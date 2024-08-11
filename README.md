@@ -12,6 +12,16 @@
 - [ ] Render Block Data (via OpenGL)
     - [ ] Render *something*
 
+## Code Style
+### I'm new to C++!
+This is moreso a disclaimer. I'm new to C++, so there'll be lots of C-isms as I try to get a proper grip on how C++ works and how to properly work with various OOP-isms. If there's code that looks out of place or outright bad, feel free to give tips as to how to improve it. I'd love to learn more!
+
+### Never Nesting Rules
+In an attempt to keep this Code somewhat readable for other people (and for me in the future), I've chosen to employ the **Never Nest** design pattern.
+
+Please refer to the following video as to why: ["Why You Shouldn't Nest Your Code" by CodeAesthetic](https://www.youtube.com/watch?v=CFRhGnuXG-4)
+
+
 ## Background
 This project was an idea I had around the middle of 2023 but due to various factors, mainly me being busy with school and work, I was unable to realize it. As I'm unemployed right now, I figured I may as well get busy and learn some proper C++ and finally delve into OpenGL. This project is the result of that.
 
@@ -22,6 +32,9 @@ The next day I rewrote that code directly in GDScript to load whole McRegion fil
 The [Python](https://github.com/OfficialPixelBrush/GodotBetaImport/blob/main/mcr.py) and [Godot](https://github.com/OfficialPixelBrush/GodotBetaImport/) experiments of this project are linked here.
 
 ## Resources
-- [Region file format - Minecraft Wiki](https://minecraft.wiki/w/Region_file_format)
-- [NBT format - Minecraft Wiki](https://minecraft.wiki/w/NBT_format)
-- [OpenGL Course - Create 3D and 2D Graphics With C++](https://youtu.be/45MIykWJ-C4)
+### Minecraft Wiki
+- [Region file format](https://minecraft.wiki/w/Region_file_format)
+- [NBT format](https://minecraft.wiki/w/NBT_format)
+### YouTube
+- ["Why You Shouldn't Nest Your Code" by CodeAesthetic](https://www.youtube.com/watch?v=CFRhGnuXG-4)
+- ["OpenGL Course - Create 3D and 2D Graphics With C++" by freeCodeCamp.org](https://youtu.be/45MIykWJ-C4)

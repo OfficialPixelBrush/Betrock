@@ -133,6 +133,9 @@ int main() {
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
+        // Respond to all GLFW events
+        glfwPollEvents();
+        // Draw
         glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         glUseProgram(shaderProgram);
@@ -141,8 +144,6 @@ int main() {
         glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
         // Swap the back and front buffer
         glfwSwapBuffers(window);
-        // Respond to all GLFW events
-        glfwPollEvents();
     }
 
     // Clean-up

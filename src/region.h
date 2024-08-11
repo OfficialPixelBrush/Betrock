@@ -5,6 +5,8 @@ using namespace std;
 uint intread(ifstream & file, uint size);
 string csDecode(uint cs);
 class regionDecoder {
+    private:
+    int decodeRegion(ifstream& f);
     public:
-    int decode(int regionX, int regionZ) { return 0; };
+    int getRegion(int regionX, int regionZ);
 };

@@ -7,7 +7,6 @@ find_package(OpenGL REQUIRED)
 add_executable(
     Betrock
     src/config.h
-    src/main.cpp
     src/region.cpp
     src/nbt.cpp
     src/glad.c
