@@ -1,12 +1,21 @@
-#include <iostream>
-#include <fstream>
-using namespace std;
+#pragma once
+//#include "chunk.h"
+#include "regionLoader.h"
 
-uint intread(ifstream & file, uint size);
-string csDecode(uint cs);
-class regionDecoder {
-    private:
-    int decodeRegion(ifstream& f);
+class region {
     public:
-    int getRegion(int regionX, int regionZ);
+        int x,z = 0;
+        region(int pX, int pZ) {
+            x = pX;
+            z = pZ;
+            //chunks = rd.decode(x,z);
+            regionLoader rL;
+            if (rL.loadRegion(x,z)) { //(chunks == NULL) {
+                cout << "Issue loading Region!" << endl;
+            }
+            cout << "Loaded successfully!" << endl;
+            //delete rL;
+        }
+    private:
+        //chunk chunks [32*32];
 };

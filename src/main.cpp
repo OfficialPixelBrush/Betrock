@@ -119,17 +119,11 @@ int main() {
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-
     // Draw Clear Color
     glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    regionDecoder rd;
-    if (rd.decode(0,0)) {
-        cout << "Issue decoding!" << endl;
-    } else {
-        cout << "Decoded successfully!" << endl;
-    }
+    region r = region(0,0);
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {

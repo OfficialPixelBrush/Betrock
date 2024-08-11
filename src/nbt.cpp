@@ -1,37 +1,35 @@
 #include <iostream>
-using namespace std;
+#include <math.h>
+#include <cstdint>
 
-/*
-class NbtTag {
+enum nbtTagType {
+    TAG_END,
+    TAG_Byte,
+    TAG_Short,
+    TAG_Int,
+    TAG_Long,
+    TAG_Float,
+    TAG_Double,
+    TAG_Byte_Array,
+    TAG_String,
+    TAG_List,
+    TAG_Compound,
+    TAG_Int_Array,
+    TAG_Long_Array
+};
+
+class nbtTag {
     public:
-        int tagId;
-        string tagName;
-        string name;
-        NbtTag(string pName) {
+        uint8_t type = 0;
+        std::string name = "";
+
+        nbtTag(uint8_t pType, std::string pName) {
+            type = pType;
             name = pName;
         }
 };
 
-class NbtTag_TAG_END: public NbtTag {
-    NbtTag_TAG_END():NbtTag("") {
-        tagId = 0;
-        tagName = "TAG_END";
-    }
-};
-
-class NbtTag_TAG_Byte: public NbtTag {
-    NbtTag_TAG_Byte(string pName):NbtTag(pName) {
-        tagId = 1;
-        tagName = "TAG_Byte";
-    }
-};
-
-int main() {
-    NbtTag_TAG_Byte("Test");
-}
-*/
-
-string tagType(int tag) {
+std::string tagType(int tag) {
     switch(tag) {
         case 0:
             return "TAG_END";
