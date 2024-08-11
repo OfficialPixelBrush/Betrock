@@ -99,7 +99,8 @@ int regionLoader::decodeRegion() {
 
 		// Load compressed data
 		uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme);
-		//nbt chunkNbt = nbt(nbtData, actualOutBytes);
+		nbt nbtLoader;
+		nbtLoader.loadNbt(nbtData);
 	}
 	// return chunks;
 	return 0;

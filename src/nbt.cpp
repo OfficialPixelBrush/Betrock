@@ -1,33 +1,134 @@
-#include <iostream>
-#include <math.h>
-#include <cstdint>
-
-enum nbtTagType {
-    TAG_END,
-    TAG_Byte,
-    TAG_Short,
-    TAG_Int,
-    TAG_Long,
-    TAG_Float,
-    TAG_Double,
-    TAG_Byte_Array,
-    TAG_String,
-    TAG_List,
-    TAG_Compound,
-    TAG_Int_Array,
-    TAG_Long_Array
-};
+#include "nbt.h"
+using namespace std;
 
 class nbtTag {
     public:
-        uint8_t type = 0;
         std::string name = "";
+};
 
-        nbtTag(uint8_t pType, std::string pName) {
-            type = pType;
-            name = pName;
+class TAG_Byte : public nbtTag {
+    public:
+        int8_t data;
+        TAG_Byte(std::string pName, int8_t pData) {
+            this->name = pName;
+            this->data = pData;
         }
 };
+
+class TAG_Short : public nbtTag {
+    public:
+        int16_t data;
+        TAG_Short(std::string pName, int16_t pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Int : public nbtTag {
+    public:
+        int32_t data;
+        TAG_Int(std::string pName, int32_t pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Long : public nbtTag {
+    public:
+        int64_t data;
+        TAG_Long(std::string pName, int64_t pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Float : public nbtTag {
+    public:
+        float data;
+        TAG_Float(std::string pName, float pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Double : public nbtTag {
+    public:
+        double data;
+        TAG_Double(std::string pName, double pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Byte_Array : public nbtTag {
+    public:
+        int32_t length;
+        int8_t* data;
+        TAG_Byte_Array(std::string pName, int32_t plength, int8_t* pData) {
+            this->name = pName;
+            this->length = plength;
+            this->data = pData;
+        }
+};
+
+class TAG_String : public nbtTag {
+    public:
+        uint16_t length;
+        int8_t* data;
+        TAG_String(std::string pName, uint16_t pLength, int8_t* pData) {
+            this->name = pName;
+            this->length = pLength;
+            this->data = pData;
+        }
+};
+
+class TAG_List : public nbtTag {
+    public:
+        int8_t tagId;
+        int32_t length;
+        nbtTag* data;
+        TAG_List(std::string pName, int8_t pTagId, uint16_t pLength, nbtTag* pData) {
+            this->name = pName;
+            this->tagId = pTagId;
+            this->length = pLength;
+            this->data = pData;
+        }
+};
+
+class TAG_Compound : public nbtTag {
+    public:
+        nbtTag* data;
+        TAG_Compound(std::string pName, nbtTag* pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Int_Array : public nbtTag {
+    public:
+        int32_t length;
+        TAG_Int* data;
+        TAG_Int_Array(std::string pName, TAG_Int* pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+class TAG_Long_Array : public nbtTag {
+    public:
+        int32_t length;
+        TAG_Long* data;
+        TAG_Long_Array(std::string pName, TAG_Long* pData) {
+            this->name = pName;
+            this->data = pData;
+        }
+};
+
+nbtTag loadNbt(uint8_t* data) {
+    for (auto d : data) {
+        printf("%c", d);
+    }
+}
 
 std::string tagType(int tag) {
     switch(tag) {
