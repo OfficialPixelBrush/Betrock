@@ -1,133 +1,54 @@
 #include "nbt.h"
-using namespace std;
+#include "helper.h"
 
-class nbtTag {
-    public:
-        std::string name = "";
-};
-
-class TAG_Byte : public nbtTag {
-    public:
-        int8_t data;
-        TAG_Byte(std::string pName, int8_t pData) {
-            this->name = pName;
-            this->data = pData;
+nbtTag nbt::loadNbt(uint8_t* data, size_t length) {
+    nbtTag* rootTag;
+    uint numberOfTags = 0;
+    for (uint i = 0; i < length; i++) {
+        uint8_t tagType = data[i];
+        i+=1;
+        // Handle TAG_End
+        if (!tagType) {
+            continue;
         }
-};
-
-class TAG_Short : public nbtTag {
-    public:
-        int16_t data;
-        TAG_Short(std::string pName, int16_t pData) {
-            this->name = pName;
-            this->data = pData;
+        // Get Name of Tag
+        uint16_t nameLength = intReadArray(data,&i,2);
+        std::string tagName = "";
+        for (uint16_t nL = 0; nL < nameLength; nL++) {
+            tagName += data[nL];
         }
-};
-
-class TAG_Int : public nbtTag {
-    public:
-        int32_t data;
-        TAG_Int(std::string pName, int32_t pData) {
-            this->name = pName;
-            this->data = pData;
+        i+=nameLength;
+        
+        // Create each kind of Tag
+        switch (tagType) {
+        case 1:
+            tag = new TAG_Byte(tagName, data[i]);
+            break;
+        case 2:
+            tag = new TAG_Short(tagName, intReadArray(data,&i,2));
+            break;
+        case 3:
+            tag = new TAG_Int(tagName, intReadArray(data,&i,4));
+            break;
+        case 4:
+            tag = new TAG_Long(tagName, intReadArray(data,&i,8));
+            break;
+        case 5:
+            tag = new TAG_Float(tagName, float(intReadArray(data,&i,4)));
+            break;
+        case 6:
+            tag = new TAG_Double(tagName, double(intReadArray(data,&i,8)));
+        case 7:
+            //tag = new TAG_Byte_Array(tagName, )
+            break;
         }
-};
-
-class TAG_Long : public nbtTag {
-    public:
-        int64_t data;
-        TAG_Long(std::string pName, int64_t pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-class TAG_Float : public nbtTag {
-    public:
-        float data;
-        TAG_Float(std::string pName, float pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-class TAG_Double : public nbtTag {
-    public:
-        double data;
-        TAG_Double(std::string pName, double pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-class TAG_Byte_Array : public nbtTag {
-    public:
-        int32_t length;
-        int8_t* data;
-        TAG_Byte_Array(std::string pName, int32_t plength, int8_t* pData) {
-            this->name = pName;
-            this->length = plength;
-            this->data = pData;
-        }
-};
-
-class TAG_String : public nbtTag {
-    public:
-        uint16_t length;
-        int8_t* data;
-        TAG_String(std::string pName, uint16_t pLength, int8_t* pData) {
-            this->name = pName;
-            this->length = pLength;
-            this->data = pData;
-        }
-};
-
-class TAG_List : public nbtTag {
-    public:
-        int8_t tagId;
-        int32_t length;
-        nbtTag* data;
-        TAG_List(std::string pName, int8_t pTagId, uint16_t pLength, nbtTag* pData) {
-            this->name = pName;
-            this->tagId = pTagId;
-            this->length = pLength;
-            this->data = pData;
-        }
-};
-
-class TAG_Compound : public nbtTag {
-    public:
-        nbtTag* data;
-        TAG_Compound(std::string pName, nbtTag* pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-class TAG_Int_Array : public nbtTag {
-    public:
-        int32_t length;
-        TAG_Int* data;
-        TAG_Int_Array(std::string pName, TAG_Int* pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-class TAG_Long_Array : public nbtTag {
-    public:
-        int32_t length;
-        TAG_Long* data;
-        TAG_Long_Array(std::string pName, TAG_Long* pData) {
-            this->name = pName;
-            this->data = pData;
-        }
-};
-
-nbtTag loadNbt(uint8_t* data) {
-    for (auto d : data) {
-        printf("%c", d);
+        std::cout << std::to_string(tagType) << ": \"" << tagName << "\"" << std::endl;
+        break;
     }
+    if (!tag) {
+        std::cerr << "Invalid Tag!" << std::endl;
+    }
+    return *tag;
 }
 
 std::string tagType(int tag) {

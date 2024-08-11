@@ -7,7 +7,8 @@
     - [x] Decompress Chunk Data
         - [ ] Gzip
         - [x] Zlib
-    - [ ] Decode NBT Data
+    - [x] Decode NBT Data
+    - [ ] Turn NBT Data into C++ Objects
     - [ ] Extract Block Data
 - [ ] Render Block Data (via OpenGL)
     - [ ] Render *something*

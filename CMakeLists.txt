@@ -8,9 +8,11 @@ add_executable(
     Betrock
     src/config.h
     src/main.cpp
-    src/region.cpp
-    src/regionLoader.cpp
+    src/helper.cpp
     src/nbt.cpp
+    src/world/regionLoader.cpp
+    src/world/region.cpp
+    src/world/chunk.cpp
     src/glad.c
 )
 target_link_libraries(
