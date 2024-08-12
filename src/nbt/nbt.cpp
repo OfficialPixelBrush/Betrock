@@ -28,7 +28,7 @@ int recursiveNbt(TAG_Compound* upperTag, uint8_t* data, size_t length, uint* ind
             }
             *index+=nameLength;
         }
-        std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName << std::endl;
+        //std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName << std::endl;
         
         // Create each kind of Tag
         switch (tagType) {
@@ -82,10 +82,10 @@ int recursiveNbt(TAG_Compound* upperTag, uint8_t* data, size_t length, uint* ind
                 break;
             }
             default:
-                std::cerr << printDepth(depth) << "Unknown or Unimplemented Tag!" << std::endl;
+                std::cerr << printDepth(depth) << "Unknown or Unimplemented Tag " << nbtIdentifierName(tagType) << "!" << std::endl;
                 return 1;
         }
-        upperTag->append(tag);
+        upperTag->append(std::unique_ptr<nbtTag>(tag));
     }
     return 0;
 }

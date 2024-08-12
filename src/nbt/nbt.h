@@ -1,9 +1,8 @@
 #pragma once
-#include <iostream>
+#include "../global.h"
 #include <math.h>
-#include <cstdint>
 #include "nbttag.h"
-#include "helper.h"
+#include "../helper.h"
 
 class nbt {
     public:

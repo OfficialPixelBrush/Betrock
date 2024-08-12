@@ -10,11 +10,16 @@ add_executable(
     src/config.h
     src/main.cpp
     src/helper.cpp
-    src/nbt.cpp
-    src/nbttag.cpp
+    src/nbt/nbt.cpp
+    src/nbt/nbttag.cpp
     src/world/regionLoader.cpp
     src/world/region.cpp
     src/world/chunk.cpp
+    src/world/block.cpp
+    src/shader/shader.cpp
+    src/shader/vao.cpp
+    src/shader/vbo.cpp
+    src/shader/ebo.cpp
     src/glad.c
 )
 target_link_libraries(
@@ -22,4 +27,5 @@ target_link_libraries(
     glfw
     OpenGL::GL
     deflate
+    stb
 )
