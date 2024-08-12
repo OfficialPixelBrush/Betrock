@@ -3,6 +3,7 @@
 
 class nbtTag {
     public:
+        virtual ~nbtTag() = default;
         uint8_t identifier = 0;
         std::string name = "";
 };
@@ -71,10 +72,10 @@ class TAG_Byte_Array : public nbtTag {
     public:
         int32_t length;
         int8_t* data;
-        TAG_Byte_Array(std::string pName, int32_t plength, int8_t* pData) {
+        TAG_Byte_Array(std::string pName, int32_t pLength, int8_t* pData) {
             this->identifier = 7;
             this->name = pName;
-            this->length = plength;
+            this->length = pLength;
             this->data = pData;
         }
 };
@@ -113,12 +114,14 @@ class TAG_Compound : public nbtTag {
             this->name = pName;
         }
 
-        int append(nbtTag tag) {
-            data.push_back(tag);
+        int append(nbtTag* tag) {
+            data.push_back(*tag);
             return 0;
         }
 };
 
+// These are not supported by Beta 1.7.3
+/*
 class TAG_Int_Array : public nbtTag {
     public:
         int32_t length;
@@ -140,3 +143,4 @@ class TAG_Long_Array : public nbtTag {
             this->data = pData;
         }
 };
+*/
