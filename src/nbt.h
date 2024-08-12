@@ -3,8 +3,9 @@
 #include <math.h>
 #include <cstdint>
 #include "nbttag.h"
+#include "helper.h"
 
 class nbt {
     public:
-        nbtTag loadNbt(uint8_t* data, size_t length);
+        TAG_Compound loadNbt(uint8_t* data, size_t length);
 };

@@ -1,11 +1,24 @@
 #pragma once
 #include <vector>
+#include <string>
+#include <cstdint>
+
+std::string nbtIdentifierName(int tag);
 
 class nbtTag {
     public:
-        virtual ~nbtTag() = default;
         uint8_t identifier = 0;
         std::string name = "";
+        virtual ~nbtTag() = default;
+        uint8_t getIdentifier() {
+            return identifier;
+        }
+        std::string getIdentifierName() {
+            return nbtIdentifierName(identifier);
+        }
+        std::string getName() {
+            return name;
+        }
 };
 
 class TAG_Byte : public nbtTag {
@@ -83,8 +96,8 @@ class TAG_Byte_Array : public nbtTag {
 class TAG_String : public nbtTag {
     public:
         uint16_t length;
-        int8_t* data;
-        TAG_String(std::string pName, uint16_t pLength, int8_t* pData) {
+        std::string data;
+        TAG_String(std::string pName, uint16_t pLength, std::string pData) {
             this->identifier = 8;
             this->name = pName;
             this->length = pLength;
@@ -117,6 +130,10 @@ class TAG_Compound : public nbtTag {
         int append(nbtTag* tag) {
             data.push_back(*tag);
             return 0;
+        }
+
+        auto getEntry(int id) {            
+            return data[id];
         }
 };
 

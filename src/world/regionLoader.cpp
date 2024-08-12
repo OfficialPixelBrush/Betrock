@@ -92,8 +92,11 @@ int regionLoader::decodeRegion() {
 		// Load compressed data
 		size_t nbtLength;
 		uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme, &nbtLength);
+
+		// Extract Block Data
 		nbt nbtLoader;
-		nbtTag chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
+		TAG_Compound chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
+		std::cout << chunkRoot.getEntry(0).getIdentifierName() <<": " << chunkRoot.getEntry(0).getName() << std::endl;
 	}
 	// return chunks;
 	return 0;
