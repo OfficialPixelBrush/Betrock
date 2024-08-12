@@ -5,21 +5,38 @@
 
 // Vertex Buffer
 GLfloat vertices[] = { // Pos  / Color       / UV
-    -0.5, -0.5, 0.0,            1.0, 0.0, 0.0, blockX*textureConst, blockY*textureConst,
-    -0.5,  0.5, 0.0,            0.0, 1.0, 0.0, blockX*textureConst, (blockY+1)*textureConst,
-     0.5,  0.5, 0.0,            0.0, 0.0, 1.0, (blockX+1)*textureConst, (blockY+1)*textureConst,
-     0.5, -0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst
+    // Front
+    -0.5, -0.5, 0.0,            1.0, 1.0, 1.0, blockX*textureConst, blockY*textureConst, // Bottom Left
+    -0.5,  0.5, 0.0,            1.0, 1.0, 1.0, blockX*textureConst, (blockY+1)*textureConst, // Top Left
+     0.5,  0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
+     0.5, -0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst, // Bottom Right
+     // Back
+    -0.5, -0.5, -1.0,            1.0, 1.0, 1.0, blockX*textureConst, blockY*textureConst, // Bottom Left
+    -0.5,  0.5, -1.0,            1.0, 1.0, 1.0, blockX*textureConst, (blockY+1)*textureConst, // Top Left
+     0.5,  0.5, -1.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
+     0.5, -0.5, -1.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst // Bottom Right
 };
 
 
 GLuint indices[] = {
-    0, 2, 1,
-    0, 3, 2
+    0,1,2, // Front
+    0,2,3,
+    1,5,6, // Top
+    1,6,2, 
+    0,1,5, // Left
+    0,5,4,
+    4,5,6, // Back
+    4,6,7,
+    0,4,7, // Bottom
+    0,3,7,
+    2,3,6, // Right
+    3,6,7
 };
 
 // Targeting OpenGL 3.3
 int main() {
     region r = region(0,0);
+    float fieldOfView = 45.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
     glfwInit();
@@ -82,20 +99,39 @@ int main() {
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
-        // Respond to all GLFW events
-        glfwPollEvents();
         // Draw
         glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Tell OpenGL to use our shader
         shaderProgram.Activate();
+
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
+        // Set fov, size, near and far clip plane
+        projection = glm::perspective(glm::radians(fieldOfView), (float)(windowWidth/windowHeight), 0.1f, 100.0f);
+
+        int modelLocation = glGetUniformLocation(shaderProgram.Id, "model");
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+        int viewLocation = glGetUniformLocation(shaderProgram.Id, "view");
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+        int projectionLocation = glGetUniformLocation(shaderProgram.Id, "projection");
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
         // Apply scaling uniform
         glUniform1f(uniId,0.8f);
+        // Binds the texture so it appears when rendering
         terrain.Bind();
+        // Binds the VAO so OpenGL knows to use it
         vao1.Bind();
         // Draw the Triangle
-        glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
         // Swap the back and front buffer
         glfwSwapBuffers(window);
+        // Respond to all GLFW events
+        glfwPollEvents();
     }
 
     // Clean-up
