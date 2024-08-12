@@ -11,6 +11,7 @@ GLfloat vertices[] = { // Pos  / Color       / UV
      0.5, -0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst
 };
 
+
 GLuint indices[] = {
     0, 2, 1,
     0, 3, 2
@@ -70,39 +71,10 @@ int main() {
 
     // Texture
     // Import texture via file
-    int imageWidth, imageHeight, numberOfColorChannels;
-    stbi_set_flip_vertically_on_load(true);
-    uint8_t* bytes = stbi_load("../textures/terrain.png",
-                                &imageWidth,
-                                &imageHeight,
-                                &numberOfColorChannels,
-                                0);
-    if (!bytes) {
-        std::cerr << "terrain.png not found!" << std::endl;
-    }
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
+    Texture terrain("../textures/terrain.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
+    // Yeet it over to the GPU
+    terrain.textureUnit(shaderProgram, "texture0", 0);
 
-    // Set Texture Scaling
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // Set how Texture Repeats
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Delete the Image from RAM
-    stbi_image_free(bytes);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    // Yeet the texture over
-    GLuint texture0Uniform = glGetUniformLocation(shaderProgram.Id, "texture0");
-    shaderProgram.Activate();
-    glUniform1i(texture0Uniform, 0);
 
     // Draw Clear Color
     glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
@@ -116,8 +88,9 @@ int main() {
         glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         shaderProgram.Activate();
-        glUniform1f(uniId,0.5f);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // Apply scaling uniform
+        glUniform1f(uniId,0.8f);
+        terrain.Bind();
         vao1.Bind();
         // Draw the Triangle
         glDrawElements(GL_TRIANGLES, sizeof(indices), GL_UNSIGNED_INT, 0);
@@ -129,7 +102,7 @@ int main() {
     vao1.Delete();
     vbo1.Delete();
     ebo1.Delete();
-    glDeleteTextures(1, &texture);
+    terrain.Delete();
     shaderProgram.Delete();
     glfwDestroyWindow(window);
     glfwTerminate();

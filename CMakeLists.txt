@@ -7,20 +7,20 @@ find_package(OpenGL REQUIRED)
 
 add_executable(
     Betrock
-    src/config.h
-    src/main.cpp
-    src/helper.cpp
-    src/nbt/nbt.cpp
-    src/nbt/nbttag.cpp
-    src/world/regionLoader.cpp
-    src/world/region.cpp
-    src/world/chunk.cpp
-    src/world/block.cpp
     src/shader/shader.cpp
     src/shader/vao.cpp
     src/shader/vbo.cpp
     src/shader/ebo.cpp
+    src/nbt/nbt.cpp
+    src/nbt/nbttag.cpp
+    src/texture/texture.cpp
+    src/world/regionLoader.cpp
+    src/world/region.cpp
+    src/world/chunk.cpp
+    src/world/block.cpp
     src/glad.c
+    src/helper.cpp
+    src/main.cpp
 )
 target_link_libraries(
     Betrock
