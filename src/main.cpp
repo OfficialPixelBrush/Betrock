@@ -6,37 +6,58 @@
 // Vertex Buffer
 GLfloat vertices[] = { // Pos  / Color       / UV
     // Front
-    -0.5, -0.5, 0.0,            1.0, 1.0, 1.0, blockX*textureConst, blockY*textureConst, // Bottom Left
-    -0.5,  0.5, 0.0,            1.0, 1.0, 1.0, blockX*textureConst, (blockY+1)*textureConst, // Top Left
-     0.5,  0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
-     0.5, -0.5, 0.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst, // Bottom Right
+    -0.5, -0.5,  0.5,            1.0, 1.0, 1.0, 0,0, // blockX*textureConst, blockY*textureConst, // Bottom Left
+    -0.5,  0.5,  0.5,            1.0, 1.0, 1.0, 0,1,//blockX*textureConst, (blockY+1)*textureConst, // Top Left
+     0.5,  0.5,  0.5,            1.0, 1.0, 1.0, 1,1,//(blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
+     0.5, -0.5,  0.5,            1.0, 1.0, 1.0, 1,0,//(blockX+1)*textureConst, blockY*textureConst, // Bottom Right
      // Back
-    -0.5, -0.5, -1.0,            1.0, 1.0, 1.0, blockX*textureConst, blockY*textureConst, // Bottom Left
-    -0.5,  0.5, -1.0,            1.0, 1.0, 1.0, blockX*textureConst, (blockY+1)*textureConst, // Top Left
-     0.5,  0.5, -1.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
-     0.5, -0.5, -1.0,            1.0, 1.0, 1.0, (blockX+1)*textureConst, blockY*textureConst // Bottom Right
+    -0.5, -0.5, -0.5,            1.0, 1.0, 1.0, 0,0,//blockX*textureConst, blockY*textureConst, // Bottom Left
+    -0.5,  0.5, -0.5,            1.0, 1.0, 1.0, 0,1,//blockX*textureConst, (blockY+1)*textureConst, // Top Left
+     0.5,  0.5, -0.5,            1.0, 1.0, 1.0, 1,1,//(blockX+1)*textureConst, (blockY+1)*textureConst, // Top Right
+     0.5, -0.5, -0.5,            1.0, 1.0, 1.0, 1,0 //(blockX+1)*textureConst, blockY*textureConst // Bottom Right
 };
 
 
 GLuint indices[] = {
-    0,1,2, // Front
-    0,2,3,
+    0,2,1, // Front
+    0,3,2,
     1,5,6, // Top
-    1,6,2, 
-    0,1,5, // Left
-    0,5,4,
-    4,5,6, // Back
-    4,6,7,
-    0,4,7, // Bottom
-    0,3,7,
-    2,3,6, // Right
-    3,6,7
+    1,2,6, 
+    0,4,5, // Left
+    0,5,1,
+    4,6,5, // Back
+    4,7,6,
+    0,3,7, // Bottom
+    0,7,4,
+    3,7,6, // Right
+    3,6,2
 };
+
+/*
+Example Pyramid
+GLfloat vertices[] = { // Pos  / Color       / UV
+    -.5, 0,  .5, .83, .7, .44, 0,0,
+    -.5, 0, -.5, .83, .7, .44, 5,0,
+     .5, 0, -.5, .83, .7, .44, 0,0,
+     .5, 0,  .5, .83, .7, .44, 5,0,
+      0, .8,  0, .92, .86, .76, 2.5,5
+};
+
+
+GLuint indices[] = {
+    0,1,2,
+    0,2,3,
+    0,1,4,
+    1,2,4,
+    2,3,4,
+    3,0,4
+};
+*/
 
 // Targeting OpenGL 3.3
 int main() {
     region r = region(0,0);
-    float fieldOfView = 45.0f;
+    float fieldOfView = 70.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
     glfwInit();
@@ -92,27 +113,47 @@ int main() {
     // Yeet it over to the GPU
     terrain.textureUnit(shaderProgram, "texture0", 0);
 
+    float rotation = 0.0f;
+    double previousTime = glfwGetTime();
+
+    glEnable(GL_DEPTH_TEST);
 
     // Draw Clear Color
     glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
+
+    // Makes it so OpenGL shows the triangles in the right order
+    // Enables the depth buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
         // Draw
         glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // Tell OpenGL to use our shader
         shaderProgram.Activate();
 
+        // Little timer
+        double currentTime = glfwGetTime();
+        if (currentTime - previousTime >= 1/60) {
+            rotation += 0.5f;
+            previousTime = currentTime;
+        }
+        
+        // Create our matricies
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 view = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
-        view = glm::translate(view, glm::vec3(0.0f, -0.5f, -2.0f));
-        // Set fov, size, near and far clip plane
-        projection = glm::perspective(glm::radians(fieldOfView), (float)(windowWidth/windowHeight), 0.1f, 100.0f);
 
+        // Rotate the model according to rotation
+        model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0));
+        // Move the model
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f));
+        // Set fov, size, near and far clip plane
+        projection = glm::perspective(glm::radians(fieldOfView), (float)((float)windowWidth/(float)windowHeight), 0.1f, 100.0f);
+
+        // Yeet that data over via uniforms
         int modelLocation = glGetUniformLocation(shaderProgram.Id, "model");
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
         int viewLocation = glGetUniformLocation(shaderProgram.Id, "view");

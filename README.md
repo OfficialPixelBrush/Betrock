@@ -8,10 +8,12 @@
         - [ ] Gzip
         - [x] Zlib
     - [x] Decode NBT Data
-    - [ ] Turn NBT Data into C++ Objects
-    - [ ] Extract Block Data
+    - [x] Turn NBT Data into C++ Objects
+    - [x] Extract Block Data
 - [ ] Render Block Data (via OpenGL)
-    - [ ] Render *something*
+    - [x] Render *something*
+    - [ ] Render a Texture
+    - [x] Render a cube
 
 ## Code Style
 ### I'm new to C++!

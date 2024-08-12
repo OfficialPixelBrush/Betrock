@@ -1,14 +1,25 @@
 #include "texture.h"
 
+uint8_t missing[2*2*4] = {255,0,255,255,0,0,0,255,0,0,0,255,255,0,255,255};
+
 Texture::Texture(const char* imagePath, GLenum textureType, GLenum slot, GLenum format, GLenum pixelType) {
     type = textureType;
     int imageWidth, imageHeight, numberOfColorChannels;
+    bool success = false;
     // Flip the image to-be-loaded vertically, because STBI loads images top to bottom by default
     stbi_set_flip_vertically_on_load(true);
     // Load given image file in
     uint8_t* bytes = stbi_load(imagePath, &imageWidth, &imageHeight, &numberOfColorChannels, 0);
+    // Handle missing textures
     if (!bytes) {
         std::cerr << imagePath << " not found!" << std::endl;
+        // Missing texture!
+        imageWidth = 2;
+        imageHeight = 2;
+        numberOfColorChannels = 4;
+        bytes = missing;
+    } else {
+        success = true;
     }
     glGenTextures(1, &Id);
     glActiveTexture(slot);
@@ -26,7 +37,9 @@ Texture::Texture(const char* imagePath, GLenum textureType, GLenum slot, GLenum 
     glGenerateMipmap(textureType);
 
     // Delete the Image from RAM
-    stbi_image_free(bytes);
+    if (success) {
+        stbi_image_free(bytes);
+    }
     glBindTexture(textureType, 0);
 }
 

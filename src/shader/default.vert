@@ -16,6 +16,7 @@ out vec2 textureCoordinate;
 // Used to scale the verts
 uniform float scale;
 
+// Inputs the matricies needed for 3D viewing with perspective
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
