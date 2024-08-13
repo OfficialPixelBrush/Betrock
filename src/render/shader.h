@@ -6,6 +6,7 @@
 #include <sstream>
 #include <iostream>
 #include <cerrno>
+#include "../compat.h"
 
 std::string getFileContents(const char* filename);
 

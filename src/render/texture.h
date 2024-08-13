@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 #include "shader.h"
+#include "../compat.h"
 
 class Texture {
     public:

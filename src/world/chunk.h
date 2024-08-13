@@ -1,5 +1,6 @@
 #pragma once
 #include "block.h"
+#include "../compat.h"
 
 class chunk {
     block data [16*128*16];

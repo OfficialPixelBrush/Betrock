@@ -1,6 +1,7 @@
 #pragma once
 //#include "chunk.h"
 #include "regionLoader.h"
+#include "../compat.h"
 
 class region {
     public:

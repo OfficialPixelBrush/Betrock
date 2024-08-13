@@ -6,6 +6,7 @@
 #include <gzip/decompress.hpp>
 #include <libdeflate.h>
 #include "chunk.h"
+#include "../compat.h"
 using namespace std;
 
 class regionLoader {

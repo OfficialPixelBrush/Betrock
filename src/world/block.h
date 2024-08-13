@@ -1,4 +1,5 @@
 #include "../global.h"
+#include "../compat.h"
 
 class block {
     public:

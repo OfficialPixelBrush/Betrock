@@ -16,6 +16,7 @@
 #include "render/ebo.h"
 #include "render/texture.h"
 #include "render/camera.h"
+#include "compat.h"
 
 #include "world/region.h"
 

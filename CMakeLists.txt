@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.28.3)
-project(Betrock VERSION 0.1.0)
 cmake_policy(SET CMP0072 NEW)
 set (CMAKE_CXX_STANDARD 20)
+project(Betrock VERSION 0.1.0)
 
 find_package(OpenGL REQUIRED)
+find_package(glfw3 3.3 REQUIRED)
 
 add_executable(
     Betrock
@@ -23,10 +24,28 @@ add_executable(
     src/helper.cpp
     src/main.cpp
 )
-target_link_libraries(
-    Betrock
-    glfw
-    OpenGL::GL
-    deflate
-    stb
-)
+
+set(CMAKE_SYSTEM_NAME Linux)
+
+# TODO: Get Windows Target working
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(CMAKE_C_COMPILER i686-w64-mingw32-gcc)
+    set(CMAKE_CXX_COMPILER i686-w64-mingw32-g++)
+    set(CMAKE_RC_COMPILER i686-w64-mingw32-windres)
+    set(CMAKE_RANLIB i686-w64-mingw32-ranlib)
+    target_link_libraries(
+        Betrock
+        gdi32
+        opengl32
+        deflate
+        stb
+    )
+else()
+    target_link_libraries(
+        Betrock
+        glfw
+        OpenGL::GL
+        deflate
+        stb
+    )
+endif()

@@ -2,3 +2,4 @@
 #include <iostream>
 #include <cstdint>
 #include <cerrno>
+#include "compat.h"
