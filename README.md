@@ -17,6 +17,8 @@
     - [x] Have a Camera that's keyboard and mouse controlled
     - [x] Add Lighting
     - [ ] Model Importing
+- [ ] Windows Version
+      - stb causing issues here
 
 ## Code Style
 ### I'm new to C++!
