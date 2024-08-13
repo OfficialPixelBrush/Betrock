@@ -25,13 +25,19 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile) {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexSource, NULL);
     glCompileShader(vertexShader);
-    compileErrors(vertexShader, "VERTEX");
+
+    std::string vertexFileStr = vertexFile; // Convert to std::string if it's a const char*
+    std::string vertexErrorMessage = "VERTEX: " + vertexFileStr;
+    compileErrors(vertexShader, vertexErrorMessage.c_str());
 
     // Create Fragment Shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
     glCompileShader(fragmentShader);
-    compileErrors(fragmentShader, "FRAGMENT");
+
+    std::string fragmentFileStr = fragmentFile; // Convert to std::string if it's a const char*
+    std::string fragmentErrorMessage = "FRAGMENT: " + fragmentFileStr;
+    compileErrors(fragmentShader, fragmentErrorMessage.c_str());
 
     // Create Shader Program and Link
     Id = glCreateProgram();
@@ -60,7 +66,7 @@ void Shader::compileErrors(uint shader, const char* type) {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &hasCompiled);
         if (hasCompiled == GL_FALSE) {
             glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cerr << "SHADER_COMP_ERROR for: " << type << std::endl;
+            std::cerr << "SHADER_COMP_ERROR for " << type << std::endl;
         }
     } else {
         

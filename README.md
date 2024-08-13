@@ -13,10 +13,10 @@
 - [ ] Render Block Data (via OpenGL)
     - [x] Render *something*
     - [x] Render a Texture
-    - [x] Render a cube
+    - [x] Render a Cube
     - [x] Have a Camera that's keyboard and mouse controlled
-    - [ ] Add Lighting
-    - [ ] Whatever else the Tutorial offers
+    - [x] Add Lighting
+    - [ ] Model Importing
 
 ## Code Style
 ### I'm new to C++!

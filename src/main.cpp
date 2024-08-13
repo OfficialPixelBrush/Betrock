@@ -93,12 +93,13 @@ int main() {
     // Texture
     // Import texture via file
     Texture textures[] {
-        Texture("../textures/yeen.png"    , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE),
-        Texture("../textures/specular.png", "specular", 1, GL_RED , GL_UNSIGNED_BYTE)
+        Texture("../textures/terrain.png" , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE)
+        //Texture("../textures/specular.png", "specular", 1, GL_RED , GL_UNSIGNED_BYTE)
     };
 
     // Creates Shader object using shaders default.vert and .frag
-    Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
+    //Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
+    Shader shaderProgram("../src/shader/default.vert", "../src/shader/minecraft.frag");
     std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
     std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
     std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
