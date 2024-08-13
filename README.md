@@ -14,8 +14,9 @@
     - [x] Render *something*
     - [x] Render a Texture
     - [x] Render a cube
-    - [ ] Have a Camera
+    - [x] Have a Camera that's keyboard and mouse controlled
     - [ ] Add Lighting
+    - [ ] Whatever else the Tutorial offers
 
 ## Code Style
 ### I'm new to C++!

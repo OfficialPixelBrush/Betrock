@@ -11,18 +11,24 @@
 
 class Camera {
     public:
-        bool clickedIn = false;
+        // Used to keep track if one is already clicked into the application
+        bool firstClick = true;
+        // Used to keep track of Camera Position, Orientation and Up Vector
         glm::vec3 Position;
         glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
 
+        // Camera size
         int width, height;
 
+        // Movement Settings
         float speed = 0.03;
-        float sensitivity = 100.0f;
+        float sensitivity = 150.0f;
 
         Camera(int pWidth, int pHeight, glm::vec3 pPosition);
 
+        // Used to define projection Matrix
         void Matrix(float FOVdeg, float nearPlane, float farPlane, Shader& shader, const char* uniform);
+        // Used to apply movement inputs to Camera
         void Inputs(GLFWwindow* window);
 };

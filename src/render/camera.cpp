@@ -41,17 +41,20 @@ void Camera::Inputs(GLFWwindow* window) {
     }
     // TODO: Add scrollwheel to adjust speed?
 
-    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS || clickedIn) {
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        clickedIn = true;
+        if (firstClick) {
+            firstClick = false;
+            glfwSetCursorPos(window, (width/2), (height/2));
+        }
     }
 
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        clickedIn = false;
+        firstClick = true;
     }
 
-    if (clickedIn) {
+    if (!firstClick) {
         double mouseX, mouseY;
         glfwGetCursorPos(window,&mouseX, &mouseY);
 
@@ -60,8 +63,8 @@ void Camera::Inputs(GLFWwindow* window) {
 
         glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotationX), glm::normalize(glm::cross(Orientation, Up)));
 
-        if (!(glm::angle(newOrientation, Up) <= glm::radians(1.0f)) ||
-        (glm::angle(newOrientation, -Up) <= glm::radians(1.0f)))  {
+        if (!(glm::angle(newOrientation, Up) <= glm::radians(5.0f)) ||
+        (glm::angle(newOrientation, -Up) <= glm::radians(5.0f)))  {
             Orientation = newOrientation;
         }
 
