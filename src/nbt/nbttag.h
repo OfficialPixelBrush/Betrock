@@ -20,6 +20,10 @@ class nbtTag {
 		std::string getName() {
 			return name;
 		}
+
+		void append(std::unique_ptr<nbtTag> tag) {
+			std::cerr << "Tried appending to non-list or compound tag!" << std::endl;
+		};
 };
 
 class TAG_Byte : public nbtTag {
@@ -114,13 +118,16 @@ class TAG_List : public nbtTag {
 	public:
 		int8_t tagId;
 		int32_t length;
-		nbtTag* data;
-		TAG_List(std::string pName, int8_t pTagId, uint16_t pLength, nbtTag* pData) {
+		std::vector<std::shared_ptr<nbtTag>> data;
+		TAG_List(std::string pName, int8_t pTagId, uint16_t pLength) {
 			this->identifier = 9;
 			this->name = pName;
 			this->tagId = pTagId;
 			this->length = pLength;
-			this->data = pData;
+		}
+
+		void append(std::unique_ptr<nbtTag> tag) {
+			data.push_back(std::move(tag));
 		}
 };
 
@@ -133,9 +140,8 @@ class TAG_Compound : public nbtTag {
 			this->name = pName;
 		}
 
-		int append(std::unique_ptr<nbtTag> tag) {
+		void append(std::unique_ptr<nbtTag> tag) {
 			data.push_back(std::move(tag));
-			return 0;
 		}
 
 		nbtTag* getData(int id) {

@@ -8,7 +8,7 @@ std::string printDepth(uint depth) {
     return result;
 }
 
-int recursiveNbt(TAG_Compound* upperTag, uint8_t* data, size_t length, uint* index, uint depth = 0, uint8_t defaultTagType = 0) {
+int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, uint depth = 0, uint8_t defaultTagType = 0) {
     while (*index<length) {
         nbtTag* tag;
         uint8_t tagType;
@@ -67,14 +67,13 @@ int recursiveNbt(TAG_Compound* upperTag, uint8_t* data, size_t length, uint* ind
                 tag = new TAG_String(tagName, size, tagString);
                 break;
             }
-            // TODO: Implement TAG_List
-            /*case 9: {
+            case 9: {
                 uint16_t size = intReadArray(data,index, 2);
-                tag = new TAG_List(tagName);
+                tag = new TAG_List(tagName, tagType, size);
                 TAG_List* listTag = dynamic_cast<TAG_List*>(tag);
-                recursiveNbt(listTag, data, length, index, tagType, tagName);
+                recursiveNbt(listTag, data, *index+size, index, depth+1, tagType);
                 break;
-            }*/
+            }
             case 10: {
                 tag = new TAG_Compound(tagName);
                 TAG_Compound* compoundTag = dynamic_cast<TAG_Compound*>(tag);
@@ -85,6 +84,7 @@ int recursiveNbt(TAG_Compound* upperTag, uint8_t* data, size_t length, uint* ind
                 std::cerr << printDepth(depth) << "Unknown or Unimplemented Tag " << nbtIdentifierName(tagType) << "!" << std::endl;
                 return 1;
         }
+        // TODO: Check what uppertag is and dynamic cast it to that
         upperTag->append(std::unique_ptr<nbtTag>(tag));
     }
     return 0;
