@@ -16,6 +16,7 @@ add_executable(
     src/render/ebo.cpp
     src/render/texture.cpp
     src/render/camera.cpp
+    src/world/world.cpp
     src/world/regionLoader.cpp
     src/world/region.cpp
     src/world/chunk.cpp

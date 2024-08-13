@@ -18,7 +18,8 @@
 #include "render/camera.h"
 #include "compat.h"
 
-#include "world/region.h"
+#include "world/world.h"
+#include "world/block.h"
 
 #define GL_MAJOR 3
 #define GL_MINOR 3

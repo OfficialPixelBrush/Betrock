@@ -38,7 +38,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 	struct libdeflate_decompressor *libd;
 	libd = libdeflate_alloc_decompressor();
 	if (libd == NULL) {
-		cerr << "Could not allocate decompressor!" << endl;
+		std::cerr << "Could not allocate decompressor!" << std::endl;
 		return NULL;
 	}
 	// Decompress Data
@@ -51,13 +51,13 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 			result = libdeflate_zlib_decompress(libd, compressedData, length, decompressedData, 100000 , &decompressedSize);
 			// Decompress Data
 			if (result) {
-				cerr << "LibDeflate Error #" << to_string(result) << endl;
+				std::cerr << "LibDeflate Error #" << std::to_string(result) << std::endl;
 				return NULL;
 			}
-			cout << "Deflated Successfully!" << endl;
+			std::cout << "Deflated Successfully!" << std::endl;
 			break;
 		default:
-			cerr << "Unknown or Unimplemented compression scheme #" << to_string(compressionScheme) <<"!" << endl;
+			std::cerr << "Unknown or Unimplemented compression scheme #" << std::to_string(compressionScheme) <<"!" << std::endl;
 			return NULL;
 	}
 	// Deallocate Decompressor
@@ -70,11 +70,11 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 }
 
 // Returns an array of Chunks
-chunk* regionLoader::decodeRegion() {
-	chunk* chunks = new chunk[32*32];
+Chunk* regionLoader::decodeRegion() {
+	Chunk* chunks = new Chunk[32*32];
 	for (uint chunkIndex = 0; chunkIndex < 1; chunkIndex++) {
-		chunk currentChunk;
-		f.seekg(chunkIndex*4,ios::beg);
+		Chunk currentChunk;
+		f.seekg(chunkIndex*4,std::ios::beg);
 		// Determine Chunk Position and Size
 		offset = intReadFile(f,3)*4096;
 		sector = intReadFile(f,1)*4096;
@@ -83,12 +83,12 @@ chunk* regionLoader::decodeRegion() {
 			// cerr << "Chunk #" << chunkIndex << " does not exist" << endl;
 			continue;
 		}
-		cout << "Chunk #" << to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << endl;
-		f.seekg(offset, ios::beg);
+		std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
+		f.seekg(offset, std::ios::beg);
 		// Determine Chunk metadata
 		size_t length = intReadFile(f,4)-1;
 		uint8_t compressionScheme = intReadFile(f,1);
-		cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << endl;
+		std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
 
 		// Load compressed data
 		size_t nbtLength;
@@ -113,7 +113,7 @@ chunk* regionLoader::decodeRegion() {
 			}
 		}
 		if (!blockData) {
-			std:cerr << "No block data found!" << std::endl;
+			std::cerr << "No block data found!" << std::endl;
 			return NULL;
 		}
 		currentChunk.setData(blockData);
@@ -122,16 +122,20 @@ chunk* regionLoader::decodeRegion() {
 	return chunks;
 }
 
+regionLoader::regionLoader(std::string pPath) {
+	this->path = pPath;
+}
+
 // Get the Region data from the associated regionX and regionZ file
-chunk* regionLoader::loadRegion(int x, int z) {
-	string regionfile = "world/region/r." + to_string(x) + "." + to_string(z) + ".mcr";
-	f.open(regionfile, ios::binary);
+Chunk* regionLoader::loadRegion(int x, int z) {
+	std::string regionfile = path + "/region/r." + std::to_string(x) + "." + std::to_string(z) + ".mcr";
+	f.open(regionfile, std::ios::binary);
 	if (!f) {
-		cerr << "Region File " << regionfile << " not found!" << endl;
+		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
 		return NULL;
 	}
-	cout << "Decoding " << regionfile << endl;
-	chunk* chunks = decodeRegion();
+	std::cout << "Decoding " << regionfile << std::endl;
+	Chunk* chunks = decodeRegion();
 	f.close();
 	return chunks;
 }

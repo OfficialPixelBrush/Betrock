@@ -7,13 +7,14 @@
 #include <libdeflate.h>
 #include "chunk.h"
 #include "../compat.h"
-using namespace std;
 
 class regionLoader {
+    std::string path;
     public:
-        chunk* loadRegion(int x, int z);
+        regionLoader(std::string pPath);
+        Chunk* loadRegion(int x, int z);
     private:
         std::string compressionSchemeString(uint cs);
         uint8_t* decompressChunk(uint chunkIndex, size_t length, uint8_t compressionScheme, size_t* nbtLength);
-        chunk* decodeRegion();
+        Chunk* decodeRegion();
 };

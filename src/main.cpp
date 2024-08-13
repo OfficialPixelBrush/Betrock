@@ -64,8 +64,16 @@ glm::vec4 skyColor(0.2, 0.2, 0.2, 1.0f);
 
 // Targeting OpenGL 3.3
 int main() {
-    region r = region(0,0);
-    
+    //region r = region(0,0);
+    World world("world");
+    Region* r = world.getRegion(0,0);
+    Block* blocks = r->getChunk(0,0)->getData();
+    for (uint i = 0; i < 128; i++) {
+        std::cout << std::to_string(blocks[i].getBlock()) << ",";
+    }
+    std::cout << std::endl;
+
+
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
@@ -166,6 +174,8 @@ int main() {
     // Enables the depth buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
+    double prevTime = glfwGetTime();
+
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
         // Draw
@@ -198,6 +208,8 @@ int main() {
         glfwSwapBuffers(window);
         // Respond to all GLFW events
         glfwPollEvents();
+        //std::cout << (glfwGetTime() - prevTime)*1000 << " ms" << std::endl;
+        prevTime = glfwGetTime();
     }
 
     // Clean-up

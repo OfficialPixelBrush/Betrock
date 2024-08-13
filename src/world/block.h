@@ -1,7 +1,8 @@
+#pragma once
 #include "../global.h"
 #include "../compat.h"
 
-class block {
+class Block {
     public:
         int8_t blockType = 0;
 
