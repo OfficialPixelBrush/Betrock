@@ -2,7 +2,7 @@
 
 uint8_t missing[2*2*4] = {255,0,255,255,0,0,0,255,0,0,0,255,255,0,255,255};
 
-Texture::Texture(const char* imagePath, GLenum textureType, GLenum slot, GLenum format, GLenum pixelType) {
+Texture::Texture(const char* imagePath, const char* textureType, GLuint slot, GLenum format, GLenum pixelType) {
     type = textureType;
     int imageWidth, imageHeight, numberOfColorChannels;
     bool success = false;
@@ -22,25 +22,27 @@ Texture::Texture(const char* imagePath, GLenum textureType, GLenum slot, GLenum 
         success = true;
     }
     glGenTextures(1, &Id);
-    glActiveTexture(slot);
-    glBindTexture(textureType, Id);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    unit = slot;
+    glBindTexture(GL_TEXTURE_2D, Id);
 
     // Set Texture Scaling
-    glTexParameteri(textureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(textureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     // Set how Texture Repeats
-    glTexParameteri(textureType, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(textureType, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexImage2D(textureType, 0, GL_RGBA, imageWidth, imageHeight, 0, format, pixelType, bytes);
-    glGenerateMipmap(textureType);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, format, pixelType, bytes);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
     // Delete the Image from RAM
     if (success) {
         stbi_image_free(bytes);
+        std::cout << imagePath << " found!" << std::endl;
     }
-    glBindTexture(textureType, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // Yeet to shader
@@ -52,12 +54,13 @@ void Texture::textureUnit(Shader& shader, const char* uniform, GLuint unit) {
 
 // Use this texture
 void Texture::Bind() {
-    glBindTexture(type, Id);
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, Id);
 }
 
 // Don't use this texture
 void Texture::Unbind() {
-    glBindTexture(type, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 // Delete this texture

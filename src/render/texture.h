@@ -7,8 +7,9 @@
 class Texture {
     public:
         GLuint Id;
-        GLenum type;
-        Texture(const char* imagePath, GLenum textureType, GLenum slot, GLenum format, GLenum pixelType);
+        const char* type;
+        GLuint unit;
+        Texture(const char* imagePath, const char* textureType, GLuint slot, GLenum format, GLenum pixelType);
 
         void textureUnit(Shader& shader, const char* uniform, GLuint unit);
         void Bind();
