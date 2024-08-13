@@ -105,18 +105,15 @@ int main() {
     vbo1.Unbind();
     ebo1.Unbind();
 
-    GLuint uniId = glGetUniformLocation(shaderProgram.Id, "scale");
-
     // Texture
     // Import texture via file
     Texture terrain("../textures/terrain.png", GL_TEXTURE_2D, GL_TEXTURE0, GL_RGBA, GL_UNSIGNED_BYTE);
     // Yeet it over to the GPU
     terrain.textureUnit(shaderProgram, "texture0", 0);
 
-    float rotation = 0.0f;
-    double previousTime = glfwGetTime();
-
     glEnable(GL_DEPTH_TEST);
+
+    Camera camera(windowWidth, windowHeight, glm::vec3(0.0f, 0.0f, 2.0f));
 
     // Draw Clear Color
     glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
@@ -129,40 +126,14 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         // Draw
         glClearColor(0.439f, 0.651f, 0.918f, 1.0f);
+        // Clear the Back and Depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         // Tell OpenGL to use our shader
         shaderProgram.Activate();
 
-        // Little timer
-        double currentTime = glfwGetTime();
-        if (currentTime - previousTime >= 1/60) {
-            rotation += 0.5f;
-            previousTime = currentTime;
-        }
-        
-        // Create our matricies
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 view = glm::mat4(1.0f);
-        glm::mat4 projection = glm::mat4(1.0f);
+        camera.Inputs(window);
+        camera.Matrix(fieldOfView, 0.1f, 100.0f, shaderProgram, "cameraMatrix");
 
-        // Rotate the model according to rotation
-        model = glm::rotate(model, glm::radians(rotation), glm::vec3(1.0));
-        // Move the model
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f));
-        // Set fov, size, near and far clip plane
-        projection = glm::perspective(glm::radians(fieldOfView), (float)((float)windowWidth/(float)windowHeight), 0.1f, 100.0f);
-
-        // Yeet that data over via uniforms
-        int modelLocation = glGetUniformLocation(shaderProgram.Id, "model");
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
-        int viewLocation = glGetUniformLocation(shaderProgram.Id, "view");
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-        int projectionLocation = glGetUniformLocation(shaderProgram.Id, "projection");
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-
-        // Apply scaling uniform
-        glUniform1f(uniId,0.8f);
         // Binds the texture so it appears when rendering
         terrain.Bind();
         // Binds the VAO so OpenGL knows to use it

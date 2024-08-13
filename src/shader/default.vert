@@ -13,18 +13,11 @@ out vec3 color;
 
 out vec2 textureCoordinate;
 
-// Used to scale the verts
-uniform float scale;
-
-// Inputs the matricies needed for 3D viewing with perspective
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+uniform mat4 cameraMatrix;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    //vec4(aPos.x + aPos.x*scale, aPos.y + aPos.y*scale, aPos.z, 1.0 + aPos.z*scale);
+    gl_Position = cameraMatrix * vec4(aPos, 1.0);
     color = aColor;
     textureCoordinate = aTexture;
 }

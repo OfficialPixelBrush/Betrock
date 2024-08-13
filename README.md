@@ -12,8 +12,10 @@
     - [x] Extract Block Data
 - [ ] Render Block Data (via OpenGL)
     - [x] Render *something*
-    - [ ] Render a Texture
+    - [x] Render a Texture
     - [x] Render a cube
+    - [ ] Have a Camera
+    - [ ] Add Lighting
 
 ## Code Style
 ### I'm new to C++!

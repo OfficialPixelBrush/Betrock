@@ -7,13 +7,14 @@ find_package(OpenGL REQUIRED)
 
 add_executable(
     Betrock
-    src/shader/shader.cpp
-    src/shader/vao.cpp
-    src/shader/vbo.cpp
-    src/shader/ebo.cpp
     src/nbt/nbt.cpp
     src/nbt/nbttag.cpp
-    src/texture/texture.cpp
+    src/render/shader.cpp
+    src/render/vao.cpp
+    src/render/vbo.cpp
+    src/render/ebo.cpp
+    src/render/texture.cpp
+    src/render/camera.cpp
     src/world/regionLoader.cpp
     src/world/region.cpp
     src/world/chunk.cpp
