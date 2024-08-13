@@ -6,5 +6,5 @@
 
 class nbt {
     public:
-        TAG_Compound loadNbt(uint8_t* data, size_t length);
+        TAG_Compound* loadNbt(uint8_t* data, size_t length);
 };

@@ -72,7 +72,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 // Returns an array of Chunks
 chunk* regionLoader::decodeRegion() {
 	chunk* chunks = new chunk[32*32];
-	for (uint chunkIndex = 0; chunkIndex < 1024; chunkIndex++) {
+	for (uint chunkIndex = 0; chunkIndex < 1; chunkIndex++) {
 		chunk currentChunk;
 		f.seekg(chunkIndex*4,ios::beg);
 		// Determine Chunk Position and Size
@@ -96,11 +96,11 @@ chunk* regionLoader::decodeRegion() {
 
 		// Extract Block Data
 		nbt nbtLoader;
-		TAG_Compound chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
-		nbtTag* entry = chunkRoot.getData(0);
+		TAG_Compound* chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
+		nbtTag* entry = chunkRoot->getData(0);
 		auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
 		if (!chunkLevel) {
-			std::cerr << "The entry is not of type TAG_Compound." << std::endl;
+			std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
 			return NULL;
 		}
 		int8_t* blockData;
