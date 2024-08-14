@@ -1,5 +1,26 @@
 #include "chunkBuilder.h"
 
+bool isSurrounded(Chunk* chunk, uint x, uint y, uint z) {
+    if (chunk->getBlock(x-1,y,z)->getBlockType() &&
+        chunk->getBlock(x+1,y,z)->getBlockType() &&
+        chunk->getBlock(x,y-1,z)->getBlockType() &&
+        chunk->getBlock(x,y+1,z)->getBlockType() &&
+        chunk->getBlock(x,y,z-1)->getBlockType() &&
+        chunk->getBlock(x,y,z+1)->getBlockType() &&
+
+        !chunk->getBlock(x-1,y,z)->getTransparent() &&
+        !chunk->getBlock(x+1,y,z)->getTransparent() &&
+        !chunk->getBlock(x,y-1,z)->getTransparent() &&
+        !chunk->getBlock(x,y+1,z)->getTransparent() &&
+        !chunk->getBlock(x,y,z-1)->getTransparent() &&
+        !chunk->getBlock(x,y,z+1)->getTransparent())
+    {
+        
+        return true;
+    }
+    return false;
+}
+
 Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> tex) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -11,13 +32,14 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> 
                 //std::cout << std::to_string(x) << ", " << std::to_string(y) << ", " << std::to_string(z) << ": ";
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
                 // If there's no block, move on
-                if (!b) {
+                if (!b || b->getBlockType() == 0) {
                     continue;
                 }
-                if (b->getBlock() == 0) {
+
+                if (isSurrounded(chunk, x,y,z)) {
                     continue;
                 }
-                //std::cout << std::to_string(b->getBlock()) << std::endl;
+                //std::cout << std::to_string(b->getBlockType()) << std::endl;
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     Vertex* original = &blockModel->vertices[v];
                     Vertex newVert(glm::vec3(original->position + pos), original->color, original->normal);

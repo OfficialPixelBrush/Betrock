@@ -10,13 +10,16 @@
     - [x] Decode NBT Data
     - [x] Turn NBT Data into C++ Objects
     - [x] Extract Block Data
-- [ ] Render Block Data (via OpenGL)
+- [x] Render Block Data (via OpenGL)
     - [x] Render *something*
     - [x] Render a Texture
     - [x] Render a Cube
     - [x] Have a Camera that's keyboard and mouse controlled
     - [x] Add Lighting
-    - [ ] Model Importing
+    - [x] Model Importing
+        - [ ] OBJ (Needs to be reworked)
+        - [ ] glTF
+    - [x] Render a Chunk
 - [ ] Windows Version
       - stb causing issues here
 

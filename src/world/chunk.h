@@ -10,13 +10,16 @@ class Chunk {
         }
 
         Block* getBlock(uint x, uint y, uint z) {
+            if (x > 15 || z > 15 || y > 127) {
+                return new Block();
+            }
             return &data[y + x*128 + (z*128*16)];
         }
 
         void setData(int8_t pData []) {
             for (uint i = 0; i < 16*128*16; i++) {
                 Block b;
-                b.setBlock(pData[i]);
+                b.setBlockType(pData[i]);
                 data[i] = b;
             }
         }
