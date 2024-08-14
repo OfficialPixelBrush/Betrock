@@ -77,5 +77,5 @@ vec4 spotLight() {
 
 void main() {
     // The final color of the pixel
-    FragColor = directionalLight();
+    FragColor = spotLight();
 }

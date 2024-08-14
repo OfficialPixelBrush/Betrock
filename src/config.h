@@ -11,6 +11,8 @@
 //#include <imgui/backends/imgui_impl_glfw.h>
 //#include <imgui/backends/imgui_impl_opengl3.h>
 #include "render/mesh.h"
+#include "model/chunkBuilder.h"
+#include "model/obj.h"
 #include "compat.h"
 
 #include "world/world.h"

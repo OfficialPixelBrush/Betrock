@@ -5,8 +5,12 @@
 class Chunk {
     Block data [16*128*16];
     public:
-        Block* getData() {
+        Block* getAllBlocks() {
             return data;
+        }
+
+        Block* getBlock(uint x, uint y, uint z) {
+            return &data[y + x*128 + (z*128*16)];
         }
 
         void setData(int8_t pData []) {

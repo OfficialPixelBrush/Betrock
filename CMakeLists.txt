@@ -8,6 +8,8 @@ find_package(glfw3 3.3 REQUIRED)
 
 add_executable(
     Betrock
+    src/model/chunkBuilder.cpp
+    src/model/obj.cpp
     src/nbt/nbt.cpp
     src/nbt/nbttag.cpp
     src/render/shader.cpp

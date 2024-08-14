@@ -72,7 +72,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 // Returns an array of Chunks
 Chunk* regionLoader::decodeRegion() {
 	Chunk* chunks = new Chunk[32*32];
-	for (uint chunkIndex = 0; chunkIndex < 1; chunkIndex++) {
+	for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
 		Chunk currentChunk;
 		f.seekg(chunkIndex*4,std::ios::beg);
 		// Determine Chunk Position and Size

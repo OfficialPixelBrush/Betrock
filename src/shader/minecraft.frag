@@ -22,5 +22,5 @@ void main() {
     float diffuse = max(dot(normal, lightDirection), 0.0f);
 
     // The final color of the pixel
-    FragColor = vec4(color,1.0f) * texture(diffuse0, textureCoordinate) * (diffuse + ambient);
+    FragColor = texture(diffuse0, textureCoordinate) * diffuse; //vec4(color,1.0f) * texture(diffuse0, textureCoordinate) * (diffuse + ambient);
 }
