@@ -5,6 +5,7 @@
 
 
 // Vertices coordinates
+/*
 Vertex vertices[] =
 { //               COORDINATES           /            COLORS          /           NORMALS         /       TEXTURE COORDINATES    //
 	Vertex{glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f)},
@@ -18,8 +19,7 @@ GLuint indices[] =
 {
 	0, 1, 2,
 	0, 2, 3
-};
-
+};*/
 
 Vertex lightVertices[] =
 { //     COORDINATES     //
@@ -48,6 +48,82 @@ GLuint lightIndices[] =
 	4, 5, 6,
 	4, 6, 7
 };
+
+struct faceElement {
+    GLuint vertex;
+    //GLuint texture;
+    GLuint normal;
+};
+
+// Ported from my old MS-DOS 3D Attempt
+Mesh* tempObject(const char* filename, std::vector <Texture> tex) {
+    FILE * fp;
+    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> normals;
+    std::vector<struct faceElement> indices;
+    char str[256];
+    fp = fopen(filename, "r");
+    int trash = 0;
+
+	if (fp != NULL) {
+		printf("Found %s\n", filename);
+		while (fgets(str, sizeof(str), fp) != NULL){
+			if(str[0] == 'v' && str[1] == ' ') {
+				/* Load verts */
+                float x,y,z = 0;
+				sscanf(str, "v %f %f %f", &x,&y,&z);
+                vertices.push_back(glm::vec3(x, y, z));
+			} else if(str[0] == 'v' && str[1] == 'n' && str[2] == ' ') {
+				/* Load verts */
+                float x,y,z = 0;
+				sscanf(str, "vn %f %f %f", &x,&y,&z);
+                normals.push_back(glm::vec3(x,y,z));
+			} else if(str[0] == 'f' && str[1] == ' ') {
+				/* Load faces */
+                GLuint vx,vy,vz = 0;
+                GLuint nx,ny,nz = 0;
+				sscanf(str, "f %d/%d/%d %d/%d/%d %d/%d/%d", &vx,&trash,&nx, &vy,&trash,&ny, &vz,&trash,&nz);
+                struct faceElement fx;
+                fx.vertex = vx-1;
+                fx.normal = nx-1;
+                struct faceElement fy;
+                fy.vertex = vy-1;
+                fy.normal = ny-1;
+                struct faceElement fz;
+                fz.vertex = vz-1;
+                fz.normal = nz-1;
+                indices.push_back(fx);
+                indices.push_back(fy);
+                indices.push_back(fz);
+			}
+		}
+		fclose(fp);
+	} else {
+		printf("Failed to find %s!\n", filename);
+		return nullptr;
+	}
+    std::vector<Vertex> vert;
+    for (uint i = 0; i < vertices.size(); i++) {
+        GLuint normalIndex = 0;
+        // Check which normal belongs to which vertex
+        for (uint j = 0; j < indices.size(); j++) {
+            struct faceElement fe = indices[j];
+            if (fe.vertex == i) {
+                normalIndex = fe.normal;
+                break;
+            }
+        }
+
+        vert.push_back(Vertex{vertices[i], normals[normalIndex], normals[normalIndex], glm::vec2(0.0f, 0.0f)});
+    }
+
+    std::vector<GLuint> vertexIndices(indices.size());
+    for (size_t i = 0; i < indices.size(); i++) {
+        vertexIndices[i] = indices[i].vertex;
+    }
+
+    return new Mesh(vert,vertexIndices,tex);
+}
 
 glm::vec4 skyColor(0.439f, 0.651f, 0.918f, 1.0f);
 //glm::vec4 skyColor(0.1, 0.1, 0.1, 1.0f);
@@ -93,17 +169,19 @@ int main() {
     // Texture
     // Import texture via file
     Texture textures[] {
-        Texture("../textures/terrain.png" , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE)
-        //Texture("../textures/specular.png", "specular", 1, GL_RED , GL_UNSIGNED_BYTE)
+        Texture("../textures/terrain.png" , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE),
+        Texture("../textures/specular.png", "specular", 1, GL_RED , GL_UNSIGNED_BYTE)
     };
 
     // Creates Shader object using shaders default.vert and .frag
     //Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
-    Shader shaderProgram("../src/shader/default.vert", "../src/shader/minecraft.frag");
-    std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
-    std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
+    Shader shaderProgram("../src/shader/default.vert", "../src/shader/normal.frag");
+    //std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
+    //std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
     std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
-    Mesh floor(verts, ind, tex);
+    //Mesh floor(verts, ind, tex);
+
+    Mesh floor = *tempObject("../src/models/cube.obj", tex);
 
 
     // Create the light and send it to the GPU
