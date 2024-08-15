@@ -25,10 +25,18 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
     ebo.Unbind();
 }
 
-void Mesh::Draw(Shader& shader, Camera& camera) {
+void Mesh::Draw(Shader& shader,
+    Camera& camera, 
+    glm::mat4 pMatrix,
+    glm::vec3 pTranslation,
+    glm::quat pRotation,
+    glm::vec3 pScale
+) {
+	// Bind shader to be able to access uniforms
     shader.Activate();
     vao.Bind();
 
+	// Keep track of how many of each type of textures we have
     uint numberOfDiffuse = 0;
     uint numberOfSpecular = 0;
 
@@ -46,5 +54,21 @@ void Mesh::Draw(Shader& shader, Camera& camera) {
     glUniform3f(glGetUniformLocation(shader.Id, "cameraPosition"), camera.Position.x, camera.Position.y, camera.Position.z);
     camera.Matrix(shader, "cameraMatrix");
 
+    glm::mat4 translation = glm::mat4(1.0f);
+    glm::mat4 rotation = glm::mat4(1.0f);
+    glm::mat4 scale = glm::mat4(1.0f);
+
+	// Use translation, rotation, and scale to change the initialized matrices
+    translation = glm::translate(translation, pTranslation);
+    rotation = glm::mat4_cast(pRotation);
+    scale = glm::scale(scale, pScale);
+
+	// Push the matrices to the vertex shader
+    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "translation"), 1, GL_FALSE, glm::value_ptr(pTranslation));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "rotation"), 1, GL_FALSE, glm::value_ptr(pRotation));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "scale"), 1, GL_FALSE, glm::value_ptr(pScale));
+    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "model"), 1, GL_FALSE, glm::value_ptr(pMatrix));
+
+	// Draw the actual mesh
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 }

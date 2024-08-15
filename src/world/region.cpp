@@ -1,7 +1,9 @@
 // Holds Data for one Region
 #include "region.h"
 
-Region::Region(Chunk* chunks) {
+Region::Region(Chunk* chunks, int x, int z) {
+    this->x = x;
+    this->z = z;
     this->chunks = chunks;
 }
 

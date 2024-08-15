@@ -10,6 +10,7 @@ add_executable(
     Betrock
     src/model/chunkBuilder.cpp
     src/model/obj.cpp
+    src/model/model.cpp
 
     src/nbt/nbt.cpp
     src/nbt/nbttag.cpp
@@ -28,7 +29,7 @@ add_executable(
     src/world/chunk.cpp
     src/world/block.cpp
 
-    src/glad.c
+    src/external/glad.c
     src/helper.cpp
     src/main.cpp
 )

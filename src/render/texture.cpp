@@ -2,7 +2,7 @@
 
 uint8_t missing[2*2*4] = {255,0,255,255,0,0,0,255,0,0,0,255,255,0,255,255};
 
-Texture::Texture(const char* imagePath, const char* textureType, GLuint slot, GLenum format, GLenum pixelType) {
+Texture::Texture(const char* imagePath, const char* textureType, GLuint slot) {
     type = textureType;
     int imageWidth, imageHeight, numberOfColorChannels;
     bool success = false;
@@ -34,7 +34,46 @@ Texture::Texture(const char* imagePath, const char* textureType, GLuint slot, GL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, format, pixelType, bytes);
+    if (numberOfColorChannels == 4) {
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            imageWidth,
+            imageHeight,
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            bytes
+        );
+    } else if (numberOfColorChannels = 3) {
+        glTexImage2D (
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            imageWidth,
+            imageHeight,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            bytes
+        );
+    } else if (numberOfColorChannels = 1) {
+        glTexImage2D (
+            GL_TEXTURE_2D,
+            0,
+            GL_RGBA,
+            imageWidth,
+            imageHeight,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            bytes
+        );
+    } else {
+        throw std::invalid_argument("Automatic Texture type recognition failed!");
+    }
+
     glGenerateMipmap(GL_TEXTURE_2D);
 
     // Delete the Image from RAM

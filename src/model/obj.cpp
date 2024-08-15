@@ -69,7 +69,7 @@ Mesh* Obj::ObjImport(const char* filename, std::vector <Texture> tex) {
             if (fe.vertex == i) {
                 normalIndex = fe.normal;
                 texUVindex = fe.textureUV;
-                std::cout << std::to_string(i) << ": " << std::to_string(texUVindex) << std::endl;
+                //std::cout << std::to_string(i) << ": " << std::to_string(texUVindex) << std::endl;
                 break;
             }
         }

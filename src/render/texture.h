@@ -9,7 +9,7 @@ class Texture {
         GLuint Id;
         const char* type;
         GLuint unit;
-        Texture(const char* imagePath, const char* textureType, GLuint slot, GLenum format, GLenum pixelType);
+        Texture(const char* imagePath, const char* textureType, GLuint slot);
 
         void textureUnit(Shader& shader, const char* uniform, GLuint unit);
         void Bind();

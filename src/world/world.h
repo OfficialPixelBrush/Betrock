@@ -6,11 +6,11 @@
 
 class World {
     public:
-        //vector<Region> v;
+        std::vector<Region> regions;
         std::string name;
-        std::vector<std::vector<Region*>> regions;
         World(std::string pName);
-
+        
+        Region* findRegion(int x, int z);
         Region* getRegion(int x, int z);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);

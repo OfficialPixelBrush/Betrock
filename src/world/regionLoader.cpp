@@ -54,7 +54,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 				std::cerr << "LibDeflate Error #" << std::to_string(result) << std::endl;
 				return NULL;
 			}
-			std::cout << "Deflated Successfully!" << std::endl;
+			//std::cout << "Deflated Successfully!" << std::endl;
 			break;
 		default:
 			std::cerr << "Unknown or Unimplemented compression scheme #" << std::to_string(compressionScheme) <<"!" << std::endl;
@@ -88,7 +88,7 @@ Chunk* regionLoader::decodeRegion() {
 		// Determine Chunk metadata
 		size_t length = intReadFile(f,4)-1;
 		uint8_t compressionScheme = intReadFile(f,1);
-		std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
+		//std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
 
 		// Load compressed data
 		size_t nbtLength;
@@ -106,7 +106,7 @@ Chunk* regionLoader::decodeRegion() {
 		int8_t* blockData;
 		for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
 			if (chunkLevel->getData(i)->getName() == "Blocks") {
-				std::cout << "Block data found!" << std::endl;
+				//std::cout << "Block data found!" << std::endl;
 				auto* blockArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
 				blockData = blockArray->getData();
 				break;				

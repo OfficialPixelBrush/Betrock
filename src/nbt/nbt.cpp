@@ -28,7 +28,7 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             }
             *index+=nameLength;
         }
-        std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName;
+        //std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName;
         
         // Create each kind of Tag
         switch (tagType) {
@@ -53,7 +53,7 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             case 7: {
                 int32_t size = intReadArray(data,index, 4);
                 int8_t* arr = new int8_t[16*128*16];
-                std::cout << " - " << std::to_string(size) << " Bytes";
+                //std::cout << " - " << std::to_string(size) << " Bytes";
                 for (int32_t j = 0; j < size; j++) {
                     arr[j] = data[*index+j];
                 }
@@ -72,22 +72,26 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
                 uint16_t size = intReadArray(data,index, 2);
                 tag = new TAG_List(tagName, underlyingTagType, size);
                 TAG_List* listTag = dynamic_cast<TAG_List*>(tag);
-                std::cout << " - " << nbtIdentifierName(underlyingTagType) << std::endl;
+                //std::cout << " - " << nbtIdentifierName(underlyingTagType) << std::endl;
                 recursiveNbt(listTag, data, *index+size, index, depth+1, underlyingTagType);
                 break;
             }
             case 10: {
                 tag = new TAG_Compound(tagName);
                 TAG_Compound* compoundTag = dynamic_cast<TAG_Compound*>(tag);
-                std::cout << std::endl;
+                //std::cout << std::endl;
                 recursiveNbt(compoundTag, data, length, index, depth+1);
                 break;
             }
             default:
-                std::cerr << "Unknown or Unimplemented Tag " << nbtIdentifierName(tagType) << "!" << std::endl;
+                std::string nbtTagName = nbtIdentifierName(tagType);
+                if (nbtTagName == "Unknown") {
+                    nbtTagName = std::to_string(tagType);
+                }
+                std::cerr << "Unknown or Unimplemented Tag " << nbtTagName << "!" << std::endl;
                 return 1;
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
         if (auto* compoundTag = dynamic_cast<TAG_Compound*>(upperTag)) {
             compoundTag->append(std::unique_ptr<nbtTag>(tag));
         } else if (auto* listTag = dynamic_cast<TAG_List*>(upperTag)) {
