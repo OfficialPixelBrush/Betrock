@@ -21,6 +21,85 @@ bool isSurrounded(Chunk* chunk, uint x, uint y, uint z) {
     return false;
 }
 
+glm::vec2 getBlockTextureOffset(unsigned char blockType) {
+    float x = 0;
+    float y = 0;
+    const float divisor = 0.0625f;
+    switch(blockType) {
+        case 1: // Stone
+            x=1;
+            break;
+        case 2: // Grass
+            x=3;
+            break;
+        case 3: // Dirt
+            x=2;
+            break;
+        case 4: // Cobblestone
+            y=1;
+            break;
+        case 5: // Oak Wood Plank
+            x=4;
+            break;
+        case 6: // Oak Sapling
+            x=15;
+            break;
+        case 7: // Bedrock
+            x=1;
+            y=1;
+            break;
+        case 8: // Flowing Water
+            x=15;
+            y=13;
+            break;
+        case 9: // Still Water
+            x=15;
+            y=13;
+            break;
+        case 10: // Stationary LAva
+            x=15;
+            y=15;
+            break;
+        case 11: // Still LAva
+            x=15;
+            y=15;
+            break;
+        case 12: // Sand
+            x=2;
+            y=1;
+            break;
+        case 13: // Gravel
+            x=3;
+            y=1;
+            break;
+        case 14: // Gold Ore
+            x=3;
+            y=1;
+            break;
+        case 15: // Iron Ore
+            x=1;
+            y=2;
+            break;
+        case 16: // Coal Ore
+            x=2;
+            y=2;
+            break;
+        case 17: // Oak Wood
+            x=4;
+            y=1;
+            break;
+        case 18: // Oak Leaves
+            x=4;
+            y=3;
+            break;
+        default: // Missing Texture
+            x=15;
+            y=9;
+            break;
+    }
+    return glm::vec2(x*divisor,-y*divisor);
+}
+
 Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> tex) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
@@ -42,7 +121,7 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> 
                 //std::cout << std::to_string(b->getBlockType()) << std::endl;
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     Vertex* original = &blockModel->vertices[v];
-                    Vertex newVert(glm::vec3(original->position + pos), original->color, original->normal);
+                    Vertex newVert(glm::vec3(original->position + pos), original->color, original->normal, original->textureUV+getBlockTextureOffset(b->getBlockType()));
                     vertices.push_back(newVert);
                 }
                 for (uint v = 0; v < blockModel->indices.size(); v++) {

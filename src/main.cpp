@@ -29,8 +29,14 @@ GLuint lightIndices[] =
 	4, 6, 7
 };
 
-glm::vec4 skyColor(0.439f, 0.651f, 0.918f, 1.0f);
+float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 //glm::vec4 skyColor(0.1, 0.1, 0.1, 1.0f);
+
+enum lightType {
+    LIGHT_POINT,
+    LIGHT_DIRECTIONAL,
+    LIGHT_SPOT
+};
 
 // Targeting OpenGL 3.3
 int main() {
@@ -67,20 +73,20 @@ int main() {
     // Texture
     // Import texture via file
     Texture textures[] {
-        Texture("../textures/yeen.png" , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE),
+        Texture("../textures/terrain.png" , "diffuse" , 0, GL_RGBA, GL_UNSIGNED_BYTE),
         Texture("../textures/specular.png", "specular", 1, GL_RED , GL_UNSIGNED_BYTE)
     };
 
     // Creates Shader object using shaders default.vert and .frag
     //Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
-    Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
+    Shader shaderProgram("../src/shader/default.vert", "../src/shader/minecraft.frag");
     //std::vector <Vertex> verts(vertices, vertices + sizeof(vertices) / sizeof(Vertex));
     //std::vector <GLuint> ind(indices, indices + sizeof(indices) / sizeof(GLuint));
     std::vector <Texture> tex(textures, textures + sizeof(textures) / sizeof(Texture));
     //Mesh floor(verts, ind, tex);
 
     Obj object;
-    Mesh* blockModel = object.ObjImport("../src/models/cube.obj", tex);
+    Mesh* blockModel = object.ObjImport("../src/models/block.obj", tex);
 
     // Create the light and send it to the GPU
     Shader lightShader("../src/shader/light.vert", "../src/shader/light.frag");
@@ -92,6 +98,7 @@ int main() {
     glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     glm::vec3 lightPosition = glm::vec3(8.0f, 90.0f, 8.0f);
     glm::mat4 lightModel = glm::mat4(1.0f);
+    int lightType = LIGHT_POINT;
     lightModel = glm::translate(lightModel, lightPosition);
     
     glm::vec3 objectPosition = glm::vec3(0.0, 0.0, 0.0);
@@ -105,7 +112,7 @@ int main() {
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram.Id, "model"), 1, GL_FALSE, glm::value_ptr(objectModel));
     glUniform4f(glGetUniformLocation(shaderProgram.Id, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
     glUniform3f(glGetUniformLocation(shaderProgram.Id, "lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z);
-    glUniform4f(glGetUniformLocation(shaderProgram.Id, "ambient"), skyColor.x, skyColor.y, skyColor.z, skyColor.w);
+    glUniform4f(glGetUniformLocation(shaderProgram.Id, "ambient"), skyColor[0], skyColor[1], skyColor[2], skyColor[3]);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -113,39 +120,74 @@ int main() {
     Camera camera(windowWidth, windowHeight, glm::vec3(8.0f, 80.0f, 16.0f));
 
     // Draw Clear Color
-    glClearColor(skyColor.x, skyColor.y, skyColor.z, skyColor.w);
+    glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
     double prevTime = glfwGetTime();
-    uint chunkX = 5;
-    uint chunkZ = 0;
-    Chunk* c = r->getChunk(chunkX,chunkZ);
+    double fpsTime = 0;
+    int chunkPos [2] = {5,0};
+    Chunk* c = r->getChunk(chunkPos[0],chunkPos[1]);
     ChunkBuilder cb;
-    Mesh chunk = *cb.build(blockModel,c, tex);
+    Mesh* chunk = cb.build(blockModel,c, tex);
+
+    // ImGui Addition
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330");
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
         // Draw
-        glClearColor(skyColor.x, skyColor.y, skyColor.z, skyColor.w);
+        glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
         // Clear the Back and Depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         // Handle inputs
-        camera.Inputs(window);
+        if (!io.WantCaptureMouse) {
+            camera.Inputs(window);
+        }
         camera.updateMatrix(fieldOfView, 0.1f, 100.0f);
 
-        chunk.Draw(shaderProgram, camera);
+        chunk->Draw(shaderProgram, camera);
         light.Draw(lightShader, camera);
+
+        ImGui::Begin("Options");
+        std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms";
+        std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
+        ImGui::Text(msTime.c_str());
+        ImGui::Text(camPos.c_str());
+        ImGui::ColorEdit4("Sky Color", skyColor);
+        ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
+        if (ImGui::Button("Load"))
+        {
+            c = r->getChunk(chunkPos[0],chunkPos[1]);
+            chunk = cb.build(blockModel,c, tex);
+        }
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         
         // Swap the back and front buffer
         glfwSwapBuffers(window);
         // Respond to all GLFW events
         glfwPollEvents();
-        //std::cout << (glfwGetTime() - prevTime)*1000 << " ms" << std::endl;
+        fpsTime = (glfwGetTime() - prevTime)*1000;
         prevTime = glfwGetTime();
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     // Clean-up
     //shaderProgram.Delete();

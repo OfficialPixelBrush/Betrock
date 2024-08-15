@@ -10,8 +10,10 @@ add_executable(
     Betrock
     src/model/chunkBuilder.cpp
     src/model/obj.cpp
+
     src/nbt/nbt.cpp
     src/nbt/nbttag.cpp
+
     src/render/shader.cpp
     src/render/vao.cpp
     src/render/vbo.cpp
@@ -19,11 +21,13 @@ add_executable(
     src/render/texture.cpp
     src/render/camera.cpp
     src/render/mesh.cpp
+
     src/world/world.cpp
     src/world/regionLoader.cpp
     src/world/region.cpp
     src/world/chunk.cpp
     src/world/block.cpp
+
     src/glad.c
     src/helper.cpp
     src/main.cpp
@@ -43,6 +47,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         opengl32
         deflate
         stb
+        imgui
     )
 else()
     target_link_libraries(
@@ -51,5 +56,6 @@ else()
         OpenGL::GL
         deflate
         stb
+        imgui
     )
 endif()
