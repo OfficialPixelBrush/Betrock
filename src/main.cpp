@@ -35,8 +35,8 @@ int main() {
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
     glViewport(0,0,windowWidth,windowHeight);
 
-    // Creates Shader object using shaders default.vert and .frag
-    Shader shaderProgram("../src/shader/default.vert", "../src/shader/default.frag");
+    // Creates Shader object using shaders default.vsh and .frag
+    Shader shaderProgram("../src/shader/default.vsh", "../src/shader/default.fsh");
 
     // Transform the light and cube models
     glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
