@@ -4,9 +4,8 @@ float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
 // Targeting OpenGL 3.3
 int main() {
-    //region r = region(0,0);
-    //World world("world");
-    //Region* r = world.getRegion(0,0);
+    World world("world");
+    Region* r = world.getRegion(0,0);
 
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
@@ -52,7 +51,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(0.0f, 0.0f, 0.0f));
+    Camera camera(windowWidth, windowHeight, glm::vec3(8.0f, 80.0f, 8.0f));
 
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
@@ -64,13 +63,13 @@ int main() {
     double prevTime = glfwGetTime();
     double fpsTime = 0;
 
-    Model model("models/GOAT.OBJ");
-    /*
+    Model model("models/cube.obj");
+    Mesh* blockModel = &model.meshes[0];
+
     int chunkPos [2] = {0,0};
     Chunk* c = r->getChunk(chunkPos[0],chunkPos[1]);
     ChunkBuilder cb;
-    Mesh* chunk = cb.build(blockModel,c, tex);
-    */
+    Mesh* chunk = cb.build(blockModel,c);
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -98,11 +97,13 @@ int main() {
 
         model.Draw(shaderProgram, camera);
 
-        //chunk->Draw(shaderProgram, camera);
+        chunk->Draw(shaderProgram, camera);
 
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
+        std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
+        std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
         std::string currentModels = model.file;
         currentModels += ": \n";
         for (uint i = 0; i < model.meshes.size(); i++) {
@@ -110,14 +111,16 @@ int main() {
         }
         ImGui::Text(msTime.c_str());
         ImGui::Text(camPos.c_str());
+        ImGui::Text(camRot.c_str());
+        ImGui::Text(camSpeed.c_str());
         ImGui::Text(currentModels.c_str());
         ImGui::ColorEdit4("Sky Color", skyColor);
-        /*ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
+        ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
         if (ImGui::Button("Load"))
         {
             c = r->getChunk(chunkPos[0],chunkPos[1]);
-            chunk = cb.build(blockModel,c, tex);
-        }*/
+            chunk = cb.build(blockModel,c);
+        }
         ImGui::End();
 
         ImGui::Render();

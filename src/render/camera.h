@@ -25,6 +25,7 @@ class Camera {
 
         // Movement Settings
         float speed = 0.1;
+        bool speedModified = false;
         float sensitivity = 150.0f;
 
         Camera(int pWidth, int pHeight, glm::vec3 pPosition);
@@ -35,4 +36,5 @@ class Camera {
 
         // Used to apply movement inputs to Camera
         void Inputs(GLFWwindow* window);
+        void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 };

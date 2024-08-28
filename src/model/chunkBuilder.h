@@ -5,5 +5,5 @@
 
 class ChunkBuilder {
     public:
-        Mesh* build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> tex);
+        Mesh* build(Mesh* blockModel, Chunk* chunk);
 };

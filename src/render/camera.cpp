@@ -19,6 +19,7 @@ void Camera::Matrix(Shader& shader, const char* uniform) {
     glUniformMatrix4fv(glGetUniformLocation(shader.Id, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+
 void Camera::Inputs(GLFWwindow* window) {
     // WASD
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -41,8 +42,29 @@ void Camera::Inputs(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
         Position += speed * -Up;
     }
-    // TODO: Add scrollwheel to adjust speed?
+    
+    // 0 to Reset Speed
+    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
+        speed = 0.1;
+    }
+    // q to increase Speed
+    if ((glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) && (speedModified == false)) {
+        speed *= 2;
+        speedModified = true;
+    }
+    
+    // e to lower speed
+    if ((glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) && (speedModified == false)) {
+        speed *= 0.5;
+        speedModified = true;
+    }
 
+    if ((glfwGetKey(window, GLFW_KEY_Q) == GLFW_RELEASE) && (glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE) && (speedModified == true)) {
+        speedModified = false;
+    }
+
+
+    // Click into Window
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
         if (firstClick) {

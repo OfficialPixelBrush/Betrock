@@ -14,7 +14,7 @@ void Model::Draw(Shader& shader, Camera& camera) {
 }
 
 void Model::getMeshData() {
-    std::vector<glm::vec3> position;
+    std::vector<glm::vec3> positions;
     std::vector<glm::vec2> textureUVs;
     std::vector<glm::vec3> normals;
     std::vector<Vertex> vertices;
@@ -26,17 +26,18 @@ void Model::getMeshData() {
     if (!source)  {
         throw std::runtime_error("Could not open file: " + std::string(file));
     }
+
+    GLuint indexCount = 0;
     for(std::string line; std::getline(source, line); ) {
         std::istringstream in(line);      //make a stream for the line itself
 
         std::string type;
         in >> type;                  //and read the first whitespace-separated token
-
         if(type == "v") { // Vertex Info
             float x,y,z;
             in >> x >> y >> z;
             //std::cout << x << "," << y << "," << z << std::endl;
-            position.push_back(glm::vec3(x,y,z));
+            positions.push_back(glm::vec3(x,y,z));
         } else if (type == "vt") { // UV Info
             float u,v;
             in >> u >> v;
@@ -45,25 +46,29 @@ void Model::getMeshData() {
             float x,y,z;
             in >> x >> y >> z;
             normals.push_back(glm::vec3(x,y,z));
-        } else if (type == "f") {
+        } else if (type == "f") { // Face Info
             std::string vertex;
             while (in >> vertex) {
                 std::replace(vertex.begin(), vertex.end(), '/', ' ');  // Replace '/' with spaces
                 std::stringstream vertexStream(vertex);
                 
-                GLuint vIndex, vtIndex, vnIndex;
-                vertexStream >> vIndex >> vtIndex >> vnIndex;
-                indices.push_back(vIndex);
-
-                // Get indicies
+                GLuint pos, texUV, norm;
+                vertexStream >> pos >> texUV >> norm;
                 vertices.push_back(
                     Vertex(
-                        position[vIndex],
-                        normals[vnIndex],
+                        positions[pos-1],
+                        normals[norm-1],
                         glm::vec3(1.0f,1.0f,1.0f),
-                        textureUVs[vtIndex]
+                        textureUVs[texUV-1]
                     )
                 );
+                indices.push_back(indexCount++);
+                /*
+                if (isUnique(pos,texUV,norm)) {
+                    posInd.push_back(pos-1);
+                    texInd.push_back(texUV-1);
+                    norInd.push_back(norm-1);
+                }*/
             }
         } else if (type == "#") { // Comment
             //std::cout << line << std::endl;
@@ -72,7 +77,7 @@ void Model::getMeshData() {
             std::cout << "Found " << objectName << std::endl;
         }
     }
-    meshes.push_back(Mesh(objectName, vertices,indices, getTextures()));
+    meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
 }
 
 std::vector<Texture> Model::getTextures() {

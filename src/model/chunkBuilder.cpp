@@ -100,7 +100,7 @@ glm::vec2 getBlockTextureOffset(unsigned char blockType) {
     return glm::vec2(x*divisor,-y*divisor);
 }
 
-Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> tex) {
+Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     uint numberOfBlocks = 0;
@@ -121,8 +121,14 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> 
                 //std::cout << std::to_string(b->getBlockType()) << std::endl;
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     Vertex* original = &blockModel->vertices[v];
-                    Vertex newVert(glm::vec3(original->position + pos), original->color, original->normal, original->textureUV+getBlockTextureOffset(b->getBlockType()));
-                    vertices.push_back(newVert);
+                    vertices.push_back(
+                        Vertex(
+                            glm::vec3(original->position + pos),
+                            original->normal,
+                            original->color,
+                            original->textureUV+getBlockTextureOffset(b->getBlockType())
+                        )
+                    );
                 }
                 for (uint v = 0; v < blockModel->indices.size(); v++) {
                     GLuint newInd = (blockModel->vertices.size()*numberOfBlocks) + blockModel->indices[v];
@@ -132,5 +138,5 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> 
             }
         }
     }
-    return new Mesh("chunk",vertices,indices,tex);
+    return new Mesh("chunk",vertices,indices,blockModel->textures);
 }
