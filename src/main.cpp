@@ -4,7 +4,7 @@ float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
 // Targeting OpenGL 3.3
 int main() {
-    World world("world");
+    World world("publicbeta");
     Region* r = world.getRegion(0,0);
 
     float fieldOfView = 70.0f;
@@ -51,7 +51,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(8.0f, 80.0f, 8.0f));
+    Camera camera(windowWidth, windowHeight, glm::vec3(32.0f, 80.0f, 32.0f));
 
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
@@ -63,13 +63,19 @@ int main() {
     double prevTime = glfwGetTime();
     double fpsTime = 0;
 
+    // Load Blockmodel
     Model model("models/cube.obj");
     Mesh* blockModel = &model.meshes[0];
 
-    int chunkPos [2] = {0,0};
-    Chunk* c = r->getChunk(chunkPos[0],chunkPos[1]);
     ChunkBuilder cb;
-    Mesh* chunk = cb.build(blockModel,c);
+    std::vector<Mesh*> loadedChunks;
+    for (uint x = 0; x < 16; x++) {
+        for (uint z = 0; z < 16; z++) {
+            Chunk* c = r->getChunk(x,z);
+            Mesh* mesh = cb.build(blockModel,c,x,z);
+            loadedChunks.push_back(mesh);
+        }
+    }
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -93,11 +99,13 @@ int main() {
         if (!io.WantCaptureMouse) {
             camera.Inputs(window);
         }
-        camera.updateMatrix(fieldOfView, 0.1f, 100.0f);
+        camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
 
         model.Draw(shaderProgram, camera);
 
-        chunk->Draw(shaderProgram, camera);
+        for (uint i = 0; i < loadedChunks.size(); i++) {
+            loadedChunks[i]->Draw(shaderProgram, camera);
+        }
 
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms";
@@ -115,12 +123,13 @@ int main() {
         ImGui::Text(camSpeed.c_str());
         ImGui::Text(currentModels.c_str());
         ImGui::ColorEdit4("Sky Color", skyColor);
+        /*
         ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
         if (ImGui::Button("Load"))
         {
             c = r->getChunk(chunkPos[0],chunkPos[1]);
             chunk = cb.build(blockModel,c);
-        }
+        }*/
         ImGui::End();
 
         ImGui::Render();

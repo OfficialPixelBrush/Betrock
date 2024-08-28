@@ -5,5 +5,5 @@
 
 class ChunkBuilder {
     public:
-        Mesh* build(Mesh* blockModel, Chunk* chunk);
+        Mesh* build(Mesh* blockModel, Chunk* chunk, int chunkX = 0, int chunkZ = 0);
 };

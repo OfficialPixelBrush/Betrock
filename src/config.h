@@ -15,7 +15,6 @@
 
 #include "render/mesh.h"
 #include "model/chunkBuilder.h"
-#include "model/obj.h"
 #include "model/model.h"
 #include "compat.h"
 

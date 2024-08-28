@@ -100,7 +100,7 @@ glm::vec2 getBlockTextureOffset(unsigned char blockType) {
     return glm::vec2(x*divisor,-y*divisor);
 }
 
-Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk) {
+Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, int chunkX, int chunkZ) {
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
     uint numberOfBlocks = 0;
@@ -109,7 +109,7 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk) {
             for (uint y = 0; y < 128; y++) {
                 Block* b = chunk->getBlock(x,y,z);
                 //std::cout << std::to_string(x) << ", " << std::to_string(y) << ", " << std::to_string(z) << ": ";
-                glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
+                glm::vec3 pos = glm::vec3(float((chunkX*15)+x), float(y), float((chunkZ*15)+z));
                 // If there's no block, move on
                 if (!b || b->getBlockType() == 0) {
                     continue;
@@ -138,5 +138,6 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk) {
             }
         }
     }
+    //std::cout << "Chunk at " << std::to_string(chunkX*15) << ", " << std::to_string(chunkZ*15) << std::endl;
     return new Mesh("chunk",vertices,indices,blockModel->textures);
 }

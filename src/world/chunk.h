@@ -13,7 +13,7 @@ class Chunk {
             if (x > 15 || z > 15 || y > 127) {
                 return new Block();
             }
-            return &data[y + x*128 + (z*128*16)];
+            return &data[y + z*128 + (x*128*16)];
         }
 
         void setData(int8_t pData []) {
