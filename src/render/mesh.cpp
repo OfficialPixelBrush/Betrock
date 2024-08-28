@@ -23,9 +23,13 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
     vao.Unbind();
     vbo.Unbind();
     ebo.Unbind();
+    std::cout << "Model with " << std::to_string(vertices.size()) << " verts, ";
+    std::cout << std::to_string(indices.size()) << " indices ";
+    std::cout << "and " << std::to_string(textures.size()) << " textures loaded"<< std::endl;
 }
 
-void Mesh::Draw(Shader& shader,
+void Mesh::Draw(
+    Shader& shader,
     Camera& camera, 
     glm::mat4 pMatrix,
     glm::vec3 pTranslation,

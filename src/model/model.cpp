@@ -142,7 +142,7 @@ std::vector<float> Model::getFloats(json accessor) {
     uint bufferViewIndex = accessor.value("bufferView", 1);
     uint count = accessor["count"];
     uint accessorByteOffset = accessor.value("byteOffset", 0);
-    std::string type =  accessor["type"];
+    std::string type = accessor["type"];
 
     json bufferView = Json["bufferViews"][bufferViewIndex];
     uint byteOffset = bufferView["byteOffset"];

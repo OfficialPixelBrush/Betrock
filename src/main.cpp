@@ -52,7 +52,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(0.0f, 0.0f, 2.0f));
+    Camera camera(windowWidth, windowHeight, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
@@ -64,7 +64,7 @@ int main() {
     double prevTime = glfwGetTime();
     double fpsTime = 0;
 
-    Model model("models/sword/scene.gltf");
+    Model model("block.gltf");
     /*
     int chunkPos [2] = {0,0};
     Chunk* c = r->getChunk(chunkPos[0],chunkPos[1]);
