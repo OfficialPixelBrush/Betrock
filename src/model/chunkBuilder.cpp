@@ -132,5 +132,5 @@ Mesh* ChunkBuilder::build(Mesh* blockModel, Chunk* chunk, std::vector <Texture> 
             }
         }
     }
-    return new Mesh(vertices,indices,tex);
+    return new Mesh("chunk",vertices,indices,tex);
 }

@@ -1,6 +1,7 @@
 #include "mesh.h"
 
-Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures) {
+Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures) {
+    Mesh::name = pName;
     Mesh::vertices = vertices;
     Mesh::indices = indices;
     Mesh::textures = textures;
@@ -23,6 +24,7 @@ Mesh::Mesh(std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vec
     vao.Unbind();
     vbo.Unbind();
     ebo.Unbind();
+    std::cout << name << " is born!" << std::endl;
     std::cout << "Model with " << std::to_string(vertices.size()) << " verts, ";
     std::cout << std::to_string(indices.size()) << " indices ";
     std::cout << "and " << std::to_string(textures.size()) << " textures loaded"<< std::endl;
@@ -36,6 +38,7 @@ void Mesh::Draw(
     glm::quat pRotation,
     glm::vec3 pScale
 ) {
+    //std::cout << name << " is getting drawn" << std::endl;
 	// Bind shader to be able to access uniforms
     shader.Activate();
     vao.Bind();

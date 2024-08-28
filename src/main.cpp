@@ -64,7 +64,7 @@ int main() {
     double prevTime = glfwGetTime();
     double fpsTime = 0;
 
-    Model model("block.gltf");
+    Model model("models/GOAT.OBJ");
     /*
     int chunkPos [2] = {0,0};
     Chunk* c = r->getChunk(chunkPos[0],chunkPos[1]);
@@ -103,8 +103,14 @@ int main() {
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
+        std::string currentModels = model.file;
+        currentModels += ": \n";
+        for (uint i = 0; i < model.meshes.size(); i++) {
+            currentModels += model.meshes[i].name + "\n";
+        }
         ImGui::Text(msTime.c_str());
         ImGui::Text(camPos.c_str());
+        ImGui::Text(currentModels.c_str());
         ImGui::ColorEdit4("Sky Color", skyColor);
         /*ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
         if (ImGui::Button("Load"))

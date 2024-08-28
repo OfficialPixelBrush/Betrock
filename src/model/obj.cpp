@@ -82,5 +82,5 @@ Mesh* Obj::ObjImport(const char* filename, std::vector <Texture> tex) {
         vertexIndices[i] = indices[i].vertex;
     }
 
-    return new Mesh(vert,vertexIndices,tex);
+    return new Mesh("object",vert,vertexIndices,tex);
 }
