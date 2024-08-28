@@ -4,9 +4,6 @@ float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
 // Targeting OpenGL 3.3
 int main() {
-    World world("publicbeta");
-    Region* r = world.getRegion(0,0);
-
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
@@ -69,10 +66,12 @@ int main() {
 
     ChunkBuilder cb;
     std::vector<Mesh*> loadedChunks;
-    for (uint x = 0; x < 16; x++) {
-        for (uint z = 0; z < 16; z++) {
-            Chunk* c = r->getChunk(x,z);
-            Mesh* mesh = cb.build(blockModel,c,x,z);
+    World world("404");
+    Region* r = world.getRegion(0,0);
+    for (uint cx = 0; cx < 16; cx++) {
+        for (uint cz = 0; cz < 16; cz++) {
+            Chunk* c = r->getChunk(cx,cz);
+            Mesh* mesh = cb.build(blockModel,c,cx,cz);
             loadedChunks.push_back(mesh);
         }
     }
@@ -101,7 +100,7 @@ int main() {
         }
         camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
 
-        model.Draw(shaderProgram, camera);
+        //model.Draw(shaderProgram, camera);
 
         for (uint i = 0; i < loadedChunks.size(); i++) {
             loadedChunks[i]->Draw(shaderProgram, camera);
