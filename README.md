@@ -17,11 +17,14 @@
     - [x] Have a Camera that's keyboard and mouse controlled
     - [x] Add Lighting
     - [x] Model Importing
-        - [ ] OBJ (Needs to be reworked)
-        - [ ] glTF
+        - [x] OBJ
+        - ~~[ ] glTF~~
     - [x] Render a Chunk
 - [ ] Windows Version
       - stb causing issues here
+
+## Screenshots
+![Betrock Screenshot](images/image.png)
 
 ## Code Style
 ### I'm new to C++!

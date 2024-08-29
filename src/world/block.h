@@ -4,10 +4,9 @@
 
 class Block {
     public:
-        int8_t blockType = 0;
-        bool transparent = false;
-        // TODO: implement so we can properly give each block it's own texture
-        //glm::vec2 textureUV();
+        int8_t blockType;
+        bool transparent;
+        Block(uint8_t blockType = 0);
 
         void setBlockType(int8_t pBlockType) {
             this->blockType = pBlockType;

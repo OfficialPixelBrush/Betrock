@@ -3,7 +3,6 @@
 uint offset;
 uint sector;
 std::ifstream f;
-const uint maxChunkSize = 16*16*128;
 
 // Get Compression Scheme String
 std::string regionLoader::compressionSchemeString(uint cs) {
@@ -70,10 +69,10 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 }
 
 // Returns an array of Chunks
-Chunk* regionLoader::decodeRegion() {
-	Chunk* chunks = new Chunk[32*32];
+std::vector<Chunk> regionLoader::decodeRegion() {
+	std::vector<Chunk> chunks;
 	for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
-		Chunk currentChunk;
+		Chunk currentChunk(chunkIndex%32, chunkIndex/32);
 		f.seekg(chunkIndex*4,std::ios::beg);
 		// Determine Chunk Position and Size
 		offset = intReadFile(f,3)*4096;
@@ -83,7 +82,7 @@ Chunk* regionLoader::decodeRegion() {
 			// cerr << "Chunk #" << chunkIndex << " does not exist" << endl;
 			continue;
 		}
-		std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
+		//std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
 		f.seekg(offset, std::ios::beg);
 		// Determine Chunk metadata
 		size_t length = intReadFile(f,4)-1;
@@ -101,7 +100,7 @@ Chunk* regionLoader::decodeRegion() {
 		auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
 		if (!chunkLevel) {
 			std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
-			return NULL;
+			continue;
 		}
 		int8_t* blockData;
 		for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
@@ -114,10 +113,10 @@ Chunk* regionLoader::decodeRegion() {
 		}
 		if (!blockData) {
 			std::cerr << "No block data found!" << std::endl;
-			return NULL;
+			continue;
 		}
 		currentChunk.setData(blockData);
-		chunks[chunkIndex] = currentChunk;
+		chunks.push_back(currentChunk);
 	}
 	return chunks;
 }
@@ -127,15 +126,14 @@ regionLoader::regionLoader(std::string pPath) {
 }
 
 // Get the Region data from the associated regionX and regionZ file
-Chunk* regionLoader::loadRegion(int x, int z) {
+std::vector<Chunk> regionLoader::loadRegion(int x, int z) {
 	std::string regionfile = path + "/region/r." + std::to_string(x) + "." + std::to_string(z) + ".mcr";
 	f.open(regionfile, std::ios::binary);
 	if (!f) {
 		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
-		return NULL;
 	}
 	std::cout << "Decoding " << regionfile << std::endl;
-	Chunk* chunks = decodeRegion();
+	std::vector<Chunk> chunks = decodeRegion();
 	f.close();
 	return chunks;
 }

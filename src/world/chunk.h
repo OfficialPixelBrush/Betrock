@@ -5,6 +5,12 @@
 class Chunk {
     Block data [16*128*16];
     public:
+        int x,z;
+        Chunk(int x, int z) {
+            this->x = x;
+            this->z = z;
+        }
+
         Block* getAllBlocks() {
             return data;
         }
@@ -18,8 +24,7 @@ class Chunk {
 
         void setData(int8_t pData []) {
             for (uint i = 0; i < 16*128*16; i++) {
-                Block b;
-                b.setBlockType(pData[i]);
+                Block b(pData[i]);
                 data[i] = b;
             }
         }

@@ -6,9 +6,6 @@
 #include <string>
 #include <cstdio>
 
-
-using json = nlohmann::json;
-
 class Model {
     public:
         Model(const char* file);

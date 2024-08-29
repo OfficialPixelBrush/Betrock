@@ -7,7 +7,7 @@
 class Region {
     public:
         int x,z;
-        Chunk* chunks;
-        Region(Chunk* chunks, int x, int z);
+        std::vector<Chunk> chunks;
+        Region(std::vector<Chunk> chunks, int x, int z);
         Chunk* getChunk(int x, int z);
 };

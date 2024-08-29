@@ -28,6 +28,7 @@ void Model::getMeshData() {
     }
 
     GLuint indexCount = 0;
+    bool firstObject = true;
     for(std::string line; std::getline(source, line); ) {
         std::istringstream in(line);      //make a stream for the line itself
 
@@ -73,11 +74,24 @@ void Model::getMeshData() {
         } else if (type == "#") { // Comment
             //std::cout << line << std::endl;
         } else if (type == "o") { // Object name and delimiter
+            if (firstObject) {
+                firstObject = false;
+            } else {
+                std::cout << "Saved " << objectName << std::endl;
+                meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+                vertices.clear();
+                indices.clear();
+            }
+            // Get name for next object
             in >> objectName;
-            std::cout << "Found " << objectName << std::endl;
         }
     }
-    meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+
+    // After the loop, handle the last object (if any)
+    if (!firstObject) {
+        std::cout << "Saved " << objectName << std::endl;
+        meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+    }
 }
 
 std::vector<Texture> Model::getTextures() {

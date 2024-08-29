@@ -8,19 +8,31 @@ in vec3 color;
 in vec2 textureCoordinate;
 
 uniform sampler2D diffuse0;
-uniform sampler2D specular0;
-uniform vec4 lightColor;
-uniform vec4 ambient;
-uniform vec3 lightPosition;
 uniform vec3 cameraPosition;
 
 void main() {
     vec3 normal = normalize(Normal);
-    vec3 lightDirection = normalize(vec3(1.0f, 1.0f, 0.0f));
+    vec4 texColor = texture(diffuse0, textureCoordinate);
 
-    // Calculate Diffuse light
-    float diffuse = max(dot(normal, lightDirection), 0.0f);
+    // Calculate light
+    float lighting = 0.1f;
+    
+    if (normal.y > 0.0f) {
+        lighting = 1.0f;
+    } else {
+        lighting = 0.5f;
+    }
+
+    if (normal.x != 0) {
+        lighting = 0.6;
+    } else if (normal.z != 0) {
+        lighting = 0.8;
+    } else {
+        lighting = 1.0f;
+    }
 
     // The final color of the pixel
-    FragColor = vec4(color,1.0f) * texture(diffuse0, textureCoordinate); //vec4(color,1.0f) * texture(diffuse0, textureCoordinate) * (diffuse + ambient);
+    if(texColor.a < 0.1)
+        discard;
+    FragColor = vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor;
 }

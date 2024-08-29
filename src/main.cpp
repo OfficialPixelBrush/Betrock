@@ -32,7 +32,7 @@ int main() {
     glViewport(0,0,windowWidth,windowHeight);
 
     // Creates Shader object using shaders default.vsh and .frag
-    Shader shaderProgram("../src/shader/default.vsh", "../src/shader/default.fsh");
+    Shader shaderProgram("../src/shader/default.vsh", "../src/shader/minecraft.fsh");
 
     // Transform the light and cube models
     glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -41,14 +41,14 @@ int main() {
     lightModel = glm::translate(lightModel, lightPosition);
     
     shaderProgram.Activate();
-    glUniform4f(glGetUniformLocation(shaderProgram.Id, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+    /*glUniform4f(glGetUniformLocation(shaderProgram.Id, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
     glUniform3f(glGetUniformLocation(shaderProgram.Id, "lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z);
-    glUniform4f(glGetUniformLocation(shaderProgram.Id, "ambient"), skyColor[0], skyColor[1], skyColor[2], skyColor[3]);
+    glUniform4f(glGetUniformLocation(shaderProgram.Id, "ambient"), skyColor[0], skyColor[1], skyColor[2], skyColor[3]);*/
 
     glEnable(GL_DEPTH_TEST);
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(32.0f, 80.0f, 32.0f));
+    Camera camera(windowWidth, windowHeight, glm::vec3(47.00f, 67.62f, 225.59f));
 
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
@@ -57,23 +57,22 @@ int main() {
     // Enables the depth buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
-    double prevTime = glfwGetTime();
-    double fpsTime = 0;
-
     // Load Blockmodel
-    Model model("models/cube.obj");
-    Mesh* blockModel = &model.meshes[0];
+    Model blockModel("models/models.obj");
 
-    ChunkBuilder cb;
+    ChunkBuilder cb(&blockModel);
     std::vector<Mesh*> loadedChunks;
-    World world("404");
+    World world("saves/publicbeta");
     Region* r = world.getRegion(0,0);
     for (uint cx = 0; cx < 16; cx++) {
         for (uint cz = 0; cz < 16; cz++) {
             Chunk* c = r->getChunk(cx,cz);
-            Mesh* mesh = cb.build(blockModel,c,cx,cz);
-            loadedChunks.push_back(mesh);
+            if (c) { 
+                Mesh* mesh = cb.build(c,cx,cz);
+                loadedChunks.push_back(mesh);
+            }
         }
+        std::cout << (float(cx)/16.0)*100.0 << "%" << std::endl;
     }
 
     // ImGui Addition
@@ -84,8 +83,25 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    bool vsync = true;
+    bool cullFace = true;
+
+    double prevTime = glfwGetTime();
+    double fpsTime = 0;
+
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
+        // Update Options
+        if (vsync) {
+            glfwSwapInterval( 1 );
+        } else {
+            glfwSwapInterval( 0 );
+        }
+        if (cullFace) {
+            glEnable(GL_CULL_FACE);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
         // Draw
         glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
         // Clear the Back and Depth buffer
@@ -100,21 +116,21 @@ int main() {
         }
         camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
 
-        //model.Draw(shaderProgram, camera);
+        //blockModel.Draw(shaderProgram, camera);
 
         for (uint i = 0; i < loadedChunks.size(); i++) {
             loadedChunks[i]->Draw(shaderProgram, camera);
         }
 
         ImGui::Begin("Options");
-        std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms";
+        std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
         std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
-        std::string currentModels = model.file;
+        std::string currentModels = blockModel.file;
         currentModels += ": \n";
-        for (uint i = 0; i < model.meshes.size(); i++) {
-            currentModels += model.meshes[i].name + "\n";
+        for (uint i = 0; i < blockModel.meshes.size(); i++) {
+            currentModels += blockModel.meshes[i].name + "\n";
         }
         ImGui::Text(msTime.c_str());
         ImGui::Text(camPos.c_str());
@@ -122,6 +138,8 @@ int main() {
         ImGui::Text(camSpeed.c_str());
         ImGui::Text(currentModels.c_str());
         ImGui::ColorEdit4("Sky Color", skyColor);
+        ImGui::Checkbox("Vsync", &vsync);
+        ImGui::Checkbox("Backface Culling", &cullFace);
         /*
         ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
         if (ImGui::Button("Load"))
