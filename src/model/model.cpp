@@ -78,9 +78,16 @@ void Model::getMeshData() {
                 firstObject = false;
             } else {
                 std::cout << "Saved " << objectName << std::endl;
+                /*std::cout << "\t Verts: " << vertices.size() << " - Indicies: " << indices.size() << std::endl;
+                std::cout << "\t" << vertices.size() << std::endl << "\t\t";
+                for (int i = 0; i < indices.size(); i++) {
+                    std::cout << indices[i] << ", ";
+                }
+                std::cout << std::endl;*/
                 meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
                 vertices.clear();
                 indices.clear();
+                indexCount = 0;
             }
             // Get name for next object
             in >> objectName;

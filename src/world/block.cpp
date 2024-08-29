@@ -1,18 +1,16 @@
 #include "block.h"
+uint8_t transparentBlocks [] = {6,8,9,10,11,18,20,27,28,30,31,32,37,38,39,40,44,50,51,52,53,55,59,60,63,64,65,66,67,68,69,70,71,72,75,76,77,79,81,83,85,90,92,93,94,96};
 
-Block::Block(uint8_t blockType){
+Block::Block(uint8_t blockType, uint8_t lightLevel){
     Block::blockType = blockType;
+    Block::lightLevel = lightLevel;
 
     // Transparent
-    if ((blockType == 6) ||
-        (blockType >= 8  && blockType <= 11) ||
-        (blockType >= 30 && blockType <= 32) ||
-        (blockType >= 37 && blockType <= 40) ||
-        (blockType == 59) || (blockType == 83) ||
-        (blockType == 18) || (blockType == 20))
-    {
-        Block::transparent = true;
-    } else {
-        Block::transparent = false;
+    Block::transparent = false;
+    for (uint i = 0; i < sizeof(transparentBlocks); i++) {
+        if (blockType == transparentBlocks[i]) {
+            Block::transparent = true;
+            break;
+        }
     }
 }

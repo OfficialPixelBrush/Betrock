@@ -102,6 +102,8 @@ std::vector<Chunk> regionLoader::decodeRegion() {
 			std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
 			continue;
 		}
+
+		// Get Block Data
 		int8_t* blockData;
 		for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
 			if (chunkLevel->getData(i)->getName() == "Blocks") {
@@ -111,11 +113,26 @@ std::vector<Chunk> regionLoader::decodeRegion() {
 				break;				
 			}
 		}
+
+		// Get Blocklight Data
+		int8_t* blockLightData;
+		for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
+			if (chunkLevel->getData(i)->getName() == "BlockLight") {
+				//std::cout << "Block light data found!" << std::endl;
+				auto* blockLightArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
+				blockLightData = blockLightArray->getData();
+				break;				
+			}
+		}
 		if (!blockData) {
 			std::cerr << "No block data found!" << std::endl;
 			continue;
 		}
-		currentChunk.setData(blockData);
+		if (!blockLightData) {
+			std::cerr << "No block light data found!" << std::endl;
+			continue;
+		}
+		currentChunk.setData(blockData,blockLightData);
 		chunks.push_back(currentChunk);
 	}
 	return chunks;

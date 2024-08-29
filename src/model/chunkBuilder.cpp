@@ -30,162 +30,43 @@ glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType) {
     float x = 0;
     float y = 0;
     const float divisor = 0.0625f;
-    switch(blockType) {
-        case 1: // Stone
-            x=1;
-            break;
-        case 2: // Grass
-            x=0;
-            break;
-        case 3: // Dirt
-            x=2;
-            break;
-        case 4: // Cobblestone
-            y=1;
-            break;
-        case 5: // Oak Wood Plank
-            x=4;
-            break;
-        case 6: // Oak Sapling
-            x=15;
-            break;
-        case 7: // Bedrock
-            x=1;
-            y=1;
-            break;
-        case 8: // Flowing Water
-            x=15;
-            y=13;
-            break;
-        case 9: // Still Water
-            x=15;
-            y=13;
-            break;
-        case 10: // Stationary Lava
-            x=15;
-            y=15;
-            break;
-        case 11: // Still LAva
-            x=15;
-            y=15;
-            break;
-        case 12: // Sand
-            x=2;
-            y=1;
-            break;
-        case 13: // Gravel
-            x=3;
-            y=1;
-            break;
-        case 14: // Gold Ore
-            x=3;
-            y=1;
-            break;
-        case 15: // Iron Ore
-            x=1;
-            y=2;
-            break;
-        case 16: // Coal Ore
-            x=2;
-            y=2;
-            break;
-        case 17: // Oak Wood
-            x=4;
-            y=1;
-            break;
-        case 18: // Oak Leaves
-            x=4;
-            y=3;
-            break;
-        case 19: // Sponge
-            x=0;
-            y=3;
-            break;
-        case 20: // Glass
-            x=1;
-            y=3;
-            break;
-        case 21: // Lapis Lazuli Ore
-            x=0;
-            y=10;
-        case 22: // Lapis Lazuli Block
-            x=0;
-            y=9;
-            break;
-        case 23: // Dispenser
-            x=14;
-            y=2;
-            break;
-        case 24: // Sandstone
-            x=0;
-            y=12;
-            break;
-        case 25: // Note Block
-            x=10;
-            y=4;
-            break;
-        case 26: // Bed
-            x=7;
-            y=8;
-        case 27: // Powered Rail
-            x=3;
-            y=11;
-            break;
-        case 28: // Detector Rail
-            x=3;
-            y=12;
-            break;
-        case 29: // Sticky Piston
-            x=10;
-            y=6;
-            break;
-        case 30: // Cobweb
-            x=11;
-            y=0;
-            break;
-        case 31: // Grass
-            x=7;
-            y=2;
-            break;
-        case 83: // Sugar Canes
-            x=9;
-            y=4;
-            break;
-        default: // Missing Texture
-            x=15;
-            y=9;
-            break;
-    }
-    return glm::vec2(x*divisor,-y*divisor);
+                                                                                                                         // v Some sort of missing entry here!
+    uint8_t xBlock [256] = { 0, 1, 0, 2, 0, 4,15, 1,15,15,15,15, 2, 3, 0, 1, 2, 4, 4, 0, 1, 0, 0,14, 0,10, 7, 3, 3,10,11, 7, 0, 7,12,11, 0,13,12,13,12, 7, 6, 5, 5, 7, 8, 3, 4, 5, 0,15, 1, 4,11};
+    uint8_t yBlock [256] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 2, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1};
+
+    return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
 }
 
-Mesh* ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uint z) {
-    /*
+uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uint z) {
     // Grass
     if (blockType == 2) {
-        return &model->meshes[3];
+        return 3;
     // Cross Model
     } else if (
         (blockType == 6) ||
         (blockType >= 30 && blockType <= 32) ||
         (blockType >= 37 && blockType <= 40) ||
         (blockType == 59) || (blockType == 83)) {
-        return &model->meshes[1];
+        return 1;
     // Fluids
     } else if (blockType >= 8 && blockType <= 11 && !chunk->getBlock(x,y+1,z)->getBlockType()) { 
-        return &model->meshes[2];
+        return 2;
+    // Torches
+    } else if (blockType == 50) {
+        return 4;
+    } else if (blockType == 44) {
+        return 5;
+    } else if (blockType == 53) {
+        return 6;
     }
-    */
     // Normal Block
-    return &model->meshes[0];
+    return 0;
 }
 
 glm::vec3 getBiomeBlockColor(unsigned char blockType, Vertex* vert) {
     glm::vec3 color = glm::vec3(0.57, 0.73, 0.34);
-    if ((blockType == 2 && vert->normal.y > 0.0f) || (blockType == 18)) {
+    if ((blockType == 2 && vert->normal.y > 0.0f) || (blockType == 18) || (blockType == 31)) {
         return color;
-    } else if (blockType == 31) {
-        return color * 2.0f;
     }
     return glm::vec3(1.0f,1.0f,1.0f);
 }
@@ -218,9 +99,17 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                 glm::vec3 pos = glm::vec3(float((chunkX*15)+x), float(y), float((chunkZ*15)+z));
 
                 //std::cout << std::to_string(b->getBlockType()) << std::endl;
-                Mesh* blockModel = getBlockModel(blockType, x,y,z);
+                uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
+                Mesh* blockModel = &model->meshes[blockModelIndex];
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     glm::vec3 color = getBiomeBlockColor(blockType, &blockModel->vertices[v]);
+                    if (blockModelIndex == 1) {
+                        color *= 2.0f;
+                    }
+                    // TODO: Use BlockLight
+                    //color *= 0.5f + (float(b->getBlockLight())/255.0f)/2.0f;
+                    //std::cout << std::to_string(b->getBlockLight()) << std::endl;
+
                     vertices.push_back(
                         Vertex(
                             glm::vec3(blockModel->vertices[v].position + pos),

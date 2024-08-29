@@ -4,19 +4,24 @@
 
 class Block {
     public:
-        int8_t blockType;
+        uint8_t blockType;
         bool transparent;
-        Block(uint8_t blockType = 0);
+        uint8_t lightLevel;
+        Block(uint8_t blockType = 0, uint8_t lightLevel = 15);
 
-        void setBlockType(int8_t pBlockType) {
+        void setBlockType(uint8_t pBlockType) {
             this->blockType = pBlockType;
         }
 
-        int8_t getBlockType() {
+        uint8_t getBlockType() {
             return blockType;
         };
 
         bool getTransparent() {
             return transparent;
         };
+
+        uint8_t getBlockLight() {
+            return lightLevel;
+        }
 };

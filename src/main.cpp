@@ -62,7 +62,7 @@ int main() {
 
     ChunkBuilder cb(&blockModel);
     std::vector<Mesh*> loadedChunks;
-    World world("saves/publicbeta");
+    World world("saves/glacier");
     Region* r = world.getRegion(0,0);
     for (uint cx = 0; cx < 16; cx++) {
         for (uint cz = 0; cz < 16; cz++) {

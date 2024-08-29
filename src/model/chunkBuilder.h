@@ -13,5 +13,5 @@ class ChunkBuilder {
         Chunk* chunk;
         bool isSurrounded(uint x, uint y, uint z);
         glm::vec2 getBlockTextureOffset(unsigned char blockType);
-        Mesh* getBlockModel(unsigned char blockType, uint x, uint y, uint z);
+        uint8_t getBlockModel(unsigned char blockType, uint x, uint y, uint z);
 };
