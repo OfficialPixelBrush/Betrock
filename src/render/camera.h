@@ -16,7 +16,7 @@ class Camera {
         bool firstClick = true;
         // Used to keep track of Camera Position, Orientation and Up Vector
         glm::vec3 Position;
-        glm::vec3 Orientation = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 Orientation;
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::mat4 cameraMatrix = glm::mat4(1.0f);
 
@@ -28,7 +28,7 @@ class Camera {
         bool speedModified = false;
         float sensitivity = 150.0f;
 
-        Camera(int pWidth, int pHeight, glm::vec3 pPosition);
+        Camera(int pWidth, int pHeight, glm::vec3 pPosition, glm::vec3 pOrientation = glm::vec3(0.0f, 0.0f, -1.0f));
 
         // Used to define projection Matrix
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane);

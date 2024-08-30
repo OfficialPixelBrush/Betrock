@@ -1,9 +1,10 @@
 #include "camera.h"
 
-Camera::Camera(int pWidth, int pHeight, glm::vec3 pPosition) {
+Camera::Camera(int pWidth, int pHeight, glm::vec3 pPosition, glm::vec3 pOrientation) {
     Camera::width = pWidth;
     Camera::height = pHeight;
     Position = pPosition;
+    Orientation = pOrientation;
 }
 
 void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {

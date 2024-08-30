@@ -30,11 +30,48 @@ glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType, unsigned 
     float x = 0;
     float y = 0;
     const float divisor = 0.0625f;
-                                                                                                                         // v Some sort of missing entry here!                   //v 50: torch
+                                                                                                                    // v Some sort of missing entry here!                   //v 50: torch
     uint8_t xBlock [] = { 0, 1, 0, 2, 0, 4,15, 1,15,15,15,15, 2, 3, 0, 1, 2, 4, 4, 0, 1, 0, 0,14, 0,10, 7, 3, 3,10,11, 7, 0, 7,12,11, 0,13,12,13,12, 7, 6, 5, 5, 7, 8, 3, 4, 5, 0,15, 1, 4,11, 5, 2, 8,11,15, 7,12,13, 4, 1, 3, 0, 0, 4, 0, 1, 2, 4, 3, 3, 3, 3, 1, 2, 3, 2, 6, 8, 9,11, 4, 7};
-    uint8_t yBlock [] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 2, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1,10, 3, 1, 3, 5, 5, 2, 3, 0, 5, 5, 8, 1, 0, 6, 0, 5, 0, 3, 3, 7, 6, 0, 4, 4, 4, 4, 4, 4, 4, 0, 7};
-
-    return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
+    uint8_t yBlock [] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 3, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1,10, 3, 1, 3, 5, 5, 2, 3, 0, 5, 5, 8, 1, 0, 6, 0, 5, 0, 3, 3, 7, 6, 0, 4, 4, 4, 4, 4, 4, 4, 0, 7};
+    if (!blockMetaData) {
+        return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
+    } else {
+        switch(blockType) {
+            // Logs
+            case 17:
+                if (blockMetaData == 1) {
+                    x = 4;
+                    y = 7;
+                } else if (blockMetaData == 2) {
+                    x = 5;
+                    y = 7;
+                }
+                break;
+            // Leaves
+            case 18:
+                if (blockMetaData == 1) {
+                    x = 4;
+                    y = 8;
+                } else {
+                    x = 4;
+                    y = 3;
+                }
+                break;
+            // Tallgrass
+            case 31:
+                if (blockMetaData == 1) {
+                    x = 7;
+                    y = 2;
+                } else if (blockMetaData == 2) {
+                    x = 8;
+                    y = 3;
+                }
+                break;
+            default:
+                return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
+        }
+        return glm::vec2(x*divisor,-y*divisor);
+    }
 }
 
 uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uint z) {
@@ -108,7 +145,7 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                 }
 
                 // Figure out the blocks coordinates in the world
-                glm::vec3 pos = glm::vec3(float((chunkX*15)+x), float(y), float((chunkZ*15)+z));
+                glm::vec3 pos = glm::vec3(float((chunkX*16)+x), float(y), float((chunkZ*16)+z));
 
                 //std::cout << std::to_string(b->getBlockType()) << std::endl;
                 uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);

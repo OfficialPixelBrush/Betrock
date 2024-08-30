@@ -48,8 +48,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(47.00f, 67.62f, 225.59f));
-
+    Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
@@ -62,7 +61,7 @@ int main() {
 
     ChunkBuilder cb(&blockModel);
     std::vector<Mesh*> loadedChunks;
-    World world("saves/publicbeta");
+    World world("saves/glacier");
     Region* r = world.getRegion(0,0);
     for (uint cx = 0; cx < 16; cx++) {
         for (uint cz = 0; cz < 16; cz++) {
@@ -140,13 +139,6 @@ int main() {
         ImGui::ColorEdit4("Sky Color", skyColor);
         ImGui::Checkbox("Vsync", &vsync);
         ImGui::Checkbox("Backface Culling", &cullFace);
-        /*
-        ImGui::SliderInt2("Chunk", chunkPos, 0, 8);
-        if (ImGui::Button("Load"))
-        {
-            c = r->getChunk(chunkPos[0],chunkPos[1]);
-            chunk = cb.build(blockModel,c);
-        }*/
         ImGui::End();
 
         ImGui::Render();

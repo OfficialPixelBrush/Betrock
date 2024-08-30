@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/zstrgitrepo-populate"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/zstrgitrepo-populate.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/zstrgitrepo-populate-complete.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-build.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-configure.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-download.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-install.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-mkdir.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-patch.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-test.rule"
+		},
+		{
+			"file" : "/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/zstrgitrepo-populate-prefix/src/zstrgitrepo-populate-stamp/zstrgitrepo-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"zstrgitrepo-populate"
+		],
+		"name" : "zstrgitrepo-populate"
+	}
+}

@@ -1,0 +1,3 @@
+/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/zstrgitrepo-populate.dir
+/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/edit_cache.dir
+/home/torben/Documents/GitHub/Betrock/build/_deps/zstrgitrepo-subbuild/CMakeFiles/rebuild_cache.dir
