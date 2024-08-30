@@ -49,6 +49,8 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
     - [x] Render per-face Block lighting
         - [x] Render Sky Lighting
         - [x] Render Block Lighting
+    - [ ] Fog
+- [ ] Dynamic Chunk Loading
 - [ ] Windows Version
       - stb causing issues here
 
@@ -56,6 +58,8 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 ### Minecraft Wiki
 - [Region file format](https://minecraft.wiki/w/Region_file_format)
 - [NBT format](https://minecraft.wiki/w/NBT_format)
+### wiki.vg
+- [Protocol: Chunk Data and Update Light](https://wiki.vg/Protocol#Chunk_Data_and_Update_Light)
 ### YouTube
 - ["Why You Shouldn't Nest Your Code" by CodeAesthetic](https://www.youtube.com/watch?v=CFRhGnuXG-4)
 - ["OpenGL Course - Create 3D and 2D Graphics With C++" by freeCodeCamp.org](https://youtu.be/45MIykWJ-C4)
