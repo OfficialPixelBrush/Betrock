@@ -3,7 +3,15 @@
 float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
 // Targeting OpenGL 3.3
-int main() {
+int main(int argc, char *argv[]) {
+    std::string worldName;
+    if (argc < 2) {
+        std::cout << "No world name provided!" << std::endl;
+        worldName = "glacier";
+        //return 1;
+    } else {
+        worldName = argv[1];
+    }
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
@@ -61,7 +69,8 @@ int main() {
 
     ChunkBuilder cb(&blockModel);
     std::vector<Mesh*> loadedChunks;
-    World world("saves/glacier");
+    worldName = "saves/" + worldName;
+    World world(worldName);
     Region* r = world.getRegion(0,0);
     for (uint cx = 0; cx < 16; cx++) {
         for (uint cz = 0; cz < 16; cz++) {
