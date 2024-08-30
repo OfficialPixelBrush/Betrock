@@ -3,6 +3,7 @@
 #include "../render/texture.h"
 #include "../render/mesh.h"
 #include "../model/model.h"
+#include <algorithm>
 
 class ChunkBuilder {
     public:
@@ -12,6 +13,6 @@ class ChunkBuilder {
         Model* model;
         Chunk* chunk;
         bool isSurrounded(uint x, uint y, uint z);
-        glm::vec2 getBlockTextureOffset(unsigned char blockType);
+        glm::vec2 getBlockTextureOffset(unsigned char blockType, unsigned char blockMetaData);
         uint8_t getBlockModel(unsigned char blockType, uint x, uint y, uint z);
 };

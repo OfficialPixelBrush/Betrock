@@ -22,12 +22,8 @@ void main() {
         lighting = 1.0f;
     } else if (normal.y < 0.0f) {
         lighting = 0.5f;
-    } else if (normal.x != 0) {
-        lighting = 0.6;
-    } else if (normal.z != 0) {
-        lighting = 0.8;
     } else {
-        lighting = 1.0f;
+        lighting = (abs(normal.x) * 0.6) + (abs(normal.z) * 0.8);
     }
 
     // The final color of the pixel

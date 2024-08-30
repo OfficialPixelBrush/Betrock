@@ -26,13 +26,13 @@ bool ChunkBuilder::isSurrounded(uint x, uint y, uint z) {
     return false;
 }
 
-glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType) {
+glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType, unsigned char blockMetaData) {
     float x = 0;
     float y = 0;
     const float divisor = 0.0625f;
-                                                                                                                         // v Some sort of missing entry here!
-    uint8_t xBlock [256] = { 0, 1, 0, 2, 0, 4,15, 1,15,15,15,15, 2, 3, 0, 1, 2, 4, 4, 0, 1, 0, 0,14, 0,10, 7, 3, 3,10,11, 7, 0, 7,12,11, 0,13,12,13,12, 7, 6, 5, 5, 7, 8, 3, 4, 5, 0,15, 1, 4,11};
-    uint8_t yBlock [256] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 2, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1};
+                                                                                                                         // v Some sort of missing entry here!                   //v 50: torch
+    uint8_t xBlock [] = { 0, 1, 0, 2, 0, 4,15, 1,15,15,15,15, 2, 3, 0, 1, 2, 4, 4, 0, 1, 0, 0,14, 0,10, 7, 3, 3,10,11, 7, 0, 7,12,11, 0,13,12,13,12, 7, 6, 5, 5, 7, 8, 3, 4, 5, 0,15, 1, 4,11, 5, 2, 8,11,15, 7,12,13, 4, 1, 3, 0, 0, 4, 0, 1, 2, 4, 3, 3, 3, 3, 1, 2, 3, 2, 6, 8, 9,11, 4, 7};
+    uint8_t yBlock [] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 2, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1,10, 3, 1, 3, 5, 5, 2, 3, 0, 5, 5, 8, 1, 0, 6, 0, 5, 0, 3, 3, 7, 6, 0, 4, 4, 4, 4, 4, 4, 4, 0, 7};
 
     return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
 }
@@ -54,9 +54,11 @@ uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uin
     // Torches
     } else if (blockType == 50) {
         return 4;
+    // Slab
     } else if (blockType == 44) {
         return 5;
-    } else if (blockType == 53) {
+    // Stair
+    } else if (blockType == 53 || blockType == 67) {
         return 6;
     }
     // Normal Block
@@ -75,6 +77,15 @@ ChunkBuilder::ChunkBuilder(Model* model) {
     ChunkBuilder::model = model;
 }
 
+float getLighting(Chunk* chunk, int x, int y, int z, glm::vec3 normal) {
+    float lightArray[16] = {0.035f,0.044f,0.055f,0.069f,0.086f,0.107f,0.134f,0.168f,0.21f,0.262f,0.328f,0.41f,0.512f,0.64f,0.8f,1.0f};
+    Block* b = chunk->getBlock( x + int(normal.x),
+                                y + int(normal.y),
+                                z + int(normal.z));
+    int light = b->getBlockLight() + b->getSkyLight();
+    return lightArray[std::min(15,light)];
+}
+
 Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
     ChunkBuilder::chunk = chunk;
     std::vector<Vertex> vertices;
@@ -86,6 +97,7 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                 // Get next block to process
                 Block* b = chunk->getBlock(x,y,z);
                 unsigned char blockType = b->getBlockType();
+                unsigned char blockMetaData = b->getBlockMetaData();
                 // Check if the block is air
                 if (!b || b->getBlockType() == 0) {
                     continue;
@@ -103,11 +115,8 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                 Mesh* blockModel = &model->meshes[blockModelIndex];
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     glm::vec3 color = getBiomeBlockColor(blockType, &blockModel->vertices[v]);
-                    if (blockModelIndex == 1) {
-                        color *= 2.0f;
-                    }
-                    // TODO: Use BlockLight
-                    //color *= 0.5f + (float(b->getBlockLight())/255.0f)/2.0f;
+                    // TODO: Fix BlockLight
+                    color *= getLighting(chunk,x,y,z,blockModel->vertices[v].normal);
                     //std::cout << std::to_string(b->getBlockLight()) << std::endl;
 
                     vertices.push_back(
@@ -115,7 +124,7 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                             glm::vec3(blockModel->vertices[v].position + pos),
                             blockModel->vertices[v].normal,
                             color,
-                            blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType)
+                            blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
                         )
                     );
                 }
