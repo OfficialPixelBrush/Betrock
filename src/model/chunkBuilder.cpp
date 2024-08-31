@@ -123,6 +123,18 @@ float getLighting(Chunk* chunk, int x, int y, int z, glm::vec3 normal) {
     return lightArray[std::min(15,light)];
 }
 
+uint8_t isVisible(Chunk* chunk, int x, int y, int z, uint8_t blockModelIndex, glm::vec3 normal) {
+    Block* b = chunk->getBlock( x + int(normal.x),
+                                y + int(normal.y),
+                                z + int(normal.z));
+    // Change || to an && for Optifine Smart trees
+    if (b->getTransparent() || blockModelIndex!=0) {
+        return 0;
+    } else {
+        return b->getBlockType();
+    }
+}
+
 Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
     ChunkBuilder::chunk = chunk;
     std::vector<Vertex> vertices;
@@ -151,6 +163,9 @@ Mesh* ChunkBuilder::build(Chunk* chunk, int chunkX, int chunkZ) {
                 uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
                 Mesh* blockModel = &model->meshes[blockModelIndex];
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
+                    if (isVisible(chunk,x,y,z,blockModelIndex,blockModel->vertices[v].normal)) {
+                        continue;
+                    }
                     glm::vec3 color = getBiomeBlockColor(blockType, &blockModel->vertices[v]);
                     // TODO: Fix BlockLight
                     color *= getLighting(chunk,x,y,z,blockModel->vertices[v].normal);

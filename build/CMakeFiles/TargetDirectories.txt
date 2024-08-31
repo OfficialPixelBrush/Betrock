@@ -1,3 +1,0 @@
-/home/torben/Documents/GitHub/Betrock/build/CMakeFiles/Betrock.dir
-/home/torben/Documents/GitHub/Betrock/build/CMakeFiles/edit_cache.dir
-/home/torben/Documents/GitHub/Betrock/build/CMakeFiles/rebuild_cache.dir
