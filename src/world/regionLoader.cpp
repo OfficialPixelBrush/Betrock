@@ -72,8 +72,6 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 Chunk* regionLoader::decodeRegion(int x, int z) {
     int chunkX = x/16;
     int chunkZ = z/16;
-    int regionX = (int) std::floor(chunkX / 32.0f);
-    int regionZ = (int) std::floor(chunkZ / 32.0f);
 	//for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
 	uint chunkIndex = (chunkX&31) + (chunkZ&31)*32;
 		Chunk* currentChunk = new Chunk(chunkX, chunkZ);

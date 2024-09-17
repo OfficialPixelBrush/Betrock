@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "publicbeta";
+        worldName = "404";
         //return 1;
     } else {
         worldName = argv[1];
@@ -70,10 +70,10 @@ int main(int argc, char *argv[]) {
 
     // Create a camera at 0,0,2
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
-    Camera camera(windowWidth, windowHeight, glm::vec3(47.00936f, 67.62f, 225.59666f), glm::vec3(0.604827, -0.490525, 0.627354f));
-    camera.Position.x -= 0.5;
-    camera.Position.y -= 0.5;
-    camera.Position.z -= 0.5;
+    Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));
+    //camera.Position.x -= 0.5;
+    //camera.Position.y -= 0.5;
+    //camera.Position.z -= 0.5;
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
@@ -179,6 +179,7 @@ int main(int argc, char *argv[]) {
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
+        std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camera.Position.x/16))) + ", " + std::to_string(int(std::floor(camera.Position.z/16)));
         std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
         std::string currentModels = blockModel.file;
@@ -188,6 +189,7 @@ int main(int argc, char *argv[]) {
         }
         ImGui::Text(msTime.c_str());
         ImGui::Text(camPos.c_str());
+        ImGui::Text(chunkPos.c_str());
         ImGui::Text(camRot.c_str());
         ImGui::Text(camSpeed.c_str());
         ImGui::Text(currentModels.c_str());
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
         prevTime = glfwGetTime();
         previousPosition = camera.Position;
         previousRenderedChunks = world->chunks.size();
-    }
+     }
 
     // Clean-up
     ImGui_ImplOpenGL3_Shutdown();

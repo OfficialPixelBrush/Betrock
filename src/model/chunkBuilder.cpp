@@ -1,6 +1,6 @@
 #include "chunkBuilder.h"
 
-bool ChunkBuilder::isSurrounded(uint x, uint y, uint z) {
+bool ChunkBuilder::isSurrounded(int x, int y, int z) {
     try {
         if (    
                 world->getBlock(x-1,y,z)->getTransparent() ||
@@ -78,7 +78,7 @@ glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType, unsigned 
     }
 }
 
-uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uint z) {
+uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, int x, int y, int z) {
     // Grass
     if (blockType == 2) {
         return 3;
@@ -154,7 +154,7 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
 
 std::vector<Mesh*> ChunkBuilder::build(World* world, uint8_t maxSkyLight) {
     ChunkBuilder::world = world;
-    std::vector<Mesh*> meshes;
+    std::vector<chunkMesh> cm;
 
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
@@ -171,8 +171,8 @@ std::vector<Mesh*> ChunkBuilder::build(World* world, uint8_t maxSkyLight) {
         int chunkX = chunk->x*16;
         int chunkZ = chunk->z*16;
         std::cout << "Chunk #" << c+1 << "/" << world->chunks.size() << ": " << chunk->x << ", " << chunk->z << std::endl;
-        for (uint x = chunkX; x < 16+chunkX; x++) {
-            for (uint z = chunkZ; z < 16+chunkZ; z++) {
+        for (int x = chunkX; x < 16+chunkX; x++) {
+            for (int z = chunkZ; z < 16+chunkZ; z++) {
                 for (uint y = 0; y < 128; y++) {
                     // Get next block to process
                     Block* b = world->getBlock(x,y,z);
@@ -241,6 +241,7 @@ std::vector<Mesh*> ChunkBuilder::build(World* world, uint8_t maxSkyLight) {
             }
         }
     }
+    std::vector<Mesh*> meshes;
     meshes.push_back(new Mesh("world",worldVertices,worldIndices,model->meshes[0].textures));
     meshes.push_back(new Mesh("water",waterVertices,waterIndices,model->meshes[0].textures));
     return meshes;
