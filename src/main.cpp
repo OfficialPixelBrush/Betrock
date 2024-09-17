@@ -2,6 +2,17 @@
 
 float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
+bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPosition) {
+    int x = int(cameraPosition.x/16);
+    int z = int(cameraPosition.z/16);
+    int px = int(previousPosition.x/16);
+    int pz = int(previousPosition.z/16);
+    if (x != px || z != pz) {
+        return true;
+    }
+    return false;
+}
+
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
     std::string worldName;
@@ -23,7 +34,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.1.0", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.0", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -57,6 +68,7 @@ int main(int argc, char *argv[]) {
 
     // Create a camera at 0,0,2
     Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
+    //Camera camera(windowWidth, windowHeight, glm::vec3(16.0f, 68.0f, 0.0f), glm::vec3(0.604827, -0.490525, 0.627354f));
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
@@ -67,21 +79,23 @@ int main(int argc, char *argv[]) {
     // Load Blockmodel
     Model blockModel("models/models.obj");
 
+    std::vector<Chunk*> renderedChunks;
+
     ChunkBuilder cb(&blockModel);
-    std::vector<Mesh*> loadedChunks;
     worldName = "saves/" + worldName;
-    World world(worldName);
+    World* world = new World(worldName);
+
+    /*
     Region* r = world.getRegion(0,0);
     for (uint cx = 0; cx < 16; cx++) {
         for (uint cz = 0; cz < 16; cz++) {
-            Chunk* c = r->getChunk(cx,cz);
             if (c) { 
                 Mesh* mesh = cb.build(c,cx,cz);
                 loadedChunks.push_back(mesh);
             }
         }
         std::cout << (float(cx)/16.0)*100.0 << "%" << std::endl;
-    }
+    }*/
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -93,9 +107,20 @@ int main(int argc, char *argv[]) {
 
     bool vsync = true;
     bool cullFace = true;
+    bool polygon = false;
+    bool updateWhenMoving = true;
 
     double prevTime = glfwGetTime();
     double fpsTime = 0;
+    int previousRenderedChunks = 0;
+    glm::vec3 previousPosition = camera.Position;
+
+    int renderDistance = 3;
+
+    float x = camera.Position.x;
+    float z = camera.Position.z;
+    world->getChunksInRadius(int(x),int(z),renderDistance);
+    Mesh* worldMesh = cb.build(world);
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -110,6 +135,13 @@ int main(int argc, char *argv[]) {
         } else {
             glDisable(GL_CULL_FACE);
         }
+
+        if (polygon) {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        } else {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        }
+
         // Draw
         glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
         // Clear the Back and Depth buffer
@@ -125,10 +157,17 @@ int main(int argc, char *argv[]) {
         camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
 
         //blockModel.Draw(shaderProgram, camera);
-
-        for (uint i = 0; i < loadedChunks.size(); i++) {
-            loadedChunks[i]->Draw(shaderProgram, camera);
+        if (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving) {
+            float x = camera.Position.x;
+            float z = camera.Position.z;
+            world->getChunksInRadius(int(x),int(z),renderDistance);
         }
+
+        if (previousRenderedChunks != world->chunks.size()) {
+            worldMesh = cb.build(world);
+        }
+
+        worldMesh->Draw(shaderProgram, camera);
 
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
@@ -148,6 +187,8 @@ int main(int argc, char *argv[]) {
         ImGui::ColorEdit4("Sky Color", skyColor);
         ImGui::Checkbox("Vsync", &vsync);
         ImGui::Checkbox("Backface Culling", &cullFace);
+        ImGui::Checkbox("Polygon", &polygon);
+        ImGui::Checkbox("Update when Moving", &updateWhenMoving);
         ImGui::End();
 
         ImGui::Render();
@@ -159,6 +200,8 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();
         fpsTime = (glfwGetTime() - prevTime)*1000;
         prevTime = glfwGetTime();
+        previousPosition = camera.Position;
+        previousRenderedChunks = world->chunks.size();
     }
 
     // Clean-up

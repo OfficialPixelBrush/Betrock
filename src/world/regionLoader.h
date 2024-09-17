@@ -12,9 +12,9 @@ class regionLoader {
     std::string path;
     public:
         regionLoader(std::string pPath);
-        std::vector<Chunk> loadRegion(int x, int z);
+        Chunk* loadRegion(int x, int z);
     private:
         std::string compressionSchemeString(uint cs);
         uint8_t* decompressChunk(uint chunkIndex, size_t length, uint8_t compressionScheme, size_t* nbtLength);
-        std::vector<Chunk> decodeRegion();
+        Chunk* decodeRegion(int x, int z);
 };

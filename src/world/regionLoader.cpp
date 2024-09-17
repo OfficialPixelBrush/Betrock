@@ -69,10 +69,15 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 }
 
 // Returns an array of Chunks
-std::vector<Chunk> regionLoader::decodeRegion() {
-	std::vector<Chunk> chunks;
-	for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
-		Chunk currentChunk(chunkIndex%32, chunkIndex/32);
+Chunk* regionLoader::decodeRegion(int x, int z) {
+    int chunkX = x/16;
+    int chunkZ = z/16;
+    int regionX = (int) std::floor(chunkX / 32.0f);
+    int regionZ = (int) std::floor(chunkZ / 32.0f);
+	std::vector<Chunk*> chunks;
+	//for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
+	uint chunkIndex = chunkX + chunkZ*32;
+		Chunk* currentChunk = new Chunk(chunkX, chunkZ);
 		f.seekg(chunkIndex*4,std::ios::beg);
 		// Determine Chunk Position and Size
 		offset = intReadFile(f,3)*4096;
@@ -80,7 +85,8 @@ std::vector<Chunk> regionLoader::decodeRegion() {
 		if (!(offset | sector)) {
 			// No Chunk Present
 			// cerr << "Chunk #" << chunkIndex << " does not exist" << endl;
-			continue;
+			//continue;
+			return nullptr;
 		}
 		//std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
 		f.seekg(offset, std::ios::beg);
@@ -100,7 +106,8 @@ std::vector<Chunk> regionLoader::decodeRegion() {
 		auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
 		if (!chunkLevel) {
 			std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
-			continue;
+			//continue;
+			return nullptr;
 		}
 
 		// Get Block Data
@@ -144,24 +151,24 @@ std::vector<Chunk> regionLoader::decodeRegion() {
 		}
 		if (!blockData) {
 			std::cerr << "No block data found!" << std::endl;
-			continue;
+			return nullptr;
 		}
 		if (!blockSkyLightData) {
 			std::cerr << "No sky light data found!" << std::endl;
-			continue;
+			return nullptr;
 		}
 		if (!blockLightData) {
 			std::cerr << "No block light data found!" << std::endl;
-			continue;
+			return nullptr;
 		}
 		if (!blockMetaData) {
 			std::cerr << "No block metadata found!" << std::endl;
-			continue;
+			return nullptr;
 		}
-		currentChunk.setData(blockData,blockSkyLightData,blockLightData,blockMetaData);
-		chunks.push_back(currentChunk);
-	}
-	return chunks;
+		currentChunk->setData(blockData,blockSkyLightData,blockLightData,blockMetaData);
+		//chunks.push_back(currentChunk);
+	//}
+	return currentChunk;
 }
 
 regionLoader::regionLoader(std::string pPath) {
@@ -169,14 +176,18 @@ regionLoader::regionLoader(std::string pPath) {
 }
 
 // Get the Region data from the associated regionX and regionZ file
-std::vector<Chunk> regionLoader::loadRegion(int x, int z) {
-	std::string regionfile = path + "/region/r." + std::to_string(x) + "." + std::to_string(z) + ".mcr";
+Chunk* regionLoader::loadRegion(int x, int z) {
+    int chunkX = x/16;
+    int chunkZ = z/16;
+    int regionX = (int) std::floor(chunkX / 32.0f);
+    int regionZ = (int) std::floor(chunkZ / 32.0f);
+	std::string regionfile = path + "/region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
 	f.open(regionfile, std::ios::binary);
 	if (!f) {
 		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
 	}
 	std::cout << "Decoding " << regionfile << std::endl;
-	std::vector<Chunk> chunks = decodeRegion();
+	Chunk* chunk = decodeRegion(x,z);
 	f.close();
-	return chunks;
+	return chunk;
 }

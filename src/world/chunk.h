@@ -6,9 +6,10 @@ class Chunk {
     Block blocks [16*128*16];
     public:
         int x,z;
-        Chunk(int x, int z) {
-            this->x = x;
-            this->z = z;
+        Chunk(int pX, int pZ) {
+            x = pX;
+            z = pZ;
+            std::cout << "Created Chunk at " << x << ", " << z << std::endl;
         }
 
         Block* getAllBlocks() {
@@ -16,6 +17,8 @@ class Chunk {
         }
 
         Block* getBlock(uint x, uint y, uint z) {
+            x = x%16;
+            z = z%16;
             if (x > 15 || z > 15 || y > 127) {
                 return new Block();
             }
