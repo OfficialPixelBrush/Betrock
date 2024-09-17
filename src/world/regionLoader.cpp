@@ -74,9 +74,8 @@ Chunk* regionLoader::decodeRegion(int x, int z) {
     int chunkZ = z/16;
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
-	std::vector<Chunk*> chunks;
 	//for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
-	uint chunkIndex = chunkX + chunkZ*32;
+	uint chunkIndex = (chunkX&31) + (chunkZ&31)*32;
 		Chunk* currentChunk = new Chunk(chunkX, chunkZ);
 		f.seekg(chunkIndex*4,std::ios::beg);
 		// Determine Chunk Position and Size
@@ -84,7 +83,7 @@ Chunk* regionLoader::decodeRegion(int x, int z) {
 		sector = intReadFile(f,1)*4096;
 		if (!(offset | sector)) {
 			// No Chunk Present
-			// cerr << "Chunk #" << chunkIndex << " does not exist" << endl;
+			//std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
 			//continue;
 			return nullptr;
 		}
@@ -185,6 +184,7 @@ Chunk* regionLoader::loadRegion(int x, int z) {
 	f.open(regionfile, std::ios::binary);
 	if (!f) {
 		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
+		return nullptr;
 	}
 	std::cout << "Decoding " << regionfile << std::endl;
 	Chunk* chunk = decodeRegion(x,z);

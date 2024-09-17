@@ -2,6 +2,8 @@
 #include "global.h"
 #include <fstream>
 #include <math.h>
+#include <thread>
+#include <mutex>
 
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>

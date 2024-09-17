@@ -53,6 +53,11 @@ Chunk* World::getChunk(int x, int z) {
     return loadChunk(x,z);
 }
 
+bool inRadius(int center_x, int center_y, int radius, int x, int y) {
+    int dist = sqrt(((center_x - x)*(center_x - x)) + ((center_y - y),(center_y - y)));
+    return dist <= radius;
+}
+
 Block* World::getBlock(int x, int y, int z) {
     //std::cout << x << "," << y << "," << z << std::endl;
     Chunk* c = findChunk(x,z);
@@ -63,9 +68,11 @@ Block* World::getBlock(int x, int y, int z) {
 }
 
 void World::getChunksInRadius(int x, int z, int radius) {
+    std::vector<Chunk*> containedChunks;
     for (int cx = radius*-1; cx < radius; cx++) {
         for (int cz = radius*-1; cz < radius; cz++) {
-            getChunk(x+cx*16,z+cz*16);
+            containedChunks.push_back(getChunk(x+cx*16,z+cz*16));
         }
     }
+    chunks = containedChunks;
 }

@@ -5,6 +5,9 @@ project(Betrock VERSION 0.1.0)
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
+add_compile_options(
+  "-ggdb"
+)
 
 add_executable(
     Betrock

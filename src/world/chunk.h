@@ -12,6 +12,10 @@ class Chunk {
             std::cout << "Created Chunk at " << x << ", " << z << std::endl;
         }
 
+        ~Chunk() {
+            std::cout << "Unloaded Chunk at " << x << ", " << z << std::endl;
+        }
+
         Block* getAllBlocks() {
             return blocks;
         }

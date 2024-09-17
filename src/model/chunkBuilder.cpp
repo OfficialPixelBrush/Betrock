@@ -1,26 +1,30 @@
 #include "chunkBuilder.h"
 
 bool ChunkBuilder::isSurrounded(uint x, uint y, uint z) {
-    if (    
-            world->getBlock(x-1,y,z)->getTransparent() ||
-            world->getBlock(x+1,y,z)->getTransparent() ||
-            world->getBlock(x,y-1,z)->getTransparent() ||
-            world->getBlock(x,y+1,z)->getTransparent() ||
-            world->getBlock(x,y,z-1)->getTransparent() ||
-            world->getBlock(x,y,z+1)->getTransparent()
-        )
-    {
+    try {
+        if (    
+                world->getBlock(x-1,y,z)->getTransparent() ||
+                world->getBlock(x+1,y,z)->getTransparent() ||
+                world->getBlock(x,y-1,z)->getTransparent() ||
+                world->getBlock(x,y+1,z)->getTransparent() ||
+                world->getBlock(x,y,z-1)->getTransparent() ||
+                world->getBlock(x,y,z+1)->getTransparent()
+            )
+        {
+            return false;
+        } else if (
+                world->getBlock(x-1,y,z)->getBlockType() &&
+                world->getBlock(x+1,y,z)->getBlockType() &&
+                world->getBlock(x,y-1,z)->getBlockType() &&
+                world->getBlock(x,y+1,z)->getBlockType() &&
+                world->getBlock(x,y,z-1)->getBlockType() &&
+                world->getBlock(x,y,z+1)->getBlockType()
+            )
+        {
+            return true;
+        }
+    } catch (int x) {
         return false;
-    } else if (
-            world->getBlock(x-1,y,z)->getBlockType() &&
-            world->getBlock(x+1,y,z)->getBlockType() &&
-            world->getBlock(x,y-1,z)->getBlockType() &&
-            world->getBlock(x,y+1,z)->getBlockType() &&
-            world->getBlock(x,y,z-1)->getBlockType() &&
-            world->getBlock(x,y,z+1)->getBlockType()
-        )
-    {
-        return true;
     }
     
     return false;
@@ -97,6 +101,9 @@ uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, uint x, uint y, uin
     // Stair
     } else if (blockType == 53 || blockType == 67) {
         return 6;
+    // Fence
+    } else if (blockType == 85) {
+        return 7;
     }
     // Normal Block
     return 0;
@@ -114,13 +121,17 @@ ChunkBuilder::ChunkBuilder(Model* model) {
     ChunkBuilder::model = model;
 }
 
-float getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
+float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t maxSkyLight) {
     float lightArray[16] = {0.035f,0.044f,0.055f,0.069f,0.086f,0.107f,0.134f,0.168f,0.21f,0.262f,0.328f,0.41f,0.512f,0.64f,0.8f,1.0f};
-    Block* b = world->getBlock( x + int(normal.x),
-                                y + int(normal.y),
-                                z + int(normal.z));
-    int light = b->getBlockLight() + b->getSkyLight();
-    return lightArray[std::min(15,light)];
+    try {
+        Block* b = world->getBlock( x + int(normal.x),
+                                    y + int(normal.y),
+                                    z + int(normal.z));
+        int light = b->getBlockLight() + (std::min(b->getSkyLight(),maxSkyLight));
+        return lightArray[std::min(15,light)];
+    } catch (int x) {
+        return lightArray[15];
+    }
 }
 
 uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, glm::vec3 normal) {
@@ -130,8 +141,10 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     // Change || to an && for Optifine Smart trees
     if (b->getTransparent()) {
         Block* self = world->getBlock( x,y,z );
-        if (b->getBlockType() == self->getBlockType()) {
-            return b->getBlockType();
+        if (self->getBlockType() >= 8 && self->getBlockType() <= 11 || self->getBlockType() == 20 ) {
+            if (b->getBlockType() == self->getBlockType()) {
+                return b->getBlockType();
+            }
         }
         return 0;
     } else {
@@ -139,10 +152,16 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     }
 }
 
-Mesh* ChunkBuilder::build(World* world) {
+std::vector<Mesh*> ChunkBuilder::build(World* world, uint8_t maxSkyLight) {
     ChunkBuilder::world = world;
-    std::vector<Vertex> vertices;
-    std::vector<GLuint> indices;
+    std::vector<Mesh*> meshes;
+
+    std::vector<Vertex> worldVertices;
+    std::vector<GLuint> worldIndices;
+
+    std::vector<Vertex> waterVertices;
+    std::vector<GLuint> waterIndices;
+
     uint numberOfBlocks = 0;
     for (uint c = 0; c < world->chunks.size(); c++) {
         Chunk* chunk = world->chunks[c];
@@ -151,7 +170,7 @@ Mesh* ChunkBuilder::build(World* world) {
         }
         int chunkX = chunk->x*16;
         int chunkZ = chunk->z*16;
-        //std::cout << "Chunk #" << c << " to Render: " << chunk->x << ", " << chunk->z << std::endl;
+        std::cout << "Chunk #" << c+1 << "/" << world->chunks.size() << ": " << chunk->x << ", " << chunk->z << std::endl;
         for (uint x = chunkX; x < 16+chunkX; x++) {
             for (uint z = chunkZ; z < 16+chunkZ; z++) {
                 for (uint y = 0; y < 128; y++) {
@@ -163,7 +182,6 @@ Mesh* ChunkBuilder::build(World* world) {
                     if (!b || blockType == 0) {
                         continue;
                     }
-                    //std::cout << x << "," << y << "," << z << std::endl;
                     // If the block is fully surrounded, don't bother loading it
                     if (isSurrounded(x,y,z)) {
                         continue;
@@ -181,28 +199,49 @@ Mesh* ChunkBuilder::build(World* world) {
                         }
                         glm::vec3 color = getBiomeBlockColor(blockType, &blockModel->vertices[v]);
                         // TODO: Fix BlockLight
-                        color *= getLighting(world,x,y,z,blockModel->vertices[v].normal);
+                        color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                         //std::cout << std::to_string(b->getBlockLight()) << std::endl;
 
-                        vertices.push_back(
-                            Vertex(
-                                glm::vec3(blockModel->vertices[v].position + pos),
-                                blockModel->vertices[v].normal,
-                                color,
-                                blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
-                            )
-                        );
+                        if (blockType == 8 || blockType == 9) {
+                            waterVertices.push_back(
+                                Vertex(
+                                    glm::vec3(blockModel->vertices[v].position + pos),
+                                    blockModel->vertices[v].normal,
+                                    color,
+                                    blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                                )
+                            );
+                        } else {
+                            worldVertices.push_back(
+                                Vertex(
+                                    glm::vec3(blockModel->vertices[v].position + pos),
+                                    blockModel->vertices[v].normal,
+                                    color,
+                                    blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                                )
+                            );
+                        }
                     }
 
-                    GLuint totalVertices = vertices.size();
-                    for (uint i = 0; i < blockModel->indices.size(); i++) {
-                        GLuint newInd = totalVertices + blockModel->indices[i];
-                        indices.push_back(newInd);
+                    if (blockType == 8 || blockType == 9) {
+                        GLuint totalVertices = waterVertices.size();
+                        for (uint i = 0; i < blockModel->indices.size(); i++) {
+                            GLuint newInd = totalVertices + blockModel->indices[i];
+                            waterIndices.push_back(newInd);
+                        }
+                    } else {
+                        GLuint totalVertices = worldVertices.size();
+                        for (uint i = 0; i < blockModel->indices.size(); i++) {
+                            GLuint newInd = totalVertices + blockModel->indices[i];
+                            worldIndices.push_back(newInd);
+                        }
                     }
                     numberOfBlocks++;
                 }
             }
         }
     }
-    return new Mesh("world",vertices,indices,model->meshes[0].textures);
+    meshes.push_back(new Mesh("world",worldVertices,worldIndices,model->meshes[0].textures));
+    meshes.push_back(new Mesh("water",waterVertices,waterIndices,model->meshes[0].textures));
+    return meshes;
 }

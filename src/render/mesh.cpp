@@ -32,6 +32,13 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
     */
 }
 
+Mesh::~Mesh() {
+    vao.Delete();
+    vertices.clear();
+    indices.clear();
+    textures.clear();
+}
+
 void Mesh::Draw(
     Shader& shader,
     Camera& camera, 
