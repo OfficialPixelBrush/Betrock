@@ -104,6 +104,9 @@ uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, int x, int y, int z
     // Fence
     } else if (blockType == 85) {
         return 7;
+    // Snow Layer
+    } else if (blockType == 78) {
+        return 8;
     }
     // Normal Block
     return 0;

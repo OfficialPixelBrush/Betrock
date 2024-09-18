@@ -26,12 +26,9 @@ Region* World::getRegion(int x, int z) {
 }*/
 
 Chunk* World::findChunk(int x, int z) {
-    int chunkX = x/16;
-    int chunkZ = z/16;
-    //std::cout << "Find Chunk at " << chunkX << ", " << chunkZ << std::endl;
     for (uint i = 0; i < chunks.size(); i++) {
         Chunk* c = chunks[i];
-        if (c->x == chunkX && c->z == chunkZ) {
+        if (c->x == x && c->z == z) {
             return c;
         }
     }
@@ -53,14 +50,9 @@ Chunk* World::getChunk(int x, int z) {
     return loadChunk(x,z);
 }
 
-bool inRadius(int center_x, int center_y, int radius, int x, int y) {
-    int dist = sqrt(((center_x - x)*(center_x - x)) + ((center_y - y),(center_y - y)));
-    return dist <= radius;
-}
-
 Block* World::getBlock(int x, int y, int z) {
     //std::cout << x << "," << y << "," << z << std::endl;
-    Chunk* c = findChunk(x,z);
+    Chunk* c = findChunk(floor(float(x)/16.0f),floor(float(z)/16.0f));
     if (c) {
         return c->getBlock(x,y,z);
     }
@@ -68,10 +60,15 @@ Block* World::getBlock(int x, int y, int z) {
 }
 
 void World::getChunksInRadius(int x, int z, int radius) {
+    int ix = int(float(x)/16.0f);
+    int iz = int(float(z)/16.0f);
     std::vector<Chunk*> containedChunks;
     for (int cx = radius*-1; cx < radius; cx++) {
         for (int cz = radius*-1; cz < radius; cz++) {
-            containedChunks.push_back(getChunk(x+cx*16,z+cz*16));
+            Chunk* c = getChunk(ix+cx,iz+cz);
+            if (c) {
+                containedChunks.push_back(c);
+            }
         }
     }
     chunks = containedChunks;

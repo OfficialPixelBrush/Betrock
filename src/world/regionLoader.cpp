@@ -69,103 +69,97 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 }
 
 // Returns an array of Chunks
-Chunk* regionLoader::decodeRegion(int x, int z) {
-    int chunkX = x/16;
-    int chunkZ = z/16;
+Chunk* regionLoader::decodeRegion(int chunkX, int chunkZ) {
 	//for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
 	uint chunkIndex = (chunkX&31) + (chunkZ&31)*32;
-		Chunk* currentChunk = new Chunk(chunkX, chunkZ);
-		f.seekg(chunkIndex*4,std::ios::beg);
-		// Determine Chunk Position and Size
-		offset = intReadFile(f,3)*4096;
-		sector = intReadFile(f,1)*4096;
-		if (!(offset | sector)) {
-			// No Chunk Present
-			//std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
-			//continue;
-			return nullptr;
-		}
-		//std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
-		f.seekg(offset, std::ios::beg);
-		// Determine Chunk metadata
-		size_t length = intReadFile(f,4)-1;
-		uint8_t compressionScheme = intReadFile(f,1);
-		//std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
+	f.seekg(chunkIndex*4,std::ios::beg);
+	// Determine Chunk Position and Size
+	offset = intReadFile(f,3)*4096;
+	sector = intReadFile(f,1)*4096;
+	if (!(offset | sector)) {
+		// No Chunk Present
+		//std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
+		//continue;
+		return nullptr;
+	}
+	//std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
+	f.seekg(offset, std::ios::beg);
+	// Determine Chunk metadata
+	size_t length = intReadFile(f,4)-1;
+	uint8_t compressionScheme = intReadFile(f,1);
+	//std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
 
-		// Load compressed data
-		size_t nbtLength;
-		uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme, &nbtLength);
+	// Load compressed data
+	size_t nbtLength;
+	uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme, &nbtLength);
 
-		// Extract Block Data
-		nbt nbtLoader;
-		TAG_Compound* chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
-		nbtTag* entry = chunkRoot->getData(0);
-		auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
-		if (!chunkLevel) {
-			std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
-			//continue;
-			return nullptr;
-		}
+	// Extract Block Data
+	nbt nbtLoader;
+	TAG_Compound* chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
+	nbtTag* entry = chunkRoot->getData(0);
+	auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
+	if (!chunkLevel) {
+		std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
+		//continue;
+		return nullptr;
+	}
 
-		// Get Block Data
-		int8_t* blockData;
-		int8_t* blockSkyLightData;
-		int8_t* blockLightData;
-		int8_t* blockMetaData;
-		bool foundBlockData = false;
-		bool foundSkyLightData = false;
-		bool foundLightData = false;
-		bool foundMetaData = false;
-		for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
-			// Get Block ID
-			if (chunkLevel->getData(i)->getName() == "Blocks") {
-				auto* blockArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
-				blockData = blockArray->getData();
-				foundBlockData = true;
-			}
-			// Get Block Sky Light
-			if (chunkLevel->getData(i)->getName() == "SkyLight") {
-				auto* blockSkyLightArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
-				blockSkyLightData = blockSkyLightArray->getData();
-				foundSkyLightData = true;		
-			}
-			// Get Block Light
-			if (chunkLevel->getData(i)->getName() == "BlockLight") {
-				auto* blockLightArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
-				blockLightData = blockLightArray->getData();
-				foundLightData = true;		
-			}
-			// Get Block Metadata
-			if (chunkLevel->getData(i)->getName() == "Data") {
-				auto* blockMetaDataArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
-				blockMetaData = blockMetaDataArray->getData();
-				foundMetaData = true;
-			}
-			// If all has been found, gtfo
-			if (foundBlockData && foundSkyLightData && foundLightData && foundMetaData) {
-				break;
-			}
+	// Get Block Data
+	int8_t* blockData;
+	int8_t* blockSkyLightData;
+	int8_t* blockLightData;
+	int8_t* blockMetaData;
+	bool foundBlockData = false;
+	bool foundSkyLightData = false;
+	bool foundLightData = false;
+	bool foundMetaData = false;
+	for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
+		// Get Block ID
+		if (chunkLevel->getData(i)->getName() == "Blocks") {
+			auto* blockArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
+			blockData = blockArray->getData();
+			foundBlockData = true;
 		}
-		if (!blockData) {
-			std::cerr << "No block data found!" << std::endl;
-			return nullptr;
+		// Get Block Sky Light
+		if (chunkLevel->getData(i)->getName() == "SkyLight") {
+			auto* blockSkyLightArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
+			blockSkyLightData = blockSkyLightArray->getData();
+			foundSkyLightData = true;		
 		}
-		if (!blockSkyLightData) {
-			std::cerr << "No sky light data found!" << std::endl;
-			return nullptr;
+		// Get Block Light
+		if (chunkLevel->getData(i)->getName() == "BlockLight") {
+			auto* blockLightArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
+			blockLightData = blockLightArray->getData();
+			foundLightData = true;		
 		}
-		if (!blockLightData) {
-			std::cerr << "No block light data found!" << std::endl;
-			return nullptr;
+		// Get Block Metadata
+		if (chunkLevel->getData(i)->getName() == "Data") {
+			auto* blockMetaDataArray = dynamic_cast<TAG_Byte_Array*>( chunkLevel->getData(i) );
+			blockMetaData = blockMetaDataArray->getData();
+			foundMetaData = true;
 		}
-		if (!blockMetaData) {
-			std::cerr << "No block metadata found!" << std::endl;
-			return nullptr;
+		// If all has been found, gtfo
+		if (foundBlockData && foundSkyLightData && foundLightData && foundMetaData) {
+			break;
 		}
-		currentChunk->setData(blockData,blockSkyLightData,blockLightData,blockMetaData);
-		//chunks.push_back(currentChunk);
-	//}
-	return currentChunk;
+	}
+	if (!blockData) {
+		std::cerr << "No block data found!" << std::endl;
+		return nullptr;
+	}
+	if (!blockSkyLightData) {
+		std::cerr << "No sky light data found!" << std::endl;
+		return nullptr;
+	}
+	if (!blockLightData) {
+		std::cerr << "No block light data found!" << std::endl;
+		return nullptr;
+	}
+	if (!blockMetaData) {
+		std::cerr << "No block metadata found!" << std::endl;
+		return nullptr;
+	}
+	return new Chunk(chunkX,chunkZ,blockData,blockSkyLightData,blockLightData,blockMetaData);
 }
 
 regionLoader::regionLoader(std::string pPath) {
@@ -173,9 +167,7 @@ regionLoader::regionLoader(std::string pPath) {
 }
 
 // Get the Region data from the associated regionX and regionZ file
-Chunk* regionLoader::loadRegion(int x, int z) {
-    int chunkX = x/16;
-    int chunkZ = z/16;
+Chunk* regionLoader::loadRegion(int chunkX, int chunkZ) {
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
 	std::string regionfile = path + "/region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
@@ -185,7 +177,7 @@ Chunk* regionLoader::loadRegion(int x, int z) {
 		return nullptr;
 	}
 	std::cout << "Decoding " << regionfile << std::endl;
-	Chunk* chunk = decodeRegion(x,z);
+	Chunk* chunk = decodeRegion(chunkX,chunkZ);
 	f.close();
 	return chunk;
 }

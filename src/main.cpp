@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "404";
+        worldName = "publicbeta";
         //return 1;
     } else {
         worldName = argv[1];

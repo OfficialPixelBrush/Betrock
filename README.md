@@ -26,7 +26,21 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 
 
 ## Progress
-- [ ] Import Beta 1.7.3 compliant Minecraft worlds
+### Goals for Version 0.2.0
+- Visual Flair
+    - [ ] Fog
+    - [ ] Smooth Lighting
+- Gameplay
+    - [x] Chunk Loading
+        - [ ] Fix Chunk Loading Memory leak
+    - [ ] Dynamic Chunk Loading as one moves
+    - [ ] Gravity
+    - [ ] Block Breaking
+- [ ] Windows Version
+      - stb causing issues here
+
+### Goals for Version 0.1.0
+- [x] Import Beta 1.7.3 compliant Minecraft worlds
     - [x] Decode Chunk Offset
     - [x] Decompress Chunk Data
         - [ ] Gzip
@@ -45,14 +59,10 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
         - ~~[ ] glTF~~
     - [x] Render a Chunk
     - [x] Render a Region
-    - [ ] Render Multiple Regions
+    - [x] Render Multiple Regions
     - [x] Render per-face Block lighting
         - [x] Render Sky Lighting
         - [x] Render Block Lighting
-    - [ ] Fog
-- [x] Dynamic Chunk Loading
-- [ ] Windows Version
-      - stb causing issues here
 
 ## Resources
 ### Minecraft Wiki
