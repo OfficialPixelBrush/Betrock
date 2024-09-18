@@ -4,6 +4,7 @@
 #include "block.h"
 #include <cmath>
 #include "regionLoader.h"
+#include <unordered_set>
 
 class World {
     public:

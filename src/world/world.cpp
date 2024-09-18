@@ -56,20 +56,34 @@ Block* World::getBlock(int x, int y, int z) {
     if (c) {
         return c->getBlock(x,y,z);
     }
-    return new Block();
+    return nullptr;
 }
 
 void World::getChunksInRadius(int x, int z, int radius) {
     int ix = int(float(x)/16.0f);
     int iz = int(float(z)/16.0f);
+
     std::vector<Chunk*> containedChunks;
+    std::unordered_set<Chunk*> newChunksSet;
+
+    // Collect new chunks and build a set for fast lookup
     for (int cx = radius*-1; cx < radius; cx++) {
         for (int cz = radius*-1; cz < radius; cz++) {
-            Chunk* c = getChunk(ix+cx,iz+cz);
+            Chunk* c = getChunk(ix + cx, iz + cz);
             if (c) {
                 containedChunks.push_back(c);
+                newChunksSet.insert(c);  // Add to the set
             }
         }
     }
+
+    // Delete chunks that are not in the new set
+    for (Chunk* oldChunk : chunks) {
+        if (newChunksSet.find(oldChunk) == newChunksSet.end()) {
+            delete oldChunk;  // Only delete if not in the new set
+        }
+    }
+
+    // Replace old chunks with the new ones
     chunks = containedChunks;
 }

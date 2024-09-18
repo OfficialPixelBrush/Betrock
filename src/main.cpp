@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     float x = camera.Position.x;
     float z = camera.Position.z;
     world->getChunksInRadius(int(x),int(z),renderDistance);
-    std::vector<Mesh*> worldMeshes = cb.build(world,maxSkyLight);
+   std::vector<std::unique_ptr<Mesh>> worldMeshes = cb.build(world,maxSkyLight);
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {

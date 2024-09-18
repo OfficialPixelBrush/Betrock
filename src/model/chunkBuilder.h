@@ -10,7 +10,7 @@
 class ChunkBuilder {
     public:
         ChunkBuilder(Model* blockModel);
-        std::vector<Mesh*> build(World* world, uint8_t maxSkyLight = 15);
+        std::vector<std::unique_ptr<Mesh>> build(World* world, uint8_t maxSkyLight = 15);
     private:
         Model* model;
         World* world;
