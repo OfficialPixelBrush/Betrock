@@ -3,14 +3,13 @@
 float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
 
 bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPosition) {
-    int x = int(cameraPosition.x/16);
-    int z = int(cameraPosition.z/16);
-    int px = int(previousPosition.x/16);
-    int pz = int(previousPosition.z/16);
-    if (x != px || z != pz) {
-        return true;
-    }
-    return false;
+    // Current chunk coordinates
+    int x = floor(cameraPosition.x / 16.0f);
+    int z = floor(cameraPosition.z / 16.0f);
+    int px = floor(previousPosition.x / 16.0f);
+    int pz = floor(previousPosition.z / 16.0f);
+    
+    return (px != x || pz != z) ;
 }
 
 // Targeting OpenGL 3.3
@@ -84,9 +83,10 @@ int main(int argc, char *argv[]) {
     // Load Blockmodel
     Model blockModel("models/models.obj");
 
-    ChunkBuilder cb(&blockModel);
     worldName = "saves/" + worldName;
     World* world = new World(worldName);
+
+    ChunkBuilder cb(&blockModel, world);
 
     /*
     Region* r = world.getRegion(0,0);
@@ -124,7 +124,10 @@ int main(int argc, char *argv[]) {
     float x = camera.Position.x;
     float z = camera.Position.z;
     world->getChunksInRadius(int(x),int(z),renderDistance);
-   std::vector<std::unique_ptr<Mesh>> worldMeshes = cb.build(world,maxSkyLight);
+    std::vector<std::unique_ptr<Mesh>> worldMeshes;
+    for (auto c : world->chunks) {
+        worldMeshes.push_back(cb.buildChunk(c,maxSkyLight));
+    }
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -168,8 +171,9 @@ int main(int argc, char *argv[]) {
         if (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving) {
             float x = camera.Position.x;
             float z = camera.Position.z;
-            world->getChunksInRadius(int(x),int(z),renderDistance);
-            worldMeshes = cb.build(world,maxSkyLight);
+            //world->getChunksInRadius(int(x),int(z),renderDistance);
+            //std::vector<std::unique_ptr<Mesh>> meshes = cb.buildChunks(world->chunks,maxSkyLight);
+            //worldMeshes.insert(worldMeshes.end(), meshes.begin(), meshes.end());
         }
 
         for (uint i = 0; i < worldMeshes.size(); i++) {
@@ -204,9 +208,10 @@ int main(int argc, char *argv[]) {
             float x = camera.Position.x;
             float z = camera.Position.z;
             world->getChunksInRadius(int(x),int(z),renderDistance);
-            worldMeshes = cb.build(world,maxSkyLight);
-            for (uint i = 0; i < worldMeshes.size(); i++) {
-                worldMeshes[i]->Draw(shaderProgram, camera);
+            std::vector<std::unique_ptr<Mesh>> meshes = cb.buildChunks(world->chunks,maxSkyLight);
+            worldMeshes.reserve(worldMeshes.size() + meshes.size());  // Reserve space to avoid reallocations
+            for (auto& mesh : meshes) {
+                worldMeshes.push_back(std::move(mesh));  // Move the ownership of the mesh into worldMeshes
             }
         }
         ImGui::End();

@@ -60,30 +60,27 @@ Block* World::getBlock(int x, int y, int z) {
 }
 
 void World::getChunksInRadius(int x, int z, int radius) {
-    int ix = int(float(x)/16.0f);
-    int iz = int(float(z)/16.0f);
+    int ix = int(float(x) / 16.0f);
+    int iz = int(float(z) / 16.0f);
 
-    std::vector<Chunk*> containedChunks;
-    std::unordered_set<Chunk*> newChunksSet;
+    std::vector<Chunk*> containedChunks;  // Use raw pointers if you don't want ownership
 
-    // Collect new chunks and build a set for fast lookup
-    for (int cx = radius*-1; cx < radius; cx++) {
-        for (int cz = radius*-1; cz < radius; cz++) {
+    // Collect new chunks
+    for (int cx = -radius; cx < radius; cx++) {
+        for (int cz = -radius; cz < radius; cz++) {
             Chunk* c = getChunk(ix + cx, iz + cz);
             if (c) {
                 containedChunks.push_back(c);
-                newChunksSet.insert(c);  // Add to the set
             }
         }
     }
 
-    // Delete chunks that are not in the new set
-    for (Chunk* oldChunk : chunks) {
-        if (newChunksSet.find(oldChunk) == newChunksSet.end()) {
-            delete oldChunk;  // Only delete if not in the new set
-        }
+    // Clear old chunks if necessary
+    chunks.clear();  // Clear the old chunks safely (assuming proper ownership elsewhere)
+    
+    // If needed, manually reset chunks to ensure no memory leaks
+    // Repopulate the old chunks with the new set of pointers
+    for (Chunk* chunk : containedChunks) {
+        chunks.push_back(chunk);  // Insert back into the main chunk vector
     }
-
-    // Replace old chunks with the new ones
-    chunks = containedChunks;
 }

@@ -141,8 +141,9 @@ glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaDat
     return glm::vec3(1.0f,1.0f,1.0f);
 }
 
-ChunkBuilder::ChunkBuilder(Model* model) {
+ChunkBuilder::ChunkBuilder(Model* model, World* world) {
     ChunkBuilder::model = model;
+    ChunkBuilder::world = world;
 }
 
 float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t maxSkyLight) {
@@ -216,98 +217,97 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     }
 }
 
+std::vector<std::unique_ptr<Mesh>> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, uint8_t maxSkyLight) {
+    std::vector<std::unique_ptr<Mesh>> meshes;
+    for (auto c : chunks) {
+        meshes.push_back(buildChunk(c,maxSkyLight));
+    }
+    return meshes;
+}
 
-std::vector<std::unique_ptr<Mesh>> ChunkBuilder::build(World* world, uint8_t maxSkyLight) {
-    ChunkBuilder::world = world;
-    std::vector<chunkMesh> cm;
-
+std::unique_ptr<Mesh> ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
 
     std::vector<Vertex> waterVertices;
     std::vector<GLuint> waterIndices;
 
-    uint numberOfBlocks = 0;
-    for (uint c = 0; c < world->chunks.size(); c++) {
-        Chunk* chunk = world->chunks[c];
-        if (chunk == nullptr) {
-            continue;
-        }
-        int chunkX = chunk->x*16;
-        int chunkZ = chunk->z*16;
-        std::cout << "Chunk #" << c+1 << "/" << world->chunks.size() << ": " << chunk->x << ", " << chunk->z << std::endl;
-        for (int x = chunkX; x < 16+chunkX; x++) {
-            for (int z = chunkZ; z < 16+chunkZ; z++) {
-                for (uint y = 0; y < 128; y++) {
-                    // Get next block to process
-                    Block* b = world->getBlock(x,y,z);
-                    unsigned char blockType = b->getBlockType();
-                    unsigned char blockMetaData = b->getBlockMetaData();
-                    // Check if the block is air
-                    if (!b || blockType == 0) {
+    if (chunk == nullptr) {
+        return nullptr;
+    }
+    int chunkX = chunk->x*16;
+    int chunkZ = chunk->z*16;
+    std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
+    for (int x = chunkX; x < 16+chunkX; x++) {
+        for (int z = chunkZ; z < 16+chunkZ; z++) {
+            for (uint y = 0; y < 128; y++) {
+                // Get next block to process
+                Block* b = world->getBlock(x,y,z);
+                unsigned char blockType = b->getBlockType();
+                unsigned char blockMetaData = b->getBlockMetaData();
+                // Check if the block is air
+                if (!b || blockType == 0) {
+                    continue;
+                }
+                // If the block is fully surrounded, don't bother loading it
+                if (isSurrounded(x,y,z)) {
+                    continue;
+                }
+
+                // Figure out the blocks coordinates in the world
+                glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
+
+                //std::cout << std::to_string(b->getBlockType()) << std::endl;
+                uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
+                Mesh* blockModel = &model->meshes[blockModelIndex];
+                for (uint v = 0; v < blockModel->vertices.size(); v++) {
+                    if (isVisible(world,x,y,z,blockModelIndex,blockModel->vertices[v].normal)) {
                         continue;
                     }
-                    // If the block is fully surrounded, don't bother loading it
-                    if (isSurrounded(x,y,z)) {
-                        continue;
-                    }
-
-                    // Figure out the blocks coordinates in the world
-                    glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
-
-                    //std::cout << std::to_string(b->getBlockType()) << std::endl;
-                    uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
-                    Mesh* blockModel = &model->meshes[blockModelIndex];
-                    for (uint v = 0; v < blockModel->vertices.size(); v++) {
-                        if (isVisible(world,x,y,z,blockModelIndex,blockModel->vertices[v].normal)) {
-                            continue;
-                        }
-                        glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
-                        // TODO: Fix BlockLight
-                        color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
-                        //std::cout << std::to_string(b->getBlockLight()) << std::endl;
-
-                        if (blockType == 8 || blockType == 9) {
-                            waterVertices.push_back(
-                                Vertex(
-                                    glm::vec3(blockModel->vertices[v].position + pos),
-                                    blockModel->vertices[v].normal,
-                                    color,
-                                    blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
-                                )
-                            );
-                        } else {
-                            worldVertices.push_back(
-                                Vertex(
-                                    glm::vec3(blockModel->vertices[v].position + pos),
-                                    blockModel->vertices[v].normal,
-                                    color,
-                                    blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
-                                )
-                            );
-                        }
-                    }
+                    glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
+                    // TODO: Fix BlockLight
+                    color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
+                    //std::cout << std::to_string(b->getBlockLight()) << std::endl;
 
                     if (blockType == 8 || blockType == 9) {
-                        GLuint totalVertices = waterVertices.size();
-                        for (uint i = 0; i < blockModel->indices.size(); i++) {
-                            GLuint newInd = totalVertices + blockModel->indices[i];
-                            waterIndices.push_back(newInd);
-                        }
+                        waterVertices.push_back(
+                            Vertex(
+                                glm::vec3(blockModel->vertices[v].position + pos),
+                                blockModel->vertices[v].normal,
+                                color,
+                                blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                            )
+                        );
                     } else {
-                        GLuint totalVertices = worldVertices.size();
-                        for (uint i = 0; i < blockModel->indices.size(); i++) {
-                            GLuint newInd = totalVertices + blockModel->indices[i];
-                            worldIndices.push_back(newInd);
-                        }
+                        worldVertices.push_back(
+                            Vertex(
+                                glm::vec3(blockModel->vertices[v].position + pos),
+                                blockModel->vertices[v].normal,
+                                color,
+                                blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                            )
+                        );
                     }
-                    numberOfBlocks++;
+                }
+
+                if (blockType == 8 || blockType == 9) {
+                    GLuint totalVertices = waterVertices.size();
+                    for (uint i = 0; i < blockModel->indices.size(); i++) {
+                        GLuint newInd = totalVertices + blockModel->indices[i];
+                        waterIndices.push_back(newInd);
+                    }
+                } else {
+                    GLuint totalVertices = worldVertices.size();
+                    for (uint i = 0; i < blockModel->indices.size(); i++) {
+                        GLuint newInd = totalVertices + blockModel->indices[i];
+                        worldIndices.push_back(newInd);
+                    }
                 }
             }
         }
     }
-    std::vector<std::unique_ptr<Mesh>> meshes;
+    /*std::vector<std::unique_ptr<Mesh>> meshes;
     meshes.push_back(std::make_unique<Mesh>("world", worldVertices, worldIndices, model->meshes[0].textures));
-    meshes.push_back(std::make_unique<Mesh>("water", waterVertices, waterIndices, model->meshes[0].textures));
-    return meshes;
+    meshes.push_back(std::make_unique<Mesh>("water", waterVertices, waterIndices, model->meshes[0].textures));*/
+    return std::make_unique<Mesh>("world", worldVertices, worldIndices, model->meshes[0].textures);
 }
