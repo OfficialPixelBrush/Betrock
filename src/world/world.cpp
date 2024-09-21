@@ -28,6 +28,9 @@ Region* World::getRegion(int x, int z) {
 Chunk* World::findChunk(int x, int z) {
     for (uint i = 0; i < chunks.size(); i++) {
         Chunk* c = chunks[i];
+        if (!c) {
+            continue;
+        }
         if (c->x == x && c->z == z) {
             return c;
         }

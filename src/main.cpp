@@ -207,6 +207,7 @@ int main(int argc, char *argv[]) {
             for (uint i = chunkMeshes.size()-1; i > 0; i--) {
                 Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x,chunkMeshes[i]->chunk->z);
                 if (!chunk) {
+                    delete chunkMeshes[i];
                     chunkMeshes.erase(chunkMeshes.begin() + i);
                 }
             }
