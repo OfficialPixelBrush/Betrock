@@ -217,15 +217,15 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     }
 }
 
-std::vector<std::unique_ptr<Mesh>> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, uint8_t maxSkyLight) {
-    std::vector<std::unique_ptr<Mesh>> meshes;
+std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, uint8_t maxSkyLight) {
+    std::vector<ChunkMesh*> meshes;
     for (auto c : chunks) {
         meshes.push_back(buildChunk(c,maxSkyLight));
     }
     return meshes;
 }
 
-std::unique_ptr<Mesh> ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
+ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
 
@@ -237,6 +237,7 @@ std::unique_ptr<Mesh> ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight
     }
     int chunkX = chunk->x*16;
     int chunkZ = chunk->z*16;
+
     std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
     for (int x = chunkX; x < 16+chunkX; x++) {
         for (int z = chunkZ; z < 16+chunkZ; z++) {
@@ -306,8 +307,8 @@ std::unique_ptr<Mesh> ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight
             }
         }
     }
-    /*std::vector<std::unique_ptr<Mesh>> meshes;
-    meshes.push_back(std::make_unique<Mesh>("world", worldVertices, worldIndices, model->meshes[0].textures));
-    meshes.push_back(std::make_unique<Mesh>("water", waterVertices, waterIndices, model->meshes[0].textures));*/
-    return std::make_unique<Mesh>("world", worldVertices, worldIndices, model->meshes[0].textures);
+    std::vector<Mesh*> meshes;
+    meshes.push_back(new Mesh("world", worldVertices, worldIndices, model->meshes[0].textures));
+    meshes.push_back(new Mesh("water", waterVertices, waterIndices, model->meshes[0].textures));
+    return new ChunkMesh(chunk,meshes);
 }

@@ -16,5 +16,5 @@ class World {
         Chunk* loadChunk(int x, int z);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);
-        void getChunksInRadius(int x, int z, int radius);
+        std::vector<Chunk*> getChunksInRadius(int x, int z, int radius);
 };

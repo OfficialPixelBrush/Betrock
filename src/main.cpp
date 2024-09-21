@@ -7,8 +7,7 @@ bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPos
     int x = floor(cameraPosition.x / 16.0f);
     int z = floor(cameraPosition.z / 16.0f);
     int px = floor(previousPosition.x / 16.0f);
-    int pz = floor(previousPosition.z / 16.0f);
-    
+    int pz = floor(previousPosition.z / 16.0f);    
     return (px != x || pz != z) ;
 }
 
@@ -123,11 +122,12 @@ int main(int argc, char *argv[]) {
 
     float x = camera.Position.x;
     float z = camera.Position.z;
-    world->getChunksInRadius(int(x),int(z),renderDistance);
-    std::vector<std::unique_ptr<Mesh>> worldMeshes;
-    for (auto c : world->chunks) {
-        worldMeshes.push_back(cb.buildChunk(c,maxSkyLight));
-    }
+    //world->getChunksInRadius(int(x),int(z),renderDistance);
+    std::vector<ChunkMesh*> chunkMeshes;
+    /*    for (auto c : world->chunks) {
+        chunkMeshes.push_back(cb.buildChunk(c,maxSkyLight));
+    }*/
+
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -167,17 +167,8 @@ int main(int argc, char *argv[]) {
         }
         camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
 
-        //blockModel.Draw(shaderProgram, camera);
-        if (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving) {
-            float x = camera.Position.x;
-            float z = camera.Position.z;
-            //world->getChunksInRadius(int(x),int(z),renderDistance);
-            //std::vector<std::unique_ptr<Mesh>> meshes = cb.buildChunks(world->chunks,maxSkyLight);
-            //worldMeshes.insert(worldMeshes.end(), meshes.begin(), meshes.end());
-        }
-
-        for (uint i = 0; i < worldMeshes.size(); i++) {
-            worldMeshes[i]->Draw(shaderProgram, camera);
+        for (uint i = 0; i < chunkMeshes.size(); i++) {
+            chunkMeshes[i]->Draw(shaderProgram, camera);
         }
 
         ImGui::Begin("Options");
@@ -203,15 +194,21 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Polygon", &polygon);
         ImGui::Checkbox("Update when Moving", &updateWhenMoving);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
-        ImGui::SliderInt("Render Distance",&renderDistance, 2, 16);
-        if (ImGui::Button("Update Chunks")) {
+        ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
+        if (ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
             float x = camera.Position.x;
             float z = camera.Position.z;
-            world->getChunksInRadius(int(x),int(z),renderDistance);
-            std::vector<std::unique_ptr<Mesh>> meshes = cb.buildChunks(world->chunks,maxSkyLight);
-            worldMeshes.reserve(worldMeshes.size() + meshes.size());  // Reserve space to avoid reallocations
-            for (auto& mesh : meshes) {
-                worldMeshes.push_back(std::move(mesh));  // Move the ownership of the mesh into worldMeshes
+            std::vector<Chunk*> toBeUpdated = world->getChunksInRadius(int(x),int(z),renderDistance);
+            std::vector<ChunkMesh*> newChunkMeshes = cb.buildChunks(toBeUpdated,maxSkyLight);
+            for (uint i = 0; i < newChunkMeshes.size(); i++) {
+                chunkMeshes.push_back(newChunkMeshes[i]);
+            }
+            newChunkMeshes.clear();
+            for (uint i = chunkMeshes.size()-1; i > 0; i--) {
+                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x,chunkMeshes[i]->chunk->z);
+                if (!chunk) {
+                    chunkMeshes.erase(chunkMeshes.begin() + i);
+                }
             }
         }
         ImGui::End();

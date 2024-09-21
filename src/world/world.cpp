@@ -59,18 +59,26 @@ Block* World::getBlock(int x, int y, int z) {
     return nullptr;
 }
 
-void World::getChunksInRadius(int x, int z, int radius) {
+std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
     int ix = int(float(x) / 16.0f);
     int iz = int(float(z) / 16.0f);
 
     std::vector<Chunk*> containedChunks;  // Use raw pointers if you don't want ownership
+    std::vector<Chunk*> newChunks;  // Use raw pointers if you don't want ownership
 
     // Collect new chunks
     for (int cx = -radius; cx < radius; cx++) {
         for (int cz = -radius; cz < radius; cz++) {
+            bool newChunk = false;
+            if (!findChunk(ix + cx, iz + cz)) {
+                newChunk = true;
+            }
             Chunk* c = getChunk(ix + cx, iz + cz);
             if (c) {
                 containedChunks.push_back(c);
+                if (newChunk) {
+                    newChunks.push_back(c);
+                }
             }
         }
     }
@@ -83,4 +91,5 @@ void World::getChunksInRadius(int x, int z, int radius) {
     for (Chunk* chunk : containedChunks) {
         chunks.push_back(chunk);  // Insert back into the main chunk vector
     }
+    return newChunks;
 }
