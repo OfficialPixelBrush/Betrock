@@ -79,6 +79,10 @@ int main(int argc, char *argv[]) {
     // Enables the depth buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
+    // Face Ordering
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
+
     // Load Blockmodel
     Model blockModel("models/models.obj");
 
