@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.0", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.1", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -170,6 +170,22 @@ int main(int argc, char *argv[]) {
             camera.Inputs(window);
         }
         camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
+
+        // Sort Chunks
+        std::sort(chunkMeshes.begin(), chunkMeshes.end(),
+        [&camera](const auto& a, const auto& b) {
+            if (a->meshes[1]->name == "water") {
+                // Assuming each chunkMesh has a method getPosition() that returns a glm::vec3
+                glm::vec2 aChunkPosition = glm::vec2(a->chunk->x*16+8,a->chunk->z*16+8);
+                glm::vec2 bChunkPosition = glm::vec2(b->chunk->x*16+8,b->chunk->z*16+8);
+                glm::vec2 cameraXZ = glm::vec2(camera.Position.x,camera.Position.z);
+                float distA = glm::length2(aChunkPosition - cameraXZ);
+                float distB = glm::length2(bChunkPosition - cameraXZ);
+                return distA > distB;
+            } else {
+                return false;
+            }
+        });
 
         for (uint i = 0; i < chunkMeshes.size(); i++) {
             chunkMeshes[i]->Draw(shaderProgram, camera);
