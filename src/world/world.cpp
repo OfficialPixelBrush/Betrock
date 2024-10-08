@@ -81,6 +81,27 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
                 containedChunks.push_back(c);
                 if (newChunk) {
                     newChunks.push_back(c);
+                    // If a chunk neighbors this chunk, add it to the chunk regen queue
+                    Chunk* nc = findChunk(ix + cx, iz + cz - 1);
+                    Chunk* sc = findChunk(ix + cx, iz + cz + 1);
+                    Chunk* ec = findChunk(ix + cx - 1, iz + cz);
+                    Chunk* wc = findChunk(ix + cx + 1, iz + cz);
+                    if (nc) {
+                        newChunks.push_back(nc);
+                        std::cout << "Neighborchunk North" << std::endl;
+                    }
+                    if (sc) {
+                        newChunks.push_back(sc);
+                        std::cout << "Neighborchunk South" << std::endl;
+                    }
+                    if (ec) {
+                        newChunks.push_back(ec);
+                        std::cout << "Neighborchunk East" << std::endl;
+                    }
+                    if (wc) {
+                        newChunks.push_back(wc);
+                        std::cout << "Neighborchunk West" << std::endl;
+                    }
                 }
             }
         }

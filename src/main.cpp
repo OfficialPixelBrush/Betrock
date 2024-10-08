@@ -204,9 +204,34 @@ int main(int argc, char *argv[]) {
             float z = camera.Position.z;
             std::vector<Chunk*> toBeUpdated = world->getChunksInRadius(int(x),int(z),renderDistance);
             std::vector<ChunkMesh*> newChunkMeshes = cb.buildChunks(toBeUpdated,maxSkyLight);
+
+            // Delete existing chunks from chunkmesh if they're part of the new chunks
+            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end();) {
+                Chunk* existingChunk = (*it)->chunk;
+
+                // Check if the existing chunk is in the newChunkMeshes
+                bool found = false;
+                for (const auto& newChunkMesh : newChunkMeshes) {
+                    if (newChunkMesh->chunk == existingChunk) {
+                        found = true;
+                        break;
+                    }
+                }
+
+                // If found, delete the existing chunk and remove it from chunkMeshes
+                if (found) {
+                    delete *it;  // Free memory of the existing chunk mesh
+                    it = chunkMeshes.erase(it);  // Remove from the vector and advance iterator
+                } else {
+                    ++it;  // Advance the iterator without deleting
+                }
+            }
+
+            // Add new chunks to chunkmesh
             for (uint i = 0; i < newChunkMeshes.size(); i++) {
                 chunkMeshes.push_back(newChunkMeshes[i]);
             }
+
             newChunkMeshes.clear();
             for (uint i = chunkMeshes.size()-1; i > 0; i--) {
                 Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x,chunkMeshes[i]->chunk->z);
