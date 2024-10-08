@@ -179,6 +179,107 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
     }
 }
 
+float getSmoothLighting(World* world, glm::vec3 position, uint8_t maxSkyLight) {
+    // Array for light values
+    const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
+
+    try {
+        float x = position.x;
+        float y = position.y;
+        float z = position.z;
+        // Calculate adjacent block coordinates
+        /*
+        int adjX = x + static_cast<int>(normal.x);
+        int adjY = y + static_cast<int>(normal.y);
+        int adjZ = z + static_cast<int>(normal.z);
+        */
+        int light = 0;
+        int relevantLights = 0;
+        Block* b;
+
+        // Get the adjacent block
+        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z+0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x+0.5), (int)(y-0.5), (int)(z+0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x+0.5), (int)(y-0.5), (int)(z-0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }        
+        b = world->getBlock((int)(x-0.5), (int)(y+0.5), (int)(z+0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x-0.5), (int)(y+0.5), (int)(z-0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x-0.5), (int)(y-0.5), (int)(z+0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        b = world->getBlock((int)(x-0.5), (int)(y-0.5), (int)(z-0.5));
+        if (b) {
+            if (b->getBlockType() == 0 || b->getTransparent()) {
+                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                relevantLights++;
+            }
+        }
+        if (!relevantLights) {
+            return lightArray[15];
+        }
+        light = light / relevantLights;
+        /*
+        if (adjacentBlock == nullptr) {
+            throw std::runtime_error("Adjacent block pointer is null.");
+        }
+
+        // Get lighting values from the adjacent block
+        int light = adjacentBlock->getBlockLight() + std::min(adjacentBlock->getSkyLight(), maxSkyLight);
+        */
+        // Ensure light index is within bounds
+        if (light < 0) {
+            light = 0;
+        } else if (light > 15) {
+            light = 15;
+        }
+
+        return lightArray[light];
+
+    } catch (const std::exception& e) {
+        return 1.0f;  // Return a default value in case of an error
+    }
+}
+
 
 uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, glm::vec3 normal) {
     try {
@@ -266,23 +367,24 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
+                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos);
                     // TODO: Fix BlockLight
-                    color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
+                    // color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                     //std::cout << std::to_string(b->getBlockLight()) << std::endl;
-
                     if (blockType == 8 || blockType == 9) {
                         waterVertices.push_back(
                             Vertex(
-                                glm::vec3(blockModel->vertices[v].position + pos),
+                                finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
                                 blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
                             )
                         );
                     } else {
+                        color *= getSmoothLighting(world,finalPos,maxSkyLight);
                         worldVertices.push_back(
                             Vertex(
-                                glm::vec3(blockModel->vertices[v].position + pos),
+                                finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
                                 blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
