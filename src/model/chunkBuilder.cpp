@@ -368,6 +368,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
                     glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos);
+                    color *= getSmoothLighting(world,finalPos,maxSkyLight);
                     // TODO: Fix BlockLight
                     // color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                     //std::cout << std::to_string(b->getBlockLight()) << std::endl;
@@ -381,7 +382,6 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                             )
                         );
                     } else {
-                        color *= getSmoothLighting(world,finalPos,maxSkyLight);
                         worldVertices.push_back(
                             Vertex(
                                 finalPos,
