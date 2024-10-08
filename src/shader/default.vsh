@@ -13,6 +13,7 @@ out vec3 currentPosition;
 out vec3 Normal;
 out vec3 color;
 out vec2 textureCoordinate;
+out float fogFactor;  // Pass fog factor to fragment shader
 
 uniform mat4 cameraMatrix;
 uniform mat4 model;
@@ -26,6 +27,12 @@ void main()
     Normal = aNormal;
     color = aColor;
     textureCoordinate = aTexture;
-    
-    gl_Position = cameraMatrix * vec4(aPos, 1.0);
+
+    vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
+
+    float distance = length(viewPosition.xyz);  // Distance from the camera
+    fogFactor = (distance - 45.0) / (50.0 - 45.0);  // Linear fog factor
+    fogFactor = clamp(fogFactor, 0.0, 1.0);       // Clamp between 0 and 1
+
+    gl_Position = viewPosition;
 }

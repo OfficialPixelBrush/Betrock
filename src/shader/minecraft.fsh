@@ -6,6 +6,7 @@ in vec3 currentPosition;
 in vec3 Normal;
 in vec3 color;
 in vec2 textureCoordinate;
+in float fogFactor;   // Fog factor from the vertex shader
 
 uniform sampler2D diffuse0;
 // TODO: uniform vec3 blockLight;
@@ -29,5 +30,5 @@ void main() {
     // The final color of the pixel
     if(texColor.a < 0.1)
         discard;
-    FragColor = vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor;
+    FragColor = mix((vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), vec4(0.0), fogFactor);
 }
