@@ -3,6 +3,8 @@
 
 #include <stdexcept>  // For std::runtime_error
 
+const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
+
 bool ChunkBuilder::isSurrounded(int x, int y, int z) {
     try {
         // Cache block pointers
@@ -148,7 +150,6 @@ ChunkBuilder::ChunkBuilder(Model* model, World* world) {
 
 float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t maxSkyLight) {
     // Array for light values
-    const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
     try {
         // Calculate adjacent block coordinates
@@ -179,9 +180,8 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
     }
 }
 
-float getSmoothLighting(World* world, glm::vec3 position, uint8_t maxSkyLight) {
+float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint8_t maxSkyLight) {
     // Array for light values
-    const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
     try {
         float x = position.x;
@@ -198,7 +198,29 @@ float getSmoothLighting(World* world, glm::vec3 position, uint8_t maxSkyLight) {
         Block* b;
 
         // Get the adjacent block
-        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z+0.5));
+        for (float aOff = -0.5; aOff <= 0.5; aOff+=1.0f) {
+            for (float bOff = -0.5; bOff <= 0.5; bOff+=1.0f) {
+                if (normal.x) {
+                    b = world->getBlock(int(x+normal.x*0.5f), int(y+aOff), int(z+bOff));
+                }
+                if (normal.y) {
+                    b = world->getBlock(int(x+aOff), int(y+normal.y*0.5f), int(z+bOff));
+                    //std::cout << "NormY: " << normal.y << std::endl;
+                }
+                if (normal.z) {
+                    b = world->getBlock(int(x+aOff), int(y+bOff), int(z+normal.z*0.5f));
+                }
+                if (b) {
+                    // Air is transparent, so we can ignore it too
+                    if (b->getBlockType() == 0 || b->getTransparent()) {
+                        light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                        relevantLights++;
+                    }
+                }
+            }
+        }
+        /*
+        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
         if (b) {
             if (b->getBlockType() == 0 || b->getTransparent()) {
                 light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
@@ -212,50 +234,16 @@ float getSmoothLighting(World* world, glm::vec3 position, uint8_t maxSkyLight) {
                 relevantLights++;
             }
         }
-        b = world->getBlock((int)(x+0.5), (int)(y-0.5), (int)(z+0.5));
+        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
         if (b) {
             if (b->getBlockType() == 0 || b->getTransparent()) {
                 light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
                 relevantLights++;
             }
-        }
-        b = world->getBlock((int)(x+0.5), (int)(y-0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }        
-        b = world->getBlock((int)(x-0.5), (int)(y+0.5), (int)(z+0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
-        b = world->getBlock((int)(x-0.5), (int)(y+0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
-        b = world->getBlock((int)(x-0.5), (int)(y-0.5), (int)(z+0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
-        b = world->getBlock((int)(x-0.5), (int)(y-0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
+        }*/
+
         if (!relevantLights) {
-            return lightArray[15];
+            return lightArray[0];
         }
         light = light / relevantLights;
         /*
@@ -339,7 +327,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
     int chunkX = chunk->x*16;
     int chunkZ = chunk->z*16;
 
-    std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
+    //std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
     for (int x = chunkX; x < 16+chunkX; x++) {
         for (int z = chunkZ; z < 16+chunkZ; z++) {
             for (uint y = 0; y < 128; y++) {
@@ -363,16 +351,16 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                 uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
                 Mesh* blockModel = &model->meshes[blockModelIndex];
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
-                    if (isVisible(world,x,y,z,blockModelIndex,blockModel->vertices[v].normal)) {
+                    if (isVisible(world,x,y,z,blockModelIndex,blockModel->vertices[v].normal) && !b->getPartialBlock()) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
                     glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos);
-                    color *= getSmoothLighting(world,finalPos,maxSkyLight);
                     // TODO: Fix BlockLight
                     // color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                     //std::cout << std::to_string(b->getBlockLight()) << std::endl;
                     if (blockType == 8 || blockType == 9) {
+                        color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                         waterVertices.push_back(
                             Vertex(
                                 finalPos,
@@ -382,6 +370,9 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                             )
                         );
                     } else {
+                        if (!b->lightSource) {
+                            color *= getSmoothLighting(world,finalPos,blockModel->vertices[v].normal,maxSkyLight);
+                        }
                         worldVertices.push_back(
                             Vertex(
                                 finalPos,

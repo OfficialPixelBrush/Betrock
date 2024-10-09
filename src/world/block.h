@@ -9,6 +9,8 @@ class Block {
         uint8_t skyLightLevel;
         uint8_t lightLevel;
         uint8_t metaData;
+        bool lightSource;
+        bool partialBlock;
         Block(uint8_t blockType = 0, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0);
 
         void setBlockType(uint8_t pBlockType) {
@@ -25,6 +27,10 @@ class Block {
 
         bool getTransparent() {
             return transparent;
+        };
+
+        bool getPartialBlock() {
+            return partialBlock;
         };
 
         uint8_t getBlockLight() {

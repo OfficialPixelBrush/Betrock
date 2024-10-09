@@ -176,7 +176,7 @@ Chunk* regionLoader::loadRegion(int chunkX, int chunkZ) {
 		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
 		return nullptr;
 	}
-	std::cout << "Decoding " << regionfile << std::endl;
+	//std::cout << "Decoding " << regionfile << std::endl;
 	Chunk* chunk = decodeRegion(chunkX,chunkZ);
 	f.close();
 	return chunk;

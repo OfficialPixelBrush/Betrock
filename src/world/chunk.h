@@ -24,7 +24,7 @@ class Chunk {
                 }
                 blocks[i] = Block(pBlockData[i], skyLight, blockLight, metaData);
             }
-            std::cout << "Created Chunk at " << x << ", " << z << std::endl;
+            //std::cout << "Created Chunk at " << x << ", " << z << std::endl;
         }
 
         ~Chunk() {

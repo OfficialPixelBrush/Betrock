@@ -26,12 +26,19 @@ Region* World::getRegion(int x, int z) {
 }*/
 
 Chunk* World::findChunk(int x, int z) {
+    // Check Cached Chunk first
+    if (cachedChunk && cachedChunk->x == x && cachedChunk->z == z) {
+        return cachedChunk;
+    }
+
+    // Then check elsewhere
     for (uint i = 0; i < chunks.size(); i++) {
         Chunk* c = chunks[i];
         if (!c) {
             continue;
         }
         if (c->x == x && c->z == z) {
+            cachedChunk = c;
             return c;
         }
     }
@@ -54,10 +61,17 @@ Chunk* World::getChunk(int x, int z) {
 }
 
 Block* World::getBlock(int x, int y, int z) {
+    if (cachedBlock && cachedBlockX == x && cachedBlockY == y && cachedBlockZ == z) {
+        return cachedBlock;
+    }
     //std::cout << x << "," << y << "," << z << std::endl;
     Chunk* c = findChunk(floor(float(x)/16.0f),floor(float(z)/16.0f));
     if (c) {
-        return c->getBlock(x,y,z);
+        cachedBlock = c->getBlock(x,y,z);
+        cachedBlockX = x;
+        cachedBlockY = y;
+        cachedBlockZ = z;
+        return cachedBlock;
     }
     return nullptr;
 }
@@ -88,19 +102,19 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
                     Chunk* wc = findChunk(ix + cx + 1, iz + cz);
                     if (nc) {
                         newChunks.push_back(nc);
-                        std::cout << "Neighborchunk North" << std::endl;
+                        //std::cout << "Neighborchunk North" << std::endl;
                     }
                     if (sc) {
                         newChunks.push_back(sc);
-                        std::cout << "Neighborchunk South" << std::endl;
+                        //std::cout << "Neighborchunk South" << std::endl;
                     }
                     if (ec) {
                         newChunks.push_back(ec);
-                        std::cout << "Neighborchunk East" << std::endl;
+                        //std::cout << "Neighborchunk East" << std::endl;
                     }
                     if (wc) {
                         newChunks.push_back(wc);
-                        std::cout << "Neighborchunk West" << std::endl;
+                        //std::cout << "Neighborchunk West" << std::endl;
                     }
                 }
             }

@@ -12,7 +12,13 @@ class ChunkMesh {
             ChunkMesh(Chunk* chunk, std::vector<Mesh*> meshes) {
                 this->chunk = chunk;  // Move the unique_ptr to transfer ownership
                 this->meshes = meshes; // Same for meshes if you're moving them as well
-                std::cout << "Created new Mesh " << chunk->x << ", " << chunk-> z << std::endl;
+                std::cout << "Created Chunk Mesh " << chunk->x << ", " << chunk-> z << std::endl;
+            }
+            ~ChunkMesh() {
+                for (Mesh* mesh : meshes) {
+                    delete mesh;  // Free memory for each Mesh object
+                }
+                std::cout << "Deleted Chunk Mesh " << chunk->x << ", " << chunk-> z << std::endl;
             }
             void Remesh();
             void Draw(Shader& shader, Camera& camera) {

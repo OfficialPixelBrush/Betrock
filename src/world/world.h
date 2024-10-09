@@ -9,6 +9,11 @@
 class World {
     public:
         std::vector<Chunk*> chunks;
+        Chunk* cachedChunk = nullptr;
+        Block* cachedBlock = nullptr;
+        int cachedBlockX;
+        int cachedBlockY;
+        int cachedBlockZ;
         std::string name;
         World(std::string pName);
 

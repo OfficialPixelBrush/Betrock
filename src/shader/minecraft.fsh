@@ -30,5 +30,6 @@ void main() {
     // The final color of the pixel
     if(texColor.a < 0.1)
         discard;
-    FragColor = mix((vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), vec4(0.0), fogFactor);
+    //FragColor = mix((vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), vec4(0.0), fogFactor);
+    FragColor = (vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor);
 }

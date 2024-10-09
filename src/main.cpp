@@ -50,18 +50,7 @@ int main(int argc, char *argv[]) {
 
     // Creates Shader object using shaders default.vsh and .frag
     Shader shaderProgram("../src/shader/default.vsh", "../src/shader/minecraft.fsh");
-
-    // Transform the light and cube models
-    glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-    glm::vec3 lightPosition = glm::vec3(0.5f, 0.5f, 0.5f);
-    glm::mat4 lightModel = glm::mat4(1.0f);
-    lightModel = glm::translate(lightModel, lightPosition);
-    
     shaderProgram.Activate();
-    /*glUniform4f(glGetUniformLocation(shaderProgram.Id, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
-    glUniform3f(glGetUniformLocation(shaderProgram.Id, "lightPosition"), lightPosition.x, lightPosition.y, lightPosition.z);
-    glUniform4f(glGetUniformLocation(shaderProgram.Id, "ambient"), skyColor[0], skyColor[1], skyColor[2], skyColor[3]);*/
-
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -69,9 +58,6 @@ int main(int argc, char *argv[]) {
     // Create a camera at 0,0,2
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
     Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));
-    //camera.Position.x -= 0.5;
-    //camera.Position.y -= 0.5;
-    //camera.Position.z -= 0.5;
     // Draw Clear Color
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
@@ -90,18 +76,6 @@ int main(int argc, char *argv[]) {
     World* world = new World(worldName);
 
     ChunkBuilder cb(&blockModel, world);
-
-    /*
-    Region* r = world.getRegion(0,0);
-    for (uint cx = 0; cx < 16; cx++) {
-        for (uint cz = 0; cz < 16; cz++) {
-            if (c) { 
-                Mesh* mesh = cb.build(c,cx,cz);
-                loadedChunks.push_back(mesh);
-            }
-        }
-        std::cout << (float(cx)/16.0)*100.0 << "%" << std::endl;
-    }*/
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -126,11 +100,7 @@ int main(int argc, char *argv[]) {
 
     float x = camera.Position.x;
     float z = camera.Position.z;
-    //world->getChunksInRadius(int(x),int(z),renderDistance);
     std::vector<ChunkMesh*> chunkMeshes;
-    /*    for (auto c : world->chunks) {
-        chunkMeshes.push_back(cb.buildChunk(c,maxSkyLight));
-    }*/
 
 
     // Main while loop
@@ -233,7 +203,6 @@ int main(int argc, char *argv[]) {
                         break;
                     }
                 }
-
                 // If found, delete the existing chunk and remove it from chunkMeshes
                 if (found) {
                     delete *it;  // Free memory of the existing chunk mesh
