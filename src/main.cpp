@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.1", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.2", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
 
     // Create a camera at 0,0,2
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
-    Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));
-    // Draw Clear Color
+    //Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));    // Draw Clear Color
+    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 222), glm::vec3(0.0, 0.0, 0.9));
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
@@ -89,6 +89,8 @@ int main(int argc, char *argv[]) {
     bool cullFace = true;
     bool polygon = false;
     bool updateWhenMoving = false;
+    bool smoothLighting = true;
+    bool manualChunkUpdateTrigger = true;
 
     double prevTime = glfwGetTime();
     double fpsTime = 0;
@@ -183,13 +185,29 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Backface Culling", &cullFace);
         ImGui::Checkbox("Polygon", &polygon);
         ImGui::Checkbox("Update when Moving", &updateWhenMoving);
+        ImGui::Checkbox("Smooth Lighting", &smoothLighting);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
-        if (ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
+        if (ImGui::Button("Clear Chunks")) {
+            // Clear pointers in world->chunks if needed
+            for (Chunk* chunk : world->chunks) {
+                delete chunk;  // Delete each chunk pointer to avoid memory leaks
+            }
+            world->chunks.clear();  // Now clear the vector
+
+            // Clear chunkMeshes
+            for (uint i = 0; i < chunkMeshes.size(); i++) {
+                delete chunkMeshes[i];  // Delete each mesh
+            }
+            chunkMeshes.clear();  // Clear the vector
+
+            manualChunkUpdateTrigger = true;
+        }
+        if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
             float x = camera.Position.x;
             float z = camera.Position.z;
             std::vector<Chunk*> toBeUpdated = world->getChunksInRadius(int(x),int(z),renderDistance);
-            std::vector<ChunkMesh*> newChunkMeshes = cb.buildChunks(toBeUpdated,maxSkyLight);
+            std::vector<ChunkMesh*> newChunkMeshes = cb.buildChunks(toBeUpdated,smoothLighting,maxSkyLight);
 
             // Delete existing chunks from chunkmesh if they're part of the new chunks
             for (auto it = chunkMeshes.begin(); it != chunkMeshes.end();) {
@@ -210,6 +228,7 @@ int main(int argc, char *argv[]) {
                 } else {
                     ++it;  // Advance the iterator without deleting
                 }
+                manualChunkUpdateTrigger = false;
             }
 
             // Add new chunks to chunkmesh

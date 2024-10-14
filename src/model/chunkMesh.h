@@ -16,6 +16,7 @@ class ChunkMesh {
             }
             ~ChunkMesh() {
                 for (Mesh* mesh : meshes) {
+                    //std::cout << "Deleted " << mesh->name << " Mesh " << mesh << std::endl;
                     delete mesh;  // Free memory for each Mesh object
                 }
                 std::cout << "Deleted Chunk Mesh " << chunk->x << ", " << chunk-> z << std::endl;
@@ -23,7 +24,11 @@ class ChunkMesh {
             void Remesh();
             void Draw(Shader& shader, Camera& camera) {
                 for (const auto& m : meshes) {
-                    m->Draw(shader,camera);
+                    if (m != nullptr) {
+                        m->Draw(shader,camera);
+                    } else {
+                        std::cout << "Missing chunk mesh!!" << std::endl;
+                    }
                 }
             };
 };

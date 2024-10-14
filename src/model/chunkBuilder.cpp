@@ -306,15 +306,15 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     }
 }
 
-std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, uint8_t maxSkyLight) {
+std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<ChunkMesh*> meshes;
     for (auto c : chunks) {
-        meshes.push_back(buildChunk(c,maxSkyLight));
+        meshes.push_back(buildChunk(c,smoothLighting,maxSkyLight));
     }
     return meshes;
 }
 
-ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
+ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
 
@@ -334,7 +334,6 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                 // Get next block to process
                 Block* b = world->getBlock(x,y,z);
                 unsigned char blockType = b->getBlockType();
-                unsigned char blockMetaData = b->getBlockMetaData();
                 // Check if the block is air
                 if (!b || blockType == 0) {
                     continue;
@@ -343,6 +342,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                 if (isSurrounded(x,y,z)) {
                     continue;
                 }
+                unsigned char blockMetaData = b->getBlockMetaData();
 
                 // Figure out the blocks coordinates in the world
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
@@ -370,8 +370,13 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                             )
                         );
                     } else {
+                        // Apply light if the block isn't a lightsource
                         if (!b->lightSource) {
-                            color *= getSmoothLighting(world,finalPos,blockModel->vertices[v].normal,maxSkyLight);
+                            if (smoothLighting) {
+                                color *= getSmoothLighting(world,finalPos,blockModel->vertices[v].normal,maxSkyLight);
+                            } else {
+                                color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
+                            }
                         }
                         worldVertices.push_back(
                             Vertex(
@@ -384,16 +389,17 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, uint8_t maxSkyLight) {
                     }
                 }
 
+                GLuint totalWaterIndices = waterIndices.size();
+                GLuint totalWorldIndices = worldIndices.size();
+
                 if (blockType == 8 || blockType == 9) {
-                    GLuint totalVertices = waterVertices.size();
                     for (uint i = 0; i < blockModel->indices.size(); i++) {
-                        GLuint newInd = totalVertices + blockModel->indices[i];
+                        GLuint newInd = totalWaterIndices + blockModel->indices[i];
                         waterIndices.push_back(newInd);
                     }
                 } else {
-                    GLuint totalVertices = worldVertices.size();
                     for (uint i = 0; i < blockModel->indices.size(); i++) {
-                        GLuint newInd = totalVertices + blockModel->indices[i];
+                        GLuint newInd = totalWorldIndices + blockModel->indices[i];
                         worldIndices.push_back(newInd);
                     }
                 }

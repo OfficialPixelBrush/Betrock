@@ -1,6 +1,9 @@
 #include "mesh.h"
 
 Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures) {
+    if (vertices.empty() || indices.empty()) {
+        std::cout << "Missing Vertices or Indices!" << std::endl;
+    }
     Mesh::name = pName;
     Mesh::vertices = vertices;
     Mesh::indices = indices;
@@ -33,11 +36,15 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
 }
 
 Mesh::~Mesh() {
+    glFinish();
+
+    vao.Unbind();
     vao.Delete();
+
     vertices.clear();
     indices.clear();
     textures.clear();
-    //std::cout << "Deleted Mesh " << Mesh::name << std::endl;
+    std::cout << "Deleted " << name << " Mesh " << this << std::endl;
 }
 
 void Mesh::Draw(
@@ -48,7 +55,7 @@ void Mesh::Draw(
     glm::quat pRotation,
     glm::vec3 pScale
 ) {
-    //std::cout << name << " is getting drawn" << std::endl;
+    std::cout << this << " (" << Mesh::name << ") is getting drawn" << std::endl;
 	// Bind shader to be able to access uniforms
     shader.Activate();
     vao.Bind();

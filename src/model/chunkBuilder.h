@@ -10,8 +10,8 @@
 class ChunkBuilder {
     public:
         ChunkBuilder(Model* model, World* world);
-        std::vector<ChunkMesh*> buildChunks(std::vector<Chunk*> chunks, uint8_t maxSkyLight = 15);
-        ChunkMesh* buildChunk(Chunk* chunk, uint8_t maxSkyLight = 15);
+        std::vector<ChunkMesh*> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight = 15);
+        ChunkMesh* buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight = 15);
     private:
         Model* model;
         World* world;
