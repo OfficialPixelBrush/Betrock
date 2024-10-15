@@ -42,20 +42,28 @@ class Block {
         }
 
         std::string getFacing() {
-            switch(metaData) {
-                case 1:
-                    return "South";
-                case 2:
-                    return "North";
-                case 3:
-                    return "West";
-                case 4:
-                    return "East";
-                case 5:
-                    return "Floor";
-                default:
-                    return "";
+            /* True for:
+             * - Torches (50)
+             * - Ladders (65)
+             * - Redstone Torches (75/76)
+             * - Pumpkins (86)
+             * - Jack o'Lantern (91)
+            */
+            if (blockType == 50 || blockType == 65 || blockType == 75 || blockType == 76 || blockType == 86 || blockType == 91) {
+                switch(metaData) {
+                    case 1:
+                        return "South";
+                    case 2:
+                        return "North";
+                    case 3:
+                        return "West";
+                    case 4:
+                        return "East";
+                    case 5:
+                        return "Floor";
+                }
             }
+            return "No Direction";
         }
 
         std::string getName() {
@@ -122,10 +130,134 @@ class Block {
                     return "Sticky Piston";
                 case 30:
                     return "Cobweb";
+                case 31:
+                    return "Dead Shrub/Grass";
+                case 32:
+                    return "Dead Bush";
+                case 33:
+                    return "Piston";
+                case 34:
+                    return "Piston Head";
+                case 35:
+                    return "White Wool";
+                //case 36:
+                //    return "Cobweb";
+                case 37:
+                    return "Dandelion";
+                case 38:
+                    return "Rose";
+                case 39:
+                    return "Brown Mushroom";
+                case 40:
+                    return "Red Mushroom";
+                case 41:
+                    return "Gold Block";
+                case 42:
+                    return "Iron Block";
+                case 43:
+                    return "Double Stone Slab";
+                case 44:
+                    return "Stone Slab";
+                case 45:
+                    return "Bricks";
+                case 46:
+                    return "TNT";
+                case 47:
+                    return "Bookshelf";
+                case 48:
+                    return "Moss Stone";
+                case 49:
+                    return "Obsidian";
                 case 50:
                     return "Torch";
+                case 51:
+                    return "Fire";
+                case 52:
+                    return "Monster Spawner";
+                case 53:
+                    return "Oak Wood Stairs";
+                case 54:
+                    return "Chest";
+                case 55:
+                    return "Redstone Wire";
+                case 56:
+                    return "Diamond Ore";
+                case 57:
+                    return "Diamond Block";
+                case 58:
+                    return "Crafting Table";
+                case 59:
+                    return "Wheat Crops";
+                case 60:
+                    return "Farmland";
+                case 61:
+                    return "Furnace";
+                case 62:
+                    return "Burning Furnace";
+                case 63:
+                    return "Standing Sign Block";
+                case 64:
+                    return "Oak Door Block";
                 case 65:
                     return "Ladder";
+                case 66:
+                    return "Rail";
+                case 67:
+                    return "Cobblestone Stairs";
+                case 68:
+                    return "Wall-mounted Sign Block";
+                case 69:
+                    return "Lever";
+                case 70:
+                    return "Stone Pressure Plate";
+                case 71:
+                    return "Iron Door Block";
+                case 72:
+                    return "Wooden Pressure Plate";
+                case 73:
+                    return "Redstone Ore";
+                case 74:
+                    return "Glowing Redstone Ore";
+                case 75:
+                    return "Redstone Torch (off)";
+                case 76:
+                    return "Redstone Torch (on)";
+                case 77:
+                    return "Stone Button";
+                case 78:
+                    return "Snow";
+                case 79:
+                    return "Snow";
+                case 80:
+                    return "Snow Block";
+                case 81:
+                    return "Cactus";
+                case 82:
+                    return "Clay";
+                case 83:
+                    return "Sugar Canes";
+                case 84:
+                    return "Jukebox";
+                case 85:
+                    return "Oak Fence";
+                case 86:
+                    return "Pumpkin";
+                case 87:
+                    return "Netherrack";
+                case 88:
+                    return "Soul Sand";
+                case 89:
+                    return "Glowstone";
+                case 90:
+                    return "Nether Portal";
+                case 91:
+                    return "Jack o'Lantern";
+                case 92:
+                    return "Cake Block";
+                case 93:
+                    return "Redstone Repeater Block (off)";
+                case 94:
+                    return "Redstone Repeater Block (on)";
                 default:
                     return "Unknown";
             }

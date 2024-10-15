@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.2", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.3", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -260,19 +260,20 @@ int main(int argc, char *argv[]) {
             } else {
                 debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
                 Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
-                debugText += "Name: " + b->getName() + "\n";
-                debugText += "Id: " + std::to_string(b->blockType) + "\n";
-                if (b->getBlockType() == 65 || b->getBlockType() == 50 || b->getBlockType() == 75 || b->getBlockType() == 76) {
-                    debugText += "Facing: " + b->getFacing() + "\n";
-                } else {
+                if (b) {
+                    debugText += "Name: " + b->getName() + "\n";
+                    debugText += "Id: " + std::to_string(b->blockType) + "\n";
                     debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
+                    debugText += "Facing: " + b->getFacing() + "\n";
+                    debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
+                    debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
+                    debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
                 }
                 Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
-                debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
-                debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
-                debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
-                debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
-                debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+                if (bn) {
+                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
+                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+                }
             }
         //}
         if (ImGui::Button("Clear Chunks")) {

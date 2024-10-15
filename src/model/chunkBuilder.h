@@ -13,9 +13,9 @@ class ChunkBuilder {
         std::vector<ChunkMesh*> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight = 15);
         ChunkMesh* buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight = 15);
     private:
+        Mesh* cachedMesh = nullptr;
         Model* model;
         World* world;
-        bool isSurrounded(int x, int y, int z);
-        glm::vec2 getBlockTextureOffset(unsigned char blockType, unsigned char blockMetaData);
-        uint8_t getBlockModel(unsigned char blockType, int x, int y, int z);
+        bool isSurrounded(int x, int y, int z, uint8_t blockType);
+        Mesh* getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData = 0);
 };

@@ -5,7 +5,7 @@
 
 const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
-bool ChunkBuilder::isSurrounded(int x, int y, int z) {
+bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     try {
         // Cache block pointers
         Block* blocks[6] = {
@@ -39,88 +39,6 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z) {
     } catch (const std::exception& e) {
         return false;
     }
-}
-
-glm::vec2 ChunkBuilder::getBlockTextureOffset(unsigned char blockType, unsigned char blockMetaData) {
-    float x = 0;
-    float y = 0;
-    const float divisor = 0.0625f;
-                                                                                                                    // v Some sort of missing entry here!                   //v 50: torch
-    uint8_t xBlock [] = { 0, 1, 0, 2, 0, 4,15, 1,15,15,15,15, 2, 3, 0, 1, 2, 4, 4, 0, 1, 0, 0,14, 0,10, 7, 3, 3,10,11, 7, 0, 7,12,11, 0,13,12,13,12, 7, 6, 5, 5, 7, 8, 3, 4, 5, 0,15, 1, 4,11, 5, 2, 8,11,15, 7,12,13, 4, 1, 3, 0, 0, 4, 0, 1, 2, 4, 3, 3, 3, 3, 1, 2, 3, 2, 6, 8, 9,11, 4, 7};
-    uint8_t yBlock [] = { 0, 0, 0, 0, 1, 0, 0, 1,13,13,15,15, 1, 1, 2, 2, 2, 1, 3, 3, 3,10, 9, 2,12, 4, 8,11,12, 6, 0, 3, 0, 3, 6, 6, 4, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 2, 2, 2, 5, 1, 4, 0, 1,10, 3, 1, 3, 5, 5, 2, 3, 0, 5, 5, 8, 1, 0, 6, 0, 5, 0, 3, 3, 7, 6, 0, 4, 4, 4, 4, 4, 4, 4, 0, 7};
-    if (!blockMetaData) {
-        return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
-    } else {
-        switch(blockType) {
-            // Logs
-            case 17:
-                if (blockMetaData == 1) {
-                    x = 4;
-                    y = 7;
-                } else if (blockMetaData == 2) {
-                    x = 5;
-                    y = 7;
-                }
-                break;
-            // Leaves
-            case 18:
-                if (blockMetaData == 1) {
-                    x = 4;
-                    y = 8;
-                } else {
-                    x = 4;
-                    y = 3;
-                }
-                break;
-            // Tallgrass
-            case 31:
-                if (blockMetaData == 1) {
-                    x = 7;
-                    y = 2;
-                } else if (blockMetaData == 2) {
-                    x = 8;
-                    y = 3;
-                }
-                break;
-            default:
-                return glm::vec2(float(xBlock[blockType])*divisor,-float(yBlock[blockType])*divisor);
-        }
-        return glm::vec2(x*divisor,-y*divisor);
-    }
-}
-
-uint8_t ChunkBuilder::getBlockModel(unsigned char blockType, int x, int y, int z) {
-    // Grass
-    if (blockType == 2) {
-        return 3;
-    // Cross Model
-    } else if (
-        (blockType == 6) ||
-        (blockType >= 30 && blockType <= 32) ||
-        (blockType >= 37 && blockType <= 40) ||
-        (blockType == 59) || (blockType == 83)) {
-        return 1;
-    // Fluids
-    } else if (blockType >= 8 && blockType <= 11 && !world->getBlock(x,y+1,z)->getBlockType()) { 
-        return 2;
-    // Torches
-    } else if (blockType == 50) {
-        return 4;
-    // Slab
-    } else if (blockType == 44) {
-        return 5;
-    // Stair
-    } else if (blockType == 53 || blockType == 67) {
-        return 6;
-    // Fence
-    } else if (blockType == 85) {
-        return 7;
-    // Snow Layer
-    } else if (blockType == 78) {
-        return 8;
-    }
-    // Normal Block
-    return 0;
 }
 
 glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert) {
@@ -195,13 +113,13 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
         for (float aOff = -0.5; aOff <= 0.5; aOff++) {
             for (float bOff = -0.5; bOff <= 0.5; bOff++) {
                 if (normal.x) {
-                    b = world->getBlock(int(x+normal.x*0.5f), int(y+aOff), int(z+bOff));
+                    b = world->getBlock(floor(x+normal.x*0.5f), floor(y+aOff), floor(z+bOff));
                 }
                 if (normal.y) {
-                    b = world->getBlock(int(x+aOff), int(y+normal.y*0.5f), int(z+bOff));
+                    b = world->getBlock(floor(x+aOff), floor(y+normal.y*0.5f), floor(z+bOff));
                 }
                 if (normal.z) {
-                    b = world->getBlock(int(x+aOff), int(y+bOff), int(z+normal.z*0.5f));
+                    b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z*0.5f));
                 }
                 if (b) {
                     // Air is transparent, so we can ignore it too
@@ -240,7 +158,7 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
 }
 
 
-uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, glm::vec3 normal) {
+uint8_t isVisible(World* world, int x, int y, int z, glm::vec3 normal) {
     try {
         // Calculate adjacent block coordinates
         int adjX = x + static_cast<int>(normal.x);
@@ -254,7 +172,7 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
         }
 
         // Check if the adjacent block is transparent
-        if (adjacentBlock->getTransparent()) {
+        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock()) {
             // Get the current block
             Block* currentBlock = world->getBlock(x, y, z);
             if (currentBlock == nullptr) {
@@ -275,6 +193,62 @@ uint8_t isVisible(World* world, int x, int y, int z, uint8_t blockModelIndex, gl
     } catch (const std::exception& e) {
         return 0;  // Not visible or error case
     }
+}
+
+std::vector<std::string> splitString(const std::string& str, char delimiter) {
+    std::vector<std::string> result;
+    std::stringstream ss(str);
+    std::string token;
+    
+    while (std::getline(ss, token, delimiter)) {
+        result.push_back(token);
+    }
+    
+    return result;
+}
+
+Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
+    std::string specialQuery = "";
+    if (blockType == 0) {
+        return nullptr;
+    }
+    // TODO: Figure out why this doesn't work!
+    if (blockType == 8 || blockType == 9) {
+        Block* b = world->getBlock(x,y+1,z);
+        if (b) {
+            // If there is a block of the same type ontop, we're below
+            // If other block type or nothing, we're above
+            if (b->getBlockType() == blockType) {
+                specialQuery = "Below";
+            } else {
+                specialQuery = "Above";
+            }
+        } else {
+            specialQuery = "Above";
+        }
+    }
+    std::vector<std::string> compareTo;
+    // Check Cached Mesh first to save time
+    if (cachedMesh != nullptr) {
+        compareTo = splitString(cachedMesh->name,'_');
+        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
+            return cachedMesh;
+        }
+    }
+    
+    // Search for the mesh
+    for (auto& m : model->meshes) {
+        compareTo = splitString(m.name,'_');
+        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
+            if (specialQuery == "") {
+                return &m;
+            }
+            if (specialQuery == compareTo[3]) {
+                return &m;
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
@@ -310,7 +284,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                     continue;
                 }
                 // If the block is fully surrounded, don't bother loading it
-                if (isSurrounded(x,y,z)) {
+                if (isSurrounded(x,y,z,blockType)) {
                     continue;
                 }
                 unsigned char blockMetaData = b->getBlockMetaData();
@@ -319,10 +293,14 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
 
                 //std::cout << std::to_string(b->getBlockType()) << std::endl;
-                uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
-                Mesh* blockModel = &model->meshes[blockModelIndex];
+                //uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
+                cachedMesh = getBlockMesh(blockType,x,y,z);
+                Mesh* blockModel = cachedMesh;
+                if (!blockModel) {
+                    continue;
+                }
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
-                    if (isVisible(world,x,y,z,blockModelIndex,blockModel->vertices[v].normal) && !b->getPartialBlock()) {
+                    if (isVisible(world,x,y,z,blockModel->vertices[v].normal) && !b->getPartialBlock()) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
@@ -337,7 +315,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                                 finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
-                                blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                                blockModel->vertices[v].textureUV
                             )
                         );
                     } else {
@@ -354,7 +332,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                                 finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
-                                blockModel->vertices[v].textureUV+getBlockTextureOffset(blockType,blockMetaData)
+                                blockModel->vertices[v].textureUV
                             )
                         );
                     }
