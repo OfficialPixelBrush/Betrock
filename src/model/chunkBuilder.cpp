@@ -187,25 +187,18 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
         float x = position.x;
         float y = position.y;
         float z = position.z;
-        // Calculate adjacent block coordinates
-        /*
-        int adjX = x + static_cast<int>(normal.x);
-        int adjY = y + static_cast<int>(normal.y);
-        int adjZ = z + static_cast<int>(normal.z);
-        */
         int light = 0;
         int relevantLights = 0;
         Block* b;
 
-        // Get the adjacent block
-        for (float aOff = -0.5; aOff <= 0.5; aOff+=1.0f) {
-            for (float bOff = -0.5; bOff <= 0.5; bOff+=1.0f) {
+        // Get the adjacent blocks along face
+        for (float aOff = -0.5; aOff <= 0.5; aOff++) {
+            for (float bOff = -0.5; bOff <= 0.5; bOff++) {
                 if (normal.x) {
                     b = world->getBlock(int(x+normal.x*0.5f), int(y+aOff), int(z+bOff));
                 }
                 if (normal.y) {
                     b = world->getBlock(int(x+aOff), int(y+normal.y*0.5f), int(z+bOff));
-                    //std::cout << "NormY: " << normal.y << std::endl;
                 }
                 if (normal.z) {
                     b = world->getBlock(int(x+aOff), int(y+bOff), int(z+normal.z*0.5f));
@@ -219,28 +212,6 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
                 }
             }
         }
-        /*
-        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
-        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }
-        b = world->getBlock((int)(x+0.5), (int)(y+0.5), (int)(z-0.5));
-        if (b) {
-            if (b->getBlockType() == 0 || b->getTransparent()) {
-                light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                relevantLights++;
-            }
-        }*/
 
         if (!relevantLights) {
             return lightArray[0];

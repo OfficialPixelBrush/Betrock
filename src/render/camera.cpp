@@ -81,20 +81,27 @@ void Camera::Inputs(GLFWwindow* window) {
 
     if (!firstClick) {
         double mouseX, mouseY;
-        glfwGetCursorPos(window,&mouseX, &mouseY);
+        glfwGetCursorPos(window, &mouseX, &mouseY);
 
         float rotationX = sensitivity * (float)(mouseY - ((float)height / 2.0)) / (float)height;
         float rotationY = sensitivity * (float)(mouseX - ((float)width / 2.0)) / (float)width;
 
-        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotationX), glm::normalize(glm::cross(Orientation, Up)));
+        // Calculate new orientation based on rotation around right axis (to avoid flipping upside down)
+        glm::vec3 right = glm::normalize(glm::cross(Orientation, Up));
+        glm::vec3 newOrientation = glm::rotate(Orientation, glm::radians(-rotationX), right);
 
-        if (!(glm::angle(newOrientation, Up) <= glm::radians(5.0f)) ||
-        (glm::angle(newOrientation, -Up) <= glm::radians(5.0f)))  {
+        // Prevent flipping by clamping the angle between newOrientation and the Up vector
+        float angleFromUp = glm::angle(newOrientation, Up);
+
+        // Allow rotation only if the angle from Up is between 10 degrees and 170 degrees
+        if (angleFromUp > glm::radians(10.0f) && angleFromUp < glm::radians(170.0f)) {
             Orientation = newOrientation;
         }
 
+        // Rotate around the Up vector (horizontal rotation)
         Orientation = glm::rotate(Orientation, glm::radians(-rotationY), Up);
 
-        glfwSetCursorPos(window, (width/2), (height/2));
+        // Reset the mouse cursor position to the center of the screen
+        glfwSetCursorPos(window, (width / 2), (height / 2));
     }
 }
