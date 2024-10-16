@@ -6,7 +6,11 @@
 const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
 bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
+    bool onlySurroundedBySame = false;
     try {
+        if (blockIndex >= 8 && blockIndex <= 11) {
+            onlySurroundedBySame = true;
+        }
         // Cache block pointers
         Block* blocks[6] = {
             world->getBlock(x - 1, y, z),
@@ -27,10 +31,19 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
             }
         }
 
+        if (onlySurroundedBySame) {
+            // Check if all adjacent blocks have a block type
+            for (int i = 0; i < 6; ++i) {
+                if (blocks[i]->getBlockType() == blockIndex) {
+                    return false;
+                }
+            }
+        } else {
         // Check if all adjacent blocks have a block type
-        for (int i = 0; i < 6; ++i) {
-            if (blocks[i]->getBlockType() == 0) {
-                return false;
+            for (int i = 0; i < 6; ++i) {
+                if (blocks[i]->getBlockType() == 0 || blocks[i]->getPartialBlock()) {
+                    return false;
+                }
             }
         }
 
@@ -158,41 +171,51 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
 }
 
 
-uint8_t isVisible(World* world, int x, int y, int z, glm::vec3 normal) {
-    try {
-        // Calculate adjacent block coordinates
-        int adjX = x + static_cast<int>(normal.x);
-        int adjY = y + static_cast<int>(normal.y);
-        int adjZ = z + static_cast<int>(normal.z);
+uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
+    if (currentBlock == nullptr) {
+        return true;
+    }
+    // Calculate adjacent block coordinates
+    int adjX = x + static_cast<int>(normal.x);
+    int adjY = y + static_cast<int>(normal.y);
+    int adjZ = z + static_cast<int>(normal.z);
 
-        // Get the adjacent block
-        Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
-        if (adjacentBlock == nullptr) {
-            throw std::runtime_error("Adjacent block pointer is null.");
+    // Get the adjacent block
+    Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
+    // No adjacent Block, not hidden
+    if (adjacentBlock == nullptr) {
+        return false;
+    }
+
+    // If it's the same as the checking block
+    if (currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11 || (!currentBlock->getPartialBlock() && currentBlock->getTransparent() && currentBlock->getBlockType() != 18)) {
+        if (adjacentBlock->getBlockType() == currentBlock->getBlockType() && currentBlock->getBlockMetaData() == 0) {
+            return true;
         }
-
-        // Check if the adjacent block is transparent
-        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock()) {
-            // Get the current block
-            Block* currentBlock = world->getBlock(x, y, z);
-            if (currentBlock == nullptr) {
-                throw std::runtime_error("Current block pointer is null.");
-            }
-
-            // Check if the current block is of a certain type and visible
-            if ((currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11) ||
-                currentBlock->getBlockType() == 20) {
-                if (adjacentBlock->getBlockType() == currentBlock->getBlockType()) {
-                    return adjacentBlock->getBlockType();
-                }
-            }
-            return 0;  // Not visible
+    } else {
+        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock() || currentBlock->getPartialBlock()) {
+            return false;
         } else {
             return adjacentBlock->getBlockType();
         }
-    } catch (const std::exception& e) {
-        return 0;  // Not visible or error case
     }
+    return false;
+    /*
+    // Check if the adjacent block is transparent
+    if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock()) {
+        // Get the current block
+        Block* currentBlock = world->getBlock(x, y, z);
+        if (currentBlock == nullptr) {
+            return false
+        }
+
+        // Check if the current block is of a certain type and visible
+        //if ((currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11) || currentBlock->getBlockType() == 20) {
+        //}
+        return 0;  // Not visible
+    } else {
+        return adjacentBlock->getBlockType();
+    }*/
 }
 
 std::vector<std::string> splitString(const std::string& str, char delimiter) {
@@ -208,9 +231,20 @@ std::vector<std::string> splitString(const std::string& str, char delimiter) {
 }
 
 Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
+
     std::string specialQuery = "";
     if (blockType == 0) {
         return nullptr;
+    }
+
+    // Bed
+    if (blockType == 26) {
+        // Check top-most bit to check if head of bed
+        if (blockMetaData & 0x08) {
+            specialQuery = "Head";
+        } else {
+            specialQuery = "End";
+        }
     }
 
     std::vector<std::string> compareTo;
@@ -227,7 +261,7 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
         compareTo = splitString(m.name,'_');
         if (blockType == std::stoi(compareTo[0])) {
             // TODO: Temp while some metadata situations aren't accounted for
-            if (blockType == 18 || blockType == 17 || blockType == 31) {
+            if (blockType == 18 || blockType == 17 || blockType == 31 || blockType == 50) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
                 } else {
@@ -294,7 +328,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                 }
                 glm::vec3 offset;
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
-                    if (isVisible(world,x,y,z,blockModel->vertices[v].normal) && !b->getPartialBlock()) {
+                    if (isHidden(world,x,y,z,b,blockModel->vertices[v].normal)) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);

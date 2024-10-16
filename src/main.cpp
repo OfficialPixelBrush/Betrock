@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "glacier";
+        worldName = "publicbeta";
         //return 1;
     } else {
         worldName = argv[1];
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.4", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.5", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -130,9 +130,9 @@ int main(int argc, char *argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Create a camera at 0,0,2
-    Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
+    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
     //Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));    // Draw Clear Color
-    //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9));
+    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9));
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
