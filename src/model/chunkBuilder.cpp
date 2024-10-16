@@ -212,21 +212,7 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
     if (blockType == 0) {
         return nullptr;
     }
-    // TODO: Figure out why this doesn't work!
-    if (blockType == 8 || blockType == 9) {
-        Block* b = world->getBlock(x,y+1,z);
-        if (b) {
-            // If there is a block of the same type ontop, we're below
-            // If other block type or nothing, we're above
-            if (b->getBlockType() == blockType) {
-                specialQuery = "Below";
-            } else {
-                specialQuery = "Above";
-            }
-        } else {
-            specialQuery = "Above";
-        }
-    }
+
     std::vector<std::string> compareTo;
     // Check Cached Mesh first to save time
     if (cachedMesh != nullptr) {
@@ -239,7 +225,16 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
     // Search for the mesh
     for (auto& m : model->meshes) {
         compareTo = splitString(m.name,'_');
-        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
+        if (blockType == std::stoi(compareTo[0])) {
+            // TODO: Temp while some metadata situations aren't accounted for
+            if (blockType == 18 || blockType == 17 || blockType == 31) {
+                if (blockMetaData == std::stoi(compareTo[1])) {
+                    return &m;
+                } else {
+                    continue;
+                }
+            }
+            
             if (specialQuery == "") {
                 return &m;
             }
@@ -248,7 +243,7 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
             }
         }
     }
-    return nullptr;
+    return &model->meshes[0];
 }
 
 std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
@@ -292,22 +287,59 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                 // Figure out the blocks coordinates in the world
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
 
-                //std::cout << std::to_string(b->getBlockType()) << std::endl;
-                //uint8_t blockModelIndex = getBlockModel(blockType, x,y,z);
-                cachedMesh = getBlockMesh(blockType,x,y,z);
+                cachedMesh = getBlockMesh(blockType,x,y,z,blockMetaData);
                 Mesh* blockModel = cachedMesh;
                 if (!blockModel) {
                     continue;
                 }
+                glm::vec3 offset;
                 for (uint v = 0; v < blockModel->vertices.size(); v++) {
                     if (isVisible(world,x,y,z,blockModel->vertices[v].normal) && !b->getPartialBlock()) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
-                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos);
-                    // TODO: Fix BlockLight
-                    // color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
-                    //std::cout << std::to_string(b->getBlockLight()) << std::endl;
+
+                    // Liquid change model
+                    // If we're dealing with the upper verts of  water or lava
+                    if (blockType >= 8 && blockType <= 11 && blockModel->vertices[v].position.y > 0.2f) {
+                        Block* wb = world->getBlock(x,y+1,z);
+                        // Offset liquid height based on metadata
+                        if (wb->getBlockType() != blockType) {
+                            switch(blockMetaData) {
+                                case 1:
+                                    offset = glm::vec3(0.0,-1.0+0.75 ,0.0);
+                                    break;
+                                case 2:
+                                    offset = glm::vec3(0.0,-1.0+0.75 ,0.0);
+                                    break;
+                                case 3:
+                                    offset = glm::vec3(0.0,-1.0+0.625,0.0);
+                                    break;
+                                case 4:
+                                    offset = glm::vec3(0.0,-1.0+0.5  ,0.0);
+                                    break;
+                                case 5:
+                                    offset = glm::vec3(0.0,-1.0+0.375,0.0);
+                                    break;
+                                case 6:
+                                    offset = glm::vec3(0.0,-1.0+0.25 ,0.0);
+                                    break;
+                                case 7:
+                                    offset = glm::vec3(0.0,-1.0+0.125,0.0);
+                                    break;
+                                default:
+                                    offset = glm::vec3(0.0,-(1.0/8.0),0.0);
+                                    break;
+                            }
+                        }
+                    } else {
+                        offset = glm::vec3(0.0,0.0,0.0);
+                    }
+
+                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos + offset);
+                    glm::vec2 finalUV = blockModel->vertices[v].textureUV;
+                    
+                    // Water in it's own thing
                     if (blockType == 8 || blockType == 9) {
                         color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
                         waterVertices.push_back(
@@ -315,7 +347,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                                 finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
-                                blockModel->vertices[v].textureUV
+                                finalUV
                             )
                         );
                     } else {
@@ -332,7 +364,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
                                 finalPos,
                                 blockModel->vertices[v].normal,
                                 color,
-                                blockModel->vertices[v].textureUV
+                                finalUV
                             )
                         );
                     }

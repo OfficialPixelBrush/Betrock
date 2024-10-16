@@ -11,6 +11,7 @@ class Block {
         uint8_t metaData;
         bool lightSource;
         bool partialBlock;
+        bool nonSolidBlock;
         Block(uint8_t blockType = 0, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0);
 
         void setBlockType(uint8_t pBlockType) {
@@ -41,15 +42,21 @@ class Block {
             return skyLightLevel;
         }
 
+        uint8_t getNonSolid() {
+            return nonSolidBlock;
+        }
+
         std::string getFacing() {
             /* True for:
              * - Torches (50)
+             * - Furnace (61)
+             * - Burning Furnace (62)
              * - Ladders (65)
              * - Redstone Torches (75/76)
              * - Pumpkins (86)
              * - Jack o'Lantern (91)
             */
-            if (blockType == 50 || blockType == 65 || blockType == 75 || blockType == 76 || blockType == 86 || blockType == 91) {
+            if (blockType == 50 || blockType == 61 ||blockType == 62 || blockType == 65 || blockType == 75 || blockType == 76 || blockType == 86 || blockType == 91) {
                 switch(metaData) {
                     case 1:
                         return "South";

@@ -1,6 +1,7 @@
 #include "config.h"
 
 float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
+//float skyColor [] = {0.0, 0.0, 0.0, 1.0f};
 
 bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPosition) {
     // Current chunk coordinates
@@ -21,7 +22,7 @@ struct BlockHitResult {
     glm::vec3 hitNormal;  // The normal of the face that was hit
 };
 
-BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world) {
+BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world, bool checkForSolidity = false) {
     glm::ivec3 currentBlock = glm::floor(origin);  // Start from the block containing the origin
 
     glm::vec3 deltaDist = glm::abs(glm::vec3(1.0f) / direction);  // How far to move in each axis
@@ -49,8 +50,15 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
         if (b != nullptr) {
             // We can't hit air!
             if (b->getBlockType() != 0) {
-                hitPos = origin + direction * rayLength;  // Calculate the exact hit position
-                return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
+                if (checkForSolidity) {
+                    if (!b->getNonSolid()) {
+                        hitPos = origin + direction * rayLength;  // Calculate the exact hit position
+                        return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
+                    }
+                } else {
+                    hitPos = origin + direction * rayLength;  // Calculate the exact hit position
+                    return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
+                }
             }
         }
 
@@ -77,13 +85,12 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
     return {false, {0, 0, 0}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 }
 
-
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "publicbeta";
+        worldName = "glacier";
         //return 1;
     } else {
         worldName = argv[1];
@@ -99,7 +106,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.3", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.4", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -123,9 +130,9 @@ int main(int argc, char *argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Create a camera at 0,0,2
-    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
+    Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
     //Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));    // Draw Clear Color
-    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 222), glm::vec3(0.0, 0.0, 0.9));
+    //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9));
     glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
@@ -158,6 +165,7 @@ int main(int argc, char *argv[]) {
     bool updateWhenMoving = false;
     bool smoothLighting = true;
     bool manualChunkUpdateTrigger = true;
+    bool gravity = false;
 
     double prevTime = glfwGetTime();
     double fpsTime = 0;
@@ -210,6 +218,7 @@ int main(int argc, char *argv[]) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        debugText = "Debug Text:\n";
 
         // Sort Chunks
         std::sort(chunkMeshes.begin(), chunkMeshes.end(),
@@ -231,6 +240,31 @@ int main(int argc, char *argv[]) {
             chunkMeshes[i]->Draw(shaderProgram, camera);
         }
 
+        // Debug Raycast to looked-at Block
+        float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
+        BlockHitResult hit = raycast(camera.Position, camera.Orientation, maxDistance, world);
+
+        if (!hit.hit) {
+            debugText += "No block hit.\n";
+        } else {
+            debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
+            Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+            if (b) {
+                debugText += "Name: " + b->getName() + "\n";
+                debugText += "Id: " + std::to_string(b->blockType) + "\n";
+                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
+                debugText += "Facing: " + b->getFacing() + "\n";
+                debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
+                debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
+                debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+            }
+            Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
+            if (bn) {
+                debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
+                debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+            }
+        }
+
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
@@ -248,34 +282,18 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Polygon", &polygon);
         ImGui::Checkbox("Update when Moving", &updateWhenMoving);
         ImGui::Checkbox("Smooth Lighting", &smoothLighting);
+        ImGui::Checkbox("Gravity", &gravity);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
-        //if (ImGui::Button("Get Block Info")) {
-            float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
-            BlockHitResult hit = raycast(camera.Position, camera.Orientation, maxDistance, world);
-            debugText = "Debug Text:\n";
 
-            if (!hit.hit) {
-                debugText += "No block hit.\n";
-            } else {
-                debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
-                Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
-                if (b) {
-                    debugText += "Name: " + b->getName() + "\n";
-                    debugText += "Id: " + std::to_string(b->blockType) + "\n";
-                    debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                    debugText += "Facing: " + b->getFacing() + "\n";
-                    debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
-                    debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
-                    debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
-                }
-                Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
-                if (bn) {
-                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
-                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
-                }
-            }
-        //}
+        hit = raycast(camera.Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
+        Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+
+        if (b && gravity) {
+            camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(hit.blockPos);
+            camera.Position.y = hit.blockPos.y + 2.0;
+        }
+
         if (ImGui::Button("Clear Chunks")) {
             // Clear pointers in world->chunks if needed
             for (Chunk* chunk : world->chunks) {

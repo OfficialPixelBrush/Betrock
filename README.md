@@ -28,12 +28,12 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 ## Progress
 ### Goals for Version 0.2.0
 - Visual Flair
-    - [ ] Fog
-    - [ ] Smooth Lighting
+    - [x] Fog
+    - [x] Smooth Lighting
 - Gameplay
     - [x] Chunk Loading
         - [ ] Fix Chunk Loading Memory leak
-    - [ ] Dynamic Chunk Loading as one moves
+    - [x] Dynamic Chunk Loading as one moves
     - [ ] Gravity
     - [ ] Block Breaking
 - [ ] Windows Version

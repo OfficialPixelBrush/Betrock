@@ -31,7 +31,7 @@ void main()
     vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
 
     float distance = length(viewPosition.xyz);  // Distance from the camera
-    fogFactor = (distance - 45.0) / (50.0 - 45.0);  // Linear fog factor
+    fogFactor = (distance - 25.0) / (30.0 - 25.0);  // Linear fog factor
     fogFactor = clamp(fogFactor, 0.0, 1.0);       // Clamp between 0 and 1
 
     gl_Position = viewPosition;
