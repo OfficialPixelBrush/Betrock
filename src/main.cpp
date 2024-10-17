@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.5", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.6", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -166,6 +166,7 @@ int main(int argc, char *argv[]) {
     bool smoothLighting = true;
     bool manualChunkUpdateTrigger = true;
     bool gravity = false;
+    std::vector<Chunk*> toBeUpdated;
 
     double prevTime = glfwGetTime();
     double fpsTime = 0;
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
     int maxSkyLight = 15;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 3;
+    int renderDistance = 4;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
@@ -293,7 +294,7 @@ int main(int argc, char *argv[]) {
             camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(hit.blockPos);
             camera.Position.y = hit.blockPos.y + 2.0;
         }
-
+        
         if (ImGui::Button("Clear Chunks")) {
             // Clear pointers in world->chunks if needed
             for (Chunk* chunk : world->chunks) {
@@ -309,48 +310,47 @@ int main(int argc, char *argv[]) {
 
             manualChunkUpdateTrigger = true;
         }
+        
+        // Get list of chunks that're to be updated
         if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
             float x = camera.Position.x;
             float z = camera.Position.z;
-            std::vector<Chunk*> toBeUpdated = world->getChunksInRadius(int(x),int(z),renderDistance);
-            std::vector<ChunkMesh*> newChunkMeshes = cb.buildChunks(toBeUpdated,smoothLighting,maxSkyLight);
+            std::vector<Chunk*> toBeAdded = world->getChunksInRadius(int(x),int(z),renderDistance);
+            for (uint i = 0; i < toBeAdded.size(); i++) {
+                toBeUpdated.push_back(toBeAdded[i]);
+            }
+            toBeAdded.clear();
+            manualChunkUpdateTrigger = false;
+        }
+        
+        if (!toBeUpdated.empty()) {
+            Chunk* c = toBeUpdated.back();
 
-            // Delete existing chunks from chunkmesh if they're part of the new chunks
-            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end();) {
-                Chunk* existingChunk = (*it)->chunk;
-
-                // Check if the existing chunk is in the newChunkMeshes
-                bool found = false;
-                for (const auto& newChunkMesh : newChunkMeshes) {
-                    if (newChunkMesh->chunk == existingChunk) {
-                        found = true;
-                        break;
-                    }
+            // Iterate over chunkMeshes to find and delete the matching chunk
+            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
+                if (c == (*it)->chunk) {
+                    delete *it; // Delete the chunkMesh
+                    chunkMeshes.erase(it); // Safely remove it from the vector
+                    break;
                 }
-                // If found, delete the existing chunk and remove it from chunkMeshes
-                if (found) {
-                    delete *it;  // Free memory of the existing chunk mesh
-                    it = chunkMeshes.erase(it);  // Remove from the vector and advance iterator
-                } else {
-                    ++it;  // Advance the iterator without deleting
-                }
-                manualChunkUpdateTrigger = false;
             }
 
-            // Add new chunks to chunkmesh
-            for (uint i = 0; i < newChunkMeshes.size(); i++) {
-                chunkMeshes.push_back(newChunkMeshes[i]);
-            }
+            // Build a new chunk mesh and add it to the chunkMeshes
+            chunkMeshes.push_back(cb.buildChunk(c, smoothLighting, maxSkyLight));
 
-            newChunkMeshes.clear();
-            for (uint i = chunkMeshes.size()-1; i > 0; i--) {
-                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x,chunkMeshes[i]->chunk->z);
+            // Remove the chunk from the toBeUpdated list
+            toBeUpdated.pop_back();
+
+            // Backwards iteration to remove chunkMeshes with missing chunks
+            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
+                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
                 if (!chunk) {
-                    delete chunkMeshes[i];
-                    chunkMeshes.erase(chunkMeshes.begin() + i);
+                    delete chunkMeshes[i]; // Delete the chunkMesh
+                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
                 }
             }
         }
+
         ImGui::Text(debugText.c_str());
         ImGui::End();
 

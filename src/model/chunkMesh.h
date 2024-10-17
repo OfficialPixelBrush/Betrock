@@ -16,9 +16,9 @@ class ChunkMesh {
             }
             ~ChunkMesh() {
                 for (Mesh* mesh : meshes) {
-                    //std::cout << "Deleted " << mesh->name << " Mesh " << mesh << std::endl;
                     delete mesh;  // Free memory for each Mesh object
                 }
+                meshes.clear();
                 std::cout << "Deleted Chunk Mesh " << chunk->x << ", " << chunk-> z << std::endl;
             }
             void Remesh();

@@ -200,22 +200,6 @@ uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::ve
         }
     }
     return false;
-    /*
-    // Check if the adjacent block is transparent
-    if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock()) {
-        // Get the current block
-        Block* currentBlock = world->getBlock(x, y, z);
-        if (currentBlock == nullptr) {
-            return false
-        }
-
-        // Check if the current block is of a certain type and visible
-        //if ((currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11) || currentBlock->getBlockType() == 20) {
-        //}
-        return 0;  // Not visible
-    } else {
-        return adjacentBlock->getBlockType();
-    }*/
 }
 
 std::vector<std::string> splitString(const std::string& str, char delimiter) {

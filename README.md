@@ -32,9 +32,12 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
     - [x] Smooth Lighting
 - Gameplay
     - [x] Chunk Loading
+        - [x] Chunk Queue
+        - [ ] Fix Chunk Loading Crash
         - [ ] Fix Chunk Loading Memory leak
+        - [ ] Threaded Chunk Loading
     - [x] Dynamic Chunk Loading as one moves
-    - [ ] Gravity
+    - [x] Gravity
     - [ ] Block Breaking
 - [ ] Windows Version
       - stb causing issues here
