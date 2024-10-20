@@ -51,97 +51,97 @@ build cmake_object_order_depends_target_Betrock: phony || .
 
 build CMakeFiles/Betrock.dir/src/model/chunkBuilder.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/model/chunkBuilder.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/model/chunkBuilder.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/model
 
 build CMakeFiles/Betrock.dir/src/model/model.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/model/model.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/model/model.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/model
 
 build CMakeFiles/Betrock.dir/src/nbt/nbt.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/nbt/nbt.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/nbt/nbt.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/nbt
 
 build CMakeFiles/Betrock.dir/src/nbt/nbttag.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/nbt/nbttag.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/nbt/nbttag.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/nbt
 
 build CMakeFiles/Betrock.dir/src/render/shader.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/shader.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/shader.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/vao.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/vao.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/vao.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/vbo.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/vbo.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/vbo.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/ebo.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/ebo.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/ebo.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/texture.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/texture.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/texture.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/camera.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/camera.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/camera.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/render/mesh.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/render/mesh.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/render/mesh.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/render
 
 build CMakeFiles/Betrock.dir/src/world/world.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/world/world.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/world/world.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/world
 
 build CMakeFiles/Betrock.dir/src/world/regionLoader.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/world/regionLoader.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/world/regionLoader.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/world
 
 build CMakeFiles/Betrock.dir/src/world/region.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/world/region.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/world/region.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/world
 
 build CMakeFiles/Betrock.dir/src/world/chunk.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/world/chunk.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/world/chunk.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/world
 
 build CMakeFiles/Betrock.dir/src/world/block.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/world/block.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/world/block.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src/world
 
@@ -153,13 +153,13 @@ build CMakeFiles/Betrock.dir/src/external/glad.c.o: C_COMPILER__Betrock_unscanne
 
 build CMakeFiles/Betrock.dir/src/helper.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/helper.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/helper.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src
 
 build CMakeFiles/Betrock.dir/src/main.cpp.o: CXX_COMPILER__Betrock_unscanned_Debug /home/torben/GitHub/C$ C++/Betrock/src/main.cpp || cmake_object_order_depends_target_Betrock
   DEP_FILE = CMakeFiles/Betrock.dir/src/main.cpp.o.d
-  FLAGS = -g -std=gnu++20 -ggdb
+  FLAGS = -fsanitize=address -g -g -std=gnu++20 -ggdb
   OBJECT_DIR = CMakeFiles/Betrock.dir
   OBJECT_FILE_DIR = CMakeFiles/Betrock.dir/src
 
@@ -172,7 +172,7 @@ build CMakeFiles/Betrock.dir/src/main.cpp.o: CXX_COMPILER__Betrock_unscanned_Deb
 # Link the executable Betrock
 
 build Betrock: CXX_EXECUTABLE_LINKER__Betrock_Debug CMakeFiles/Betrock.dir/src/model/chunkBuilder.cpp.o CMakeFiles/Betrock.dir/src/model/model.cpp.o CMakeFiles/Betrock.dir/src/nbt/nbt.cpp.o CMakeFiles/Betrock.dir/src/nbt/nbttag.cpp.o CMakeFiles/Betrock.dir/src/render/shader.cpp.o CMakeFiles/Betrock.dir/src/render/vao.cpp.o CMakeFiles/Betrock.dir/src/render/vbo.cpp.o CMakeFiles/Betrock.dir/src/render/ebo.cpp.o CMakeFiles/Betrock.dir/src/render/texture.cpp.o CMakeFiles/Betrock.dir/src/render/camera.cpp.o CMakeFiles/Betrock.dir/src/render/mesh.cpp.o CMakeFiles/Betrock.dir/src/world/world.cpp.o CMakeFiles/Betrock.dir/src/world/regionLoader.cpp.o CMakeFiles/Betrock.dir/src/world/region.cpp.o CMakeFiles/Betrock.dir/src/world/chunk.cpp.o CMakeFiles/Betrock.dir/src/world/block.cpp.o CMakeFiles/Betrock.dir/src/external/glad.c.o CMakeFiles/Betrock.dir/src/helper.cpp.o CMakeFiles/Betrock.dir/src/main.cpp.o | /usr/lib/x86_64-linux-gnu/libglfw.so.3.3 /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so
-  FLAGS = -g
+  FLAGS = -fsanitize=address -g -g
   LINK_LIBRARIES = /usr/lib/x86_64-linux-gnu/libglfw.so.3.3  -ldeflate  -lstb  -limgui  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so
   OBJECT_DIR = CMakeFiles/Betrock.dir
   POST_BUILD = :

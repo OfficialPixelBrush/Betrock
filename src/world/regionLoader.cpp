@@ -25,7 +25,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 	// Read Compressed Data from Region File
 	char* compressedData = new char[length];
 	f.read(reinterpret_cast<char*>(compressedData), length);
-	size_t decompressedSize = 100000;
+	size_t decompressedSize = 1000000;
 	// Prepare array for Decompressed Data
     uint8_t* decompressedData = (uint8_t*)malloc(decompressedSize);
     if (!decompressedData) {
@@ -95,9 +95,7 @@ Chunk* regionLoader::decodeRegion(int chunkX, int chunkZ) {
 
 	// Extract Block Data
 	nbt nbtLoader;
-	TAG_Compound* chunkRoot = nbtLoader.loadNbt(nbtData, nbtLength);
-	nbtTag* entry = chunkRoot->getData(0);
-	auto* chunkLevel = dynamic_cast<TAG_Compound*>(entry);
+	auto* chunkLevel = dynamic_cast<TAG_Compound*>(nbtLoader.loadNbt(nbtData, nbtLength)->getData(0));
 	if (!chunkLevel) {
 		std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
 		//continue;

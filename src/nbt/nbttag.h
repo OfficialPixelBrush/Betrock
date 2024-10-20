@@ -87,19 +87,22 @@ class TAG_Double : public nbtTag {
 };
 
 class TAG_Byte_Array : public nbtTag {
-	public:
-		int32_t length;
-		int8_t* data;
-		TAG_Byte_Array(std::string pName, int32_t pLength, int8_t* pData) {
-			this->identifier = 7;
-			this->name = pName;
-			this->length = pLength;
-			this->data = pData;
-		}
+public:
+    int32_t length;
+    std::unique_ptr<int8_t[]> data;
 
-		int8_t* getData() {
-			return data;
-		}
+    TAG_Byte_Array(std::string pName, int32_t pLength, std::unique_ptr<int8_t[]> pData)
+        : nbtTag(), // Ensure you call the base class constructor if needed
+          length(pLength),
+          data(std::move(pData)) // Move the unique_ptr in the initialization list
+    {
+        this->identifier = 7;
+        this->name = std::move(pName); // Move the string for efficiency
+    }
+
+    int8_t* getData() {
+        return data.get(); // Return the raw pointer safely
+    }
 };
 
 class TAG_String : public nbtTag {

@@ -291,9 +291,12 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
             for (uint y = 0; y < 128; y++) {
                 // Get next block to process
                 Block* b = world->getBlock(x,y,z);
-                unsigned char blockType = b->getBlockType();
                 // Check if the block is air
-                if (!b || blockType == 0) {
+                if (!b || b == nullptr) {
+                    continue;
+                }
+                unsigned char blockType = b->getBlockType();
+                if (blockType == 0) {
                     continue;
                 }
                 // If the block is fully surrounded, don't bother loading it
@@ -356,6 +359,10 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
 
                     glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos + offset);
                     glm::vec2 finalUV = blockModel->vertices[v].textureUV;
+                    // Only affects the side
+                    if (blockModel->vertices[v].normal.y == 0) {
+                        finalUV.y = finalUV.y + (offset.y/16);
+                    }
                     
                     // Water in it's own thing
                     if (blockType == 8 || blockType == 9) {
@@ -406,7 +413,10 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
         }
     }
     std::vector<Mesh*> meshes;
+    std::cout << "Making meshes" << std::endl;
+    // TODO: Figure out why this segfaults under thread
     meshes.push_back(new Mesh("world", worldVertices, worldIndices, model->meshes[0].textures));
     meshes.push_back(new Mesh("water", waterVertices, waterIndices, model->meshes[0].textures));
+    std::cout << "Returning" << std::endl;
     return new ChunkMesh(chunk,meshes);
 }

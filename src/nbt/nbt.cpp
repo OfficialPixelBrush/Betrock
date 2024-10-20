@@ -7,98 +7,92 @@ std::string printDepth(uint depth) {
     }
     return result;
 }
-
 int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, uint depth = 0, uint8_t defaultTagType = 0) {
-    while (*index<length) {
-        nbtTag* tag = nullptr;
+    while (*index < length) {
+        std::unique_ptr<nbtTag> tag; // Use a unique_ptr for automatic memory management
         uint8_t tagType;
         std::string tagName = "";
-        // If no default paramaters have been provided, read them from the array
+
+        // Read the tag type and name
         if (!defaultTagType) {
             tagType = data[*index];
-            *index+=1;
+            *index += 1;
+
             // Handle TAG_End
             if (!tagType) {
                 return 0;
             }
+
             // Get Name of Tag
-            uint16_t nameLength = intReadArray(data,index,2);
+            uint16_t nameLength = intReadArray(data, index, 2);
             for (uint16_t nL = 0; nL < nameLength; nL++) {
-                tagName += data[*index+nL];
+                tagName += data[*index + nL];
             }
-            *index+=nameLength;
+            *index += nameLength;
         }
-        //std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName;
-        
+
         // Create each kind of Tag
         switch (tagType) {
             case 1:
-                tag = new TAG_Byte(tagName, intReadArray(data,index,1));
+                tag = std::make_unique<TAG_Byte>(tagName, intReadArray(data, index, 1));
                 break;
             case 2:
-                tag = new TAG_Short(tagName, intReadArray(data,index,2));
+                tag = std::make_unique<TAG_Short>(tagName, intReadArray(data, index, 2));
                 break;
             case 3:
-                tag = new TAG_Int(tagName, intReadArray(data,index,4));
+                tag = std::make_unique<TAG_Int>(tagName, intReadArray(data, index, 4));
                 break;
             case 4:
-                tag = new TAG_Long(tagName, intReadArray(data,index,8));
+                tag = std::make_unique<TAG_Long>(tagName, intReadArray(data, index, 8));
                 break;
             case 5:
-                tag = new TAG_Float(tagName, float(intReadArray(data,index,4)));
+                tag = std::make_unique<TAG_Float>(tagName, float(intReadArray(data, index, 4)));
                 break;
             case 6:
-                tag = new TAG_Double(tagName, double(intReadArray(data,index,8)));
+                tag = std::make_unique<TAG_Double>(tagName, double(intReadArray(data, index, 8)));
                 break;
             case 7: {
-                int32_t size = intReadArray(data,index, 4);
-                int8_t* arr = new int8_t[16*128*16];
-                //std::cout << " - " << std::to_string(size) << " Bytes";
+                int32_t size = intReadArray(data, index, 4);
+                auto arr = std::make_unique<int8_t[]>(size);
                 for (int32_t j = 0; j < size; j++) {
-                    arr[j] = data[*index+j];
+                    arr[j] = data[*index + j];
                 }
-                *index+=size;
-                tag = new TAG_Byte_Array(tagName, length, arr);
+                *index += size;
+                tag = std::make_unique<TAG_Byte_Array>(tagName, size, std::move(arr));
                 break;
             }
             case 8: {
-                uint16_t size = intReadArray(data,index, 2);
-                std::string tagString = "";
-                tag = new TAG_String(tagName, size, tagString);
+                uint16_t size = intReadArray(data, index, 2);
+                std::string tagString = ""; // This should be populated as needed
+                tag = std::make_unique<TAG_String>(tagName, size, tagString);
                 break;
             }
             case 9: {
-                uint8_t underlyingTagType = intReadArray(data,index, 1);
-                uint16_t size = intReadArray(data,index, 2);
-                tag = new TAG_List(tagName, underlyingTagType, size);
-                TAG_List* listTag = dynamic_cast<TAG_List*>(tag);
-                //std::cout << " - " << nbtIdentifierName(underlyingTagType) << std::endl;
-                recursiveNbt(listTag, data, *index+size, index, depth+1, underlyingTagType);
+                uint8_t underlyingTagType = intReadArray(data, index, 1);
+                uint16_t size = intReadArray(data, index, 2);
+                tag = std::make_unique<TAG_List>(tagName, underlyingTagType, size);
+                TAG_List* listTag = dynamic_cast<TAG_List*>(tag.get());
+                recursiveNbt(listTag, data, *index + size, index, depth + 1, underlyingTagType);
                 break;
             }
             case 10: {
-                tag = new TAG_Compound(tagName);
-                TAG_Compound* compoundTag = dynamic_cast<TAG_Compound*>(tag);
-                //std::cout << std::endl;
-                recursiveNbt(compoundTag, data, length, index, depth+1);
+                tag = std::make_unique<TAG_Compound>(tagName);
+                TAG_Compound* compoundTag = dynamic_cast<TAG_Compound*>(tag.get());
+                recursiveNbt(compoundTag, data, length, index, depth + 1);
                 break;
             }
             default:
-                std::string nbtTagName = nbtIdentifierName(tagType);
-                if (nbtTagName == "Unknown") {
-                    nbtTagName = std::to_string(tagType);
-                }
-                std::cerr << "Unknown or Unimplemented Tag " << nbtTagName << "!" << std::endl;
+                std::cerr << "Unknown or Unimplemented Tag!" << std::endl;
                 return 1;
         }
-        //std::cout << std::endl;
+
+        // Append the tag to upperTag (assuming it handles ownership correctly)
         if (auto* compoundTag = dynamic_cast<TAG_Compound*>(upperTag)) {
-            compoundTag->append(std::unique_ptr<nbtTag>(tag));
+            compoundTag->append(std::move(tag)); // Move the unique_ptr
         } else if (auto* listTag = dynamic_cast<TAG_List*>(upperTag)) {
-            listTag->append(std::unique_ptr<nbtTag>(tag));
+            listTag->append(std::move(tag)); // Move the unique_ptr
         } else {
             std::cerr << "Error: upperTag is neither a TAG_Compound nor a TAG_List!" << std::endl;
-            delete tag;
             return 1;
         }
     }

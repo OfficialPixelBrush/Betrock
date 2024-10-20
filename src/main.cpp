@@ -22,6 +22,8 @@ struct BlockHitResult {
     glm::vec3 hitNormal;  // The normal of the face that was hit
 };
 
+std::vector<ChunkMesh*> chunkMeshes;
+
 BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world, bool checkForSolidity = false) {
     glm::ivec3 currentBlock = glm::floor(origin);  // Start from the block containing the origin
 
@@ -106,7 +108,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.6", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.7", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -174,11 +176,10 @@ int main(int argc, char *argv[]) {
     int maxSkyLight = 15;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 4;
+    int renderDistance = 3;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
-    std::vector<ChunkMesh*> chunkMeshes;
     std::string debugText = "Debug Text:\n";
 
     // Main while loop
@@ -236,7 +237,6 @@ int main(int argc, char *argv[]) {
                 return false;
             }
         });
-
         for (uint i = 0; i < chunkMeshes.size(); i++) {
             chunkMeshes[i]->Draw(shaderProgram, camera);
         }
@@ -322,7 +322,6 @@ int main(int argc, char *argv[]) {
             toBeAdded.clear();
             manualChunkUpdateTrigger = false;
         }
-        
         if (!toBeUpdated.empty()) {
             Chunk* c = toBeUpdated.back();
 
@@ -336,7 +335,8 @@ int main(int argc, char *argv[]) {
             }
 
             // Build a new chunk mesh and add it to the chunkMeshes
-            chunkMeshes.push_back(cb.buildChunk(c, smoothLighting, maxSkyLight));
+            std::cout << toBeUpdated.size() << std::endl;
+            chunkMeshes.push_back(cb.buildChunk(c, true, 15));
 
             // Remove the chunk from the toBeUpdated list
             toBeUpdated.pop_back();
