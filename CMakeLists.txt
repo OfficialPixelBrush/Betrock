@@ -56,7 +56,6 @@ else()
     # Apply AddressSanitizer to all build types
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
     set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
-
     target_link_libraries(
         Betrock
         glfw

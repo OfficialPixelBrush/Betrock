@@ -25,7 +25,9 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 	// Read Compressed Data from Region File
 	char* compressedData = new char[length];
 	f.read(reinterpret_cast<char*>(compressedData), length);
+	// Issue was caused by too small decompressed size guess
 	size_t decompressedSize = 1000000;
+	
 	// Prepare array for Decompressed Data
     uint8_t* decompressedData = (uint8_t*)malloc(decompressedSize);
     if (!decompressedData) {

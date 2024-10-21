@@ -5,13 +5,14 @@
 #include "../render/mesh.h"
 #include "../model/model.h"
 #include "chunkMesh.h"
+#include "dummyMesh.h"
 #include <algorithm>
 
 class ChunkBuilder {
     public:
         ChunkBuilder(Model* model, World* world);
-        std::vector<ChunkMesh*> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight = 15);
-        ChunkMesh* buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight = 15);
+        std::vector<DummyMesh> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight = 15);
+        DummyMesh buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight = 15);
     private:
         Mesh* cachedMesh = nullptr;
         Model* model;

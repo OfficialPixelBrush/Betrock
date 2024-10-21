@@ -1,8 +1,12 @@
 #include "mesh.h"
 
 Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures) {
-    if (vertices.empty() || indices.empty()) {
-        std::cout << "Missing Vertices or Indices!" << std::endl;
+    if (vertices.empty() && indices.empty()) {
+        std::cout << "Missing Vertices and Indices!" << std::endl;
+    } else if (vertices.empty()) {
+        std::cout << "Missing Vertices" << std::endl;
+    } else if (indices.empty()) {
+        std::cout << "Missing Indices!" << std::endl;
     }
     Mesh::name = pName;
     Mesh::vertices = vertices;

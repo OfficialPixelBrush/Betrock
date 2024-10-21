@@ -20,28 +20,33 @@ void Camera::Matrix(Shader& shader, const char* uniform) {
     glUniformMatrix4fv(glGetUniformLocation(shader.Id, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+void Camera::setDelta(double delta) {
+    Camera::delta = delta;
+}
+
 
 void Camera::Inputs(GLFWwindow* window) {
+    float tSpeed = speed * delta;
     // WASD
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        Position += speed * Orientation;
+        Position += tSpeed * Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        Position += speed * -glm::normalize(glm::cross(Orientation, Up));
+        Position += tSpeed * -glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        Position += speed * -Orientation;
+        Position += tSpeed * -Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        Position += speed * glm::normalize(glm::cross(Orientation, Up));
+        Position += tSpeed * glm::normalize(glm::cross(Orientation, Up));
     }
     // Going up
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        Position += speed * Up;
+        Position += tSpeed * Up;
     }
     // Going down
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        Position += speed * -Up;
+        Position += tSpeed * -Up;
     }
     
     // 0 to Reset Speed
