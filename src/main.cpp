@@ -23,6 +23,45 @@ struct BlockHitResult {
 };
 
 std::vector<ChunkMesh*> chunkMeshes;
+std::mutex chunkMeshesMutex;
+std::vector<DummyMesh> meshBuildQueue;
+
+void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdated) {
+    ChunkBuilder cb(blockModel, world);
+    std::cout << "BuildChunk Thread lives!" << std::endl;
+    while (true) {
+        if (!toBeUpdated.empty()) {
+            std::lock_guard<std::mutex> lock(chunkMeshesMutex);
+            Chunk* c = toBeUpdated.back();
+
+            // Iterate over chunkMeshes to find and delete the matching chunk
+            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
+                if (c == (*it)->chunk) {
+                    //delete *it; // Delete the chunkMesh
+                    chunkMeshes.erase(it); // Safely remove it from the vector
+                    break;
+                }
+            }
+
+            // Build a new chunk mesh and add it to the chunkMeshes
+            //std::cout << toBeUpdated.size() << std::endl;
+            meshBuildQueue.push_back(cb.buildChunk(c, true, 15));
+
+            // Remove the chunk from the toBeUpdated list
+            toBeUpdated.pop_back();
+
+            // Backwards iteration to remove chunkMeshes with missing chunks
+            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
+                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
+                if (!chunk) {
+                    delete chunkMeshes[i]; // Delete the chunkMesh
+                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
+                }
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
 
 BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world, bool checkForSolidity = false) {
     glm::ivec3 currentBlock = glm::floor(origin);  // Start from the block containing the origin
@@ -108,7 +147,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.7", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.8", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -146,12 +185,10 @@ int main(int argc, char *argv[]) {
     glFrontFace(GL_CCW);
 
     // Load Blockmodel
-    Model blockModel("models/models.obj");
+    Model* blockModel = new Model("models/models.obj");
 
     worldName = "saves/" + worldName;
     World* world = new World(worldName);
-
-    ChunkBuilder cb(&blockModel, world);
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -176,11 +213,14 @@ int main(int argc, char *argv[]) {
     int maxSkyLight = 15;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 3;
+    int renderDistance = 5;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
     std::string debugText = "Debug Text:\n";
+    std::vector<Texture> tex = blockModel->meshes[0].textures;
+    std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(toBeUpdated));
+
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -222,21 +262,58 @@ int main(int argc, char *argv[]) {
         ImGui::NewFrame();
         debugText = "Debug Text:\n";
 
-        // Sort Chunks
-        std::sort(chunkMeshes.begin(), chunkMeshes.end(),
-        [&camera](const auto& a, const auto& b) {
-            if (a->meshes[1]->name == "water") {
-                // Assuming each chunkMesh has a method getPosition() that returns a glm::vec3
-                glm::vec2 aChunkPosition = glm::vec2(a->chunk->x*16+8,a->chunk->z*16+8);
-                glm::vec2 bChunkPosition = glm::vec2(b->chunk->x*16+8,b->chunk->z*16+8);
-                glm::vec2 cameraXZ = glm::vec2(camera.Position.x,camera.Position.z);
-                float distA = glm::length2(aChunkPosition - cameraXZ);
-                float distB = glm::length2(bChunkPosition - cameraXZ);
-                return distA > distB;
-            } else {
-                return false;
+        std::unique_lock<std::mutex> lock(chunkMeshesMutex, std::try_to_lock);
+        // TODO: Fix chunks corrupting
+        if (lock.owns_lock()) {
+            if (!meshBuildQueue.empty()) {
+                DummyMesh mesh = meshBuildQueue.back();
+                std::vector<Mesh*> meshes;
+                if (!mesh.vertices.empty() && !mesh.indices.empty()) {
+                    meshes.push_back(new Mesh("world", mesh.vertices, mesh.indices, tex));
+                }
+                if (!mesh.waterVertices.empty() && !mesh.waterIndices.empty()) {
+                    meshes.push_back(new Mesh("water", mesh.waterVertices, mesh.waterIndices, tex));
+                }
+                ChunkMesh* cm = new ChunkMesh(mesh.chunk, meshes);
+                chunkMeshes.push_back(cm);
+                meshBuildQueue.pop_back();
             }
-        });
+
+            // Sort Chunks with improved precision
+            std::sort(chunkMeshes.begin(), chunkMeshes.end(),
+                [&camera](const auto& a, const auto& b) {
+                    // Only compare if the second mesh is "water" for both chunks
+                    if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
+                        b->meshes.size() > 1 && b->meshes[1]->name == "water") {
+
+                        // Calculate chunk center positions
+                        glm::vec2 aChunkPosition = glm::vec2(a->chunk->x * 16 + 8, a->chunk->z * 16 + 8);
+                        glm::vec2 bChunkPosition = glm::vec2(b->chunk->x * 16 + 8, b->chunk->z * 16 + 8);
+                        glm::vec2 cameraXZ = glm::vec2(camera.Position.x, camera.Position.z);
+
+                        // Calculate squared distances from the camera
+                        float distA = glm::length2(aChunkPosition - cameraXZ);
+                        float distB = glm::length2(bChunkPosition - cameraXZ);
+
+                        // Primary sorting condition: Compare distances (larger distance comes first)
+                        if (std::abs(distA - distB) > 1e-4f) {  // Add epsilon tolerance to avoid precision issues
+                            return distA > distB;
+                        }
+
+                        // Secondary sorting condition: Compare chunk x positions as tie-breaker
+                        if (a->chunk->x != b->chunk->x) {
+                            return a->chunk->x > b->chunk->x;
+                        }
+
+                        // Final tie-breaker: Compare chunk z positions
+                        return a->chunk->z > b->chunk->z;
+                    }
+
+                    // If one or both chunks don't have water, maintain original order
+                    return false;
+                });
+        }
+
         for (uint i = 0; i < chunkMeshes.size(); i++) {
             chunkMeshes[i]->Draw(shaderProgram, camera);
         }
@@ -293,6 +370,7 @@ int main(int argc, char *argv[]) {
         if (b && gravity) {
             camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(hit.blockPos);
             camera.Position.y = hit.blockPos.y + 2.0;
+            //camera.Speed = 4.317;
         }
         
         if (ImGui::Button("Clear Chunks")) {
@@ -322,34 +400,6 @@ int main(int argc, char *argv[]) {
             toBeAdded.clear();
             manualChunkUpdateTrigger = false;
         }
-        if (!toBeUpdated.empty()) {
-            Chunk* c = toBeUpdated.back();
-
-            // Iterate over chunkMeshes to find and delete the matching chunk
-            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
-                if (c == (*it)->chunk) {
-                    delete *it; // Delete the chunkMesh
-                    chunkMeshes.erase(it); // Safely remove it from the vector
-                    break;
-                }
-            }
-
-            // Build a new chunk mesh and add it to the chunkMeshes
-            std::cout << toBeUpdated.size() << std::endl;
-            chunkMeshes.push_back(cb.buildChunk(c, true, 15));
-
-            // Remove the chunk from the toBeUpdated list
-            toBeUpdated.pop_back();
-
-            // Backwards iteration to remove chunkMeshes with missing chunks
-            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
-                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
-                if (!chunk) {
-                    delete chunkMeshes[i]; // Delete the chunkMesh
-                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
-                }
-            }
-        }
 
         ImGui::Text(debugText.c_str());
         ImGui::End();
@@ -363,6 +413,7 @@ int main(int argc, char *argv[]) {
         glfwPollEvents();
         fpsTime = (glfwGetTime() - prevTime)*1000;
         prevTime = glfwGetTime();
+        camera.setDelta(fpsTime);
         previousPosition = camera.Position;
         previousRenderedChunks = world->chunks.size();
      }

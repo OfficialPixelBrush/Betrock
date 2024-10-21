@@ -33,9 +33,9 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 - Gameplay
     - [x] Chunk Loading
         - [x] Chunk Queue
-        - [ ] Fix Chunk Loading Crash
+        - [x] Fix Chunk Loading Crash
         - [ ] Fix Chunk Loading Memory leak
-        - [ ] Threaded Chunk Loading
+        - [x]  Threaded Chunk Loading
     - [x] Dynamic Chunk Loading as one moves
     - [x] Gravity
     - [ ] Block Breaking

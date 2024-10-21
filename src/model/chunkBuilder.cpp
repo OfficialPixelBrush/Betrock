@@ -264,24 +264,21 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
     return &model->meshes[0];
 }
 
-std::vector<ChunkMesh*> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
-    std::vector<ChunkMesh*> meshes;
+std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
+    std::vector<DummyMesh> meshes;
     for (auto c : chunks) {
         meshes.push_back(buildChunk(c,smoothLighting,maxSkyLight));
     }
     return meshes;
 }
 
-ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
+DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
 
     std::vector<Vertex> waterVertices;
     std::vector<GLuint> waterIndices;
 
-    if (chunk == nullptr) {
-        return nullptr;
-    }
     int chunkX = chunk->x*16;
     int chunkZ = chunk->z*16;
 
@@ -412,11 +409,7 @@ ChunkMesh* ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t m
             }
         }
     }
-    std::vector<Mesh*> meshes;
-    std::cout << "Making meshes" << std::endl;
-    // TODO: Figure out why this segfaults under thread
-    meshes.push_back(new Mesh("world", worldVertices, worldIndices, model->meshes[0].textures));
-    meshes.push_back(new Mesh("water", waterVertices, waterIndices, model->meshes[0].textures));
-    std::cout << "Returning" << std::endl;
-    return new ChunkMesh(chunk,meshes);
+
+    return DummyMesh(chunk, std::to_string(chunkX) + "_" + std::to_string(chunkZ),
+        worldVertices, worldIndices, waterVertices, waterIndices);
 }
