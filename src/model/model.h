@@ -1,5 +1,5 @@
 #pragma once
-#include "../external/json.h"
+#include "../include/json.h"
 #include "../render/mesh.h"
 #include <fstream>
 #include <sstream>

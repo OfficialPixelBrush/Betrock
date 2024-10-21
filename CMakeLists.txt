@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.28.3)
+cmake_minimum_required(VERSION 3.16.0)
 cmake_policy(SET CMP0072 NEW)
 set (CMAKE_CXX_STANDARD 20)
 project(Betrock VERSION 0.1.0)
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
+include_directories(src/include)
 add_compile_options(
   "-ggdb"
 )
@@ -30,10 +31,17 @@ add_executable(
     src/world/region.cpp
     src/world/chunk.cpp
     src/world/block.cpp
-
-    src/external/glad.c
+    
     src/helper.cpp
     src/main.cpp
+
+    src/include/glad.c
+    src/include/imgui/imgui.cpp
+    src/include/imgui/imgui_draw.cpp
+    src/include/imgui/imgui_tables.cpp
+    src/include/imgui/imgui_widgets.cpp
+    src/include/imgui/backends/imgui_impl_glfw.cpp
+    src/include/imgui/backends/imgui_impl_opengl3.cpp
 )
 
 set(CMAKE_SYSTEM_NAME Linux)
@@ -50,7 +58,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         opengl32
         deflate
         stb
-        imgui
     )
 else()
     # Apply AddressSanitizer to all build types
@@ -62,6 +69,6 @@ else()
         OpenGL::GL
         deflate
         stb
-        imgui
+        ${CMAKE_DL_LIBS}
     )
 endif()

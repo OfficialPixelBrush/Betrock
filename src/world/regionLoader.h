@@ -3,7 +3,7 @@
 #include "../nbt/nbt.h"
 #include "../helper.h"
 #include <fstream>
-#include <gzip/decompress.hpp>
+#include "../include/decompress.hpp"
 #include <libdeflate.h>
 #include "chunk.h"
 #include "../compat.h"

@@ -1,3 +1,8 @@
+#pragma once
+#include "../world/chunk.h"
+#include "../render/mesh.h"
+#include "../model/model.h"
+
 class DummyMesh {
     public:
         std::string name;

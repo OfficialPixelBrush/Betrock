@@ -128,10 +128,24 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
 
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
+    // Define a buffer 
+    const size_t size = 1024; 
+    // Allocate a character array to store the directory path
+    char buffer[size];        
+    
+    // Call _getcwd to get the current working directory and store it in buffer
+    if (getcwd(buffer, size) != NULL) {
+        // print the current working directory
+        std::cout << "Current working directory: " << buffer << std::endl;
+    } 
+    else {
+        // If _getcwd returns NULL, print an error message
+        std::cerr << "Error getting current working directory" << std::endl;
+    }
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "publicbeta";
+        worldName = "saves/publicbeta/";
         //return 1;
     } else {
         worldName = argv[1];
@@ -164,7 +178,7 @@ int main(int argc, char *argv[]) {
     glViewport(0,0,windowWidth,windowHeight);
 
     // Creates Shader object using shaders default.vsh and .frag
-    Shader shaderProgram("../src/shader/default.vsh", "../src/shader/minecraft.fsh");
+    Shader shaderProgram("./src/external/shader/default.vsh", "./src/external/shader/minecraft.fsh");
     shaderProgram.Activate();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -185,9 +199,8 @@ int main(int argc, char *argv[]) {
     glFrontFace(GL_CCW);
 
     // Load Blockmodel
-    Model* blockModel = new Model("models/models.obj");
+    Model* blockModel = new Model("./src/external/models/models.obj");
 
-    worldName = "saves/" + worldName;
     World* world = new World(worldName);
 
     // ImGui Addition

@@ -1,5 +1,5 @@
 #pragma once
-#include <glad/glad.h>
+#include "../include/glad/glad.h"
 #include "vbo.h"
 #include "../compat.h"
 

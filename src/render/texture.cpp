@@ -1,6 +1,6 @@
 #include "texture.h"
 
-uint8_t missing[2*2*4] = {255,0,255,255,0,0,0,255,0,0,0,255,255,0,255,255};
+uint8_t missing[16] = {255,0,255,255,0,0,0,255,0,0,0,255,255,0,255,255};
 
 Texture::Texture(const char* imagePath, const char* textureType, GLuint slot) {
     type = textureType;
@@ -10,14 +10,33 @@ Texture::Texture(const char* imagePath, const char* textureType, GLuint slot) {
     stbi_set_flip_vertically_on_load(true);
     // Load given image file in
     uint8_t* bytes = stbi_load(imagePath, &imageWidth, &imageHeight, &numberOfColorChannels, 0);
-    // Handle missing textures
+    // Handle missing textures// Handle missing textures
     if (!bytes) {
         std::cerr << imagePath << " not found!" << std::endl;
         // Missing texture!
-        imageWidth = 2;
-        imageHeight = 2;
+        imageWidth = 32;
+        imageHeight = 32;
         numberOfColorChannels = 4;
-        bytes = missing;
+        bytes = (uint8_t*)malloc(imageWidth * imageHeight * numberOfColorChannels);
+
+        // Loop over each 2x2 block in the 32x32 texture
+        for (uint32_t y = 0; y < imageHeight; y++) {
+            for (uint32_t x = 0; x < imageWidth; x++) {
+                // Calculate the index in the 32x32 texture
+                uint32_t index = (y * imageWidth + x) * numberOfColorChannels;
+
+                // Calculate the corresponding pixel in the 2x2 texture
+                uint32_t smallX = x % 2;
+                uint32_t smallY = y % 2;
+                uint32_t smallIndex = (smallY * 2 + smallX) * numberOfColorChannels;
+
+                // Copy the pixel from the 2x2 texture
+                bytes[index + 0] = missing[smallIndex + 0]; // Red
+                bytes[index + 1] = missing[smallIndex + 1]; // Green
+                bytes[index + 2] = missing[smallIndex + 2]; // Blue
+                bytes[index + 3] = missing[smallIndex + 3]; // Alpha
+            }
+        }
     } else {
         success = true;
     }

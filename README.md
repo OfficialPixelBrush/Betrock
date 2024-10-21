@@ -4,6 +4,35 @@
 ## Screenshot
 ![Betrock Screenshot](images/image.png)
 
+## Build Instructions
+Install the required programs
+
+## Setup
+```bash
+# Getting utilities
+sudo apt install git cmake ninja-build g++
+# Getting libraries
+sudo apt install libgl1-mesa-dev libglfw3-dev libzip-dev libdeflate-dev libglm-dev libstb-dev
+
+# Setting up the repo
+git clone --recurse-submodules https://github.com/OfficialPixelBrush/Betrock.git
+cd Betrock
+rm -rf build
+mkdir build
+cmake -B build -S.
+```
+
+### Compilation
+```bash
+cmake --build "build" --config Debug --target all
+cp ./build/Betrock ./
+```
+
+### Running
+```bash
+./Betrock saves/glacier/
+```
+Tested on Linux Mint 22 and Ubuntu 20.04
 
 ## Background
 This project was an idea I had around the middle of 2023 but due to various factors, mainly me being busy with school and work, I was unable to realize it. As I'm unemployed right now, I figured I may as well get busy and learn some proper C++ and finally delve into OpenGL. This project is the result of that.
