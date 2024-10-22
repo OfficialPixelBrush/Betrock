@@ -120,6 +120,16 @@ void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdat
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
+
+void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, std::vector<Chunk*>& toBeUpdated) {
+    std::cout << "Get Chunk Render Distance Thread Called" << std::endl;
+    //std::lock_guard<std::mutex> lock(chunkMeshesMutex);
+    std::vector<Chunk*> toBeAdded = world->getChunksInRadius(x,z,renderDistance);
+    for (uint i = 0; i < toBeAdded.size(); i++) {
+        toBeUpdated.push_back(toBeAdded[i]);
+    }
+    toBeAdded.clear();
+}
 Camera* camPointer;
 
 // Callback function to handle window resizing
@@ -129,7 +139,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     std::cout << "Window resized to: " << width << "x" << height << std::endl;
     camPointer->updateResolution(width,height);
 }
-
 
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
@@ -158,6 +167,9 @@ int main(int argc, char *argv[]) {
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
     int windowHeight = 720;
+    int windowedWidth = windowWidth;
+    int windowedHeight = windowHeight;
+    int windowedX, windowedY;
     glfwInit();
 
     // Specify OpenGL Version and Feature-set
@@ -166,7 +178,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.10", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.11", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -194,12 +206,11 @@ int main(int argc, char *argv[]) {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
-    // Create a camera at 0,0,2
-    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
-    //Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));    // Draw Clear Color
-    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9));
+    // Create a camera
+    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
-    //glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
@@ -226,6 +237,8 @@ int main(int argc, char *argv[]) {
     ImGui_ImplOpenGL3_Init("#version 330");
 
     bool vsync = true;
+    bool fullscreen = false;
+    bool wasFullscreen = false;
     bool cullFace = true;
     bool polygon = false;
     bool updateWhenMoving = false;
@@ -245,7 +258,7 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 1;
+    int renderDistance = 8;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
@@ -376,6 +389,7 @@ int main(int argc, char *argv[]) {
         ImGui::Text("%s", camSpeed.c_str());
         ImGui::ColorEdit4("Sky Color", sky.skyColor);
         ImGui::Checkbox("Vsync", &vsync);
+        ImGui::Checkbox("Fullscreen", &fullscreen);
         ImGui::Checkbox("Backface Culling", &cullFace);
         ImGui::Checkbox("Polygon", &polygon);
         ImGui::Checkbox("Update when Moving", &updateWhenMoving);
@@ -383,10 +397,43 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Gravity", &gravity);
         ImGui::Checkbox("Collision", &collision);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
+        int fovTemp = 7;
+        ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
+        fieldOfView = float(fovTemp*10);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
+        std::string renderDistancePreset = "";
+        if (renderDistance==16) {
+            renderDistancePreset = "Far";
+        }
+        if (renderDistance==8) {
+            renderDistancePreset = "Normal";
+        }
+        if (renderDistance==4) {
+            renderDistancePreset = "Short";
+        }
+        if (renderDistance==2) {
+            renderDistancePreset = "Tiny";
+        }
+        ImGui::Text("%s", renderDistancePreset.c_str());
         ImGui::SliderInt("Time of Day",&timeOfDay, 1, 24000);
 
         ImGui::Checkbox("Render Chunks", &renderChunks);
+
+        if (fullscreen && !wasFullscreen) {
+            // Get the primary monitor and its video mode
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            // Save windowed mode position and size
+            glfwGetWindowPos(window, &windowedX, &windowedY);
+            glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
+
+            // Set the window to fullscreen on the primary monitor
+            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        } else if (wasFullscreen && !fullscreen) {
+            // Restore the window to windowed mode
+            glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedWidth, windowedHeight, 0);
+        }
 
         float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -410,14 +457,14 @@ int main(int argc, char *argv[]) {
                 //camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(groundHit.blockPos);
                 camera.Position.y = groundHit.blockPos.y + 2.8;
                 ground = true;
-                if (camera.Velocity.y < 0.0) {
+                if (camera.Velocity.y > 0.0) {
                     camera.Velocity.y = 0.0;
                 }
             }
             if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.2)) {
                 camera.Position.y = ceilingHit.blockPos.y - 0.2;
                 ceiling = false;
-                if (camera.Velocity.y > 0.0) {
+                if (camera.Velocity.y < 0.0) {
                     camera.Velocity.y = 0.0;
                 }
             }
@@ -475,13 +522,10 @@ int main(int argc, char *argv[]) {
         // Get list of chunks that're to be updated
         if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
             sky.UpdateFog(blockShader, renderDistance*16);
-            float x = camera.Position.x;
-            float z = camera.Position.z;
-            std::vector<Chunk*> toBeAdded = world->getChunksInRadius(int(x),int(z),renderDistance);
-            for (uint i = 0; i < toBeAdded.size(); i++) {
-                toBeUpdated.push_back(toBeAdded[i]);
-            }
-            toBeAdded.clear();
+            int x = int(camera.Position.x);
+            int z = int(camera.Position.z);
+            std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated));
+            chunkRadiusThread.detach();
             manualChunkUpdateTrigger = false;
         }
 
@@ -538,6 +582,7 @@ int main(int argc, char *argv[]) {
         camera.setDelta(fpsTime);
         previousPosition = camera.Position;
         previousRenderedChunks = world->chunks.size();
+        wasFullscreen = fullscreen;
      }
 
     // Clean-up

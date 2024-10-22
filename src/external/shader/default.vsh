@@ -34,7 +34,7 @@ void main()
     vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
 
     float distance = length(viewPosition.xyz);  // Distance from the camera
-    fogFactor = (distance - fogDistance) / ((fogDistance + 10) - fogDistance);  // Linear fog factor
+    fogFactor = (distance - fogDistance) / ((fogDistance + 20) - fogDistance);  // Linear fog factor
     fogFactor = clamp(fogFactor, 0.0, 1.0);  // Clamp between 0 and 1
 
     fogColor = externalFogColor;  // Use the dynamically set fog color

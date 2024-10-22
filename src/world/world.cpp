@@ -119,6 +119,20 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
         }
     }
 
+    // Sort newChunks by distance from the point (x, z)
+    std::sort(newChunks.begin(), newChunks.end(), [ix, iz](Chunk* a, Chunk* b) {
+        // Assuming Chunk has methods getX() and getZ() that return its coordinates
+        int ax = a->x;
+        int az = a->z;
+        int bx = b->x;
+        int bz = b->z;
+
+        // Calculate squared distance to avoid the cost of sqrt
+        int distA = (ax - ix) * (ax - ix) + (az - iz) * (az - iz);
+        int distB = (bx - ix) * (bx - ix) + (bz - iz) * (bz - iz);
+        return distA > distB;  // Sort in ascending order (closest first)
+    });
+
     // Clear old chunks if necessary
     chunks.clear();  // Clear the old chunks safely (assuming proper ownership elsewhere)
 
