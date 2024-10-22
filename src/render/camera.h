@@ -35,10 +35,12 @@ class Camera {
 
         // Used to define projection Matrix
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
+        void updateResolution(int pWidth, int pHeight);
         void Matrix(Shader& shader, const char* uniform);
 
         // Used to apply movement inputs to Camera
         void Inputs(GLFWwindow* window);
         void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
         void setDelta(double delta);
+        glm::mat4 GetViewMatrix();
 };

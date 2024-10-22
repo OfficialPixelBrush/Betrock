@@ -57,16 +57,21 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 ### Goals for Version 0.2.0
 - Visual Flair
     - [x] Fog
+        - [ ] Make fog act in world space, not view space!
     - [x] Smooth Lighting
+    - [ ] Ambient Occlusion
+    - [ ] Sky
+    - [ ] Biome Visuals
 - Gameplay
     - [x] Chunk Loading
         - [x] Chunk Queue
         - [x] Fix Chunk Loading Crash
         - [ ] Fix Chunk Loading Memory leak
+            - Caused by NBT Data
         - [x]  Threaded Chunk Loading
     - [x] Dynamic Chunk Loading as one moves
     - [x] Gravity
-    - [ ] Block Breaking
+    - [x] Smooth Movement
 - [ ] Windows Version
       - stb causing issues here
 

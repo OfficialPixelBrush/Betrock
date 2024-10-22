@@ -84,8 +84,8 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
     std::vector<Chunk*> newChunks;  // Use raw pointers if you don't want ownership
 
     // Collect new chunks
-    for (int cx = -radius; cx < radius; cx++) {
-        for (int cz = -radius; cz < radius; cz++) {
+    for (int cx = -radius; cx <= radius; cx++) {
+        for (int cz = -radius; cz <= radius; cz++) {
             bool newChunk = false;
             if (!findChunk(ix + cx, iz + cz)) {
                 newChunk = true;
@@ -100,21 +100,19 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
                     Chunk* sc = findChunk(ix + cx, iz + cz + 1);
                     Chunk* ec = findChunk(ix + cx - 1, iz + cz);
                     Chunk* wc = findChunk(ix + cx + 1, iz + cz);
-                    if (nc) {
+                    
+                    // Check and add neighboring chunks only if they are not already in newChunks
+                    if (nc && std::find(newChunks.begin(), newChunks.end(), nc) == newChunks.end()) {
                         newChunks.push_back(nc);
-                        //std::cout << "Neighborchunk North" << std::endl;
                     }
-                    if (sc) {
+                    if (sc && std::find(newChunks.begin(), newChunks.end(), sc) == newChunks.end()) {
                         newChunks.push_back(sc);
-                        //std::cout << "Neighborchunk South" << std::endl;
                     }
-                    if (ec) {
+                    if (ec && std::find(newChunks.begin(), newChunks.end(), ec) == newChunks.end()) {
                         newChunks.push_back(ec);
-                        //std::cout << "Neighborchunk East" << std::endl;
                     }
-                    if (wc) {
+                    if (wc && std::find(newChunks.begin(), newChunks.end(), wc) == newChunks.end()) {
                         newChunks.push_back(wc);
-                        //std::cout << "Neighborchunk West" << std::endl;
                     }
                 }
             }
@@ -123,11 +121,12 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
 
     // Clear old chunks if necessary
     chunks.clear();  // Clear the old chunks safely (assuming proper ownership elsewhere)
-    
+
     // If needed, manually reset chunks to ensure no memory leaks
     // Repopulate the old chunks with the new set of pointers
     for (Chunk* chunk : containedChunks) {
         chunks.push_back(chunk);  // Insert back into the main chunk vector
     }
+
     return newChunks;
 }

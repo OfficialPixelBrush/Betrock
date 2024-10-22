@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <algorithm>
 #include "chunk.h"
 #include "block.h"
 #include <cmath>

@@ -1,5 +1,7 @@
 #pragma once
 #include "global.h"
+#include "helper.h"
+#include "compat.h"
 #include <fstream>
 #include <math.h>
 #include <thread>
@@ -16,9 +18,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "render/mesh.h"
+#include "render/sky.h"
 #include "model/chunkBuilder.h"
 #include "model/model.h"
-#include "compat.h"
 
 #include "world/world.h"
 #include "world/block.h"

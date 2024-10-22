@@ -25,6 +25,7 @@ add_executable(
     src/render/texture.cpp
     src/render/camera.cpp
     src/render/mesh.cpp
+    src/render/sky.cpp
 
     src/world/world.cpp
     src/world/regionLoader.cpp

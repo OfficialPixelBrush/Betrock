@@ -14,12 +14,15 @@ out vec3 Normal;
 out vec3 color;
 out vec2 textureCoordinate;
 out float fogFactor;  // Pass fog factor to fragment shader
+out vec4 fogColor;
 
 uniform mat4 cameraMatrix;
 uniform mat4 model;
 uniform mat4 translation;
 uniform mat4 rotation;
 uniform mat4 scale;
+uniform float fogDistance;
+uniform vec4 externalFogColor;  // Dynamic fog color as a uniform
 
 void main()
 {
@@ -31,8 +34,10 @@ void main()
     vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
 
     float distance = length(viewPosition.xyz);  // Distance from the camera
-    fogFactor = (distance - 30.0) / (35.0 - 30.0);  // Linear fog factor
-    fogFactor = clamp(fogFactor, 0.0, 1.0);       // Clamp between 0 and 1
+    fogFactor = (distance - fogDistance) / ((fogDistance + 10) - fogDistance);  // Linear fog factor
+    fogFactor = clamp(fogFactor, 0.0, 1.0);  // Clamp between 0 and 1
+
+    fogColor = externalFogColor;  // Use the dynamically set fog color
 
     gl_Position = viewPosition;
 }

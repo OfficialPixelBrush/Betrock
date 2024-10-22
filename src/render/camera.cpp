@@ -16,6 +16,11 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
     cameraMatrix = projection * view;
 }
 
+void Camera::updateResolution(int pWidth, int pHeight) {
+    Camera::width = pWidth;
+    Camera::height = pHeight;
+}
+
 void Camera::Matrix(Shader& shader, const char* uniform) {
     glUniformMatrix4fv(glGetUniformLocation(shader.Id, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
@@ -24,6 +29,9 @@ void Camera::setDelta(double delta) {
     Camera::delta = delta;
 }
 
+glm::mat4 Camera::GetViewMatrix() {
+    return glm::lookAt(Position, Position + Orientation, Up);
+}
 
 void Camera::Inputs(GLFWwindow* window) {
     float tSpeed = speed * delta;

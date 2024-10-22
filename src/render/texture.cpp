@@ -98,7 +98,7 @@ Texture::Texture(const char* imagePath, const char* textureType, GLuint slot) {
     // Delete the Image from RAM
     if (success) {
         stbi_image_free(bytes);
-        std::cout << imagePath << " found!" << std::endl;
+        //std::cout << imagePath << " found!" << std::endl;
     }
     glBindTexture(GL_TEXTURE_2D, 0);
 }

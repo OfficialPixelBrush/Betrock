@@ -170,7 +170,7 @@ regionLoader::regionLoader(std::string pPath) {
 Chunk* regionLoader::loadRegion(int chunkX, int chunkZ) {
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
-	std::string regionfile = path + "/region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
+	std::string regionfile = path + "region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
 	f.open(regionfile, std::ios::binary);
 	if (!f) {
 		std::cerr << "Region File " << regionfile << " not found!" << std::endl;

@@ -48,7 +48,7 @@ Mesh::~Mesh() {
     vertices.clear();
     indices.clear();
     textures.clear();
-    std::cout << "Deleted " << name << " Mesh " << this << std::endl;
+    //std::cout << "Deleted " << name << " Mesh " << this << std::endl;
 }
 
 void Mesh::Draw(

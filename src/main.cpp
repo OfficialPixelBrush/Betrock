@@ -1,20 +1,6 @@
 #include "config.h"
 
-float skyColor [] = {0.439f, 0.651f, 0.918f, 1.0f};
-//float skyColor [] = {0.0, 0.0, 0.0, 1.0f};
-
-bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPosition) {
-    // Current chunk coordinates
-    int x = floor(cameraPosition.x / 16.0f);
-    int z = floor(cameraPosition.z / 16.0f);
-    int px = floor(previousPosition.x / 16.0f);
-    int pz = floor(previousPosition.z / 16.0f);    
-    return (px != x || pz != z) ;
-}
-#include <glm/glm.hpp>
-#include <cmath>
-#include <limits>
-
+// TODO: Yeet these elsewhere
 struct BlockHitResult {
     bool hit;
     glm::ivec3 blockPos;  // The coordinates of the block hit
@@ -22,45 +8,13 @@ struct BlockHitResult {
     glm::vec3 hitNormal;  // The normal of the face that was hit
 };
 
-std::vector<ChunkMesh*> chunkMeshes;
-std::mutex chunkMeshesMutex;
-std::vector<DummyMesh> meshBuildQueue;
-
-void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdated) {
-    ChunkBuilder cb(blockModel, world);
-    std::cout << "BuildChunk Thread lives!" << std::endl;
-    while (true) {
-        if (!toBeUpdated.empty()) {
-            std::lock_guard<std::mutex> lock(chunkMeshesMutex);
-            Chunk* c = toBeUpdated.back();
-
-            // Iterate over chunkMeshes to find and delete the matching chunk
-            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
-                if (c == (*it)->chunk) {
-                    //delete *it; // Delete the chunkMesh
-                    chunkMeshes.erase(it); // Safely remove it from the vector
-                    break;
-                }
-            }
-
-            // Build a new chunk mesh and add it to the chunkMeshes
-            //std::cout << toBeUpdated.size() << std::endl;
-            meshBuildQueue.push_back(cb.buildChunk(c, true, 15));
-
-            // Remove the chunk from the toBeUpdated list
-            toBeUpdated.pop_back();
-
-            // Backwards iteration to remove chunkMeshes with missing chunks
-            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
-                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
-                if (!chunk) {
-                    delete chunkMeshes[i]; // Delete the chunkMesh
-                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
-                }
-            }
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
+bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPosition) {
+    // Current chunk coordinates
+    int x  = int(floor(cameraPosition.x   / 16.0f)+0.5);
+    int z  = int(floor(cameraPosition.z   / 16.0f)+0.5);
+    int px = int(floor(previousPosition.x / 16.0f)+0.5);
+    int pz = int(floor(previousPosition.z / 16.0f)+0.5);    
+    return (px != x || pz != z) ;
 }
 
 BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world, bool checkForSolidity = false) {
@@ -126,6 +80,57 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
     return {false, {0, 0, 0}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 }
 
+std::vector<ChunkMesh*> chunkMeshes;
+std::mutex chunkMeshesMutex;
+std::vector<DummyMesh> meshBuildQueue;
+
+void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdated) {
+    ChunkBuilder cb(blockModel, world);
+    std::cout << "BuildChunk Thread lives!" << std::endl;
+    while (true) {
+        if (!toBeUpdated.empty()) {
+            std::lock_guard<std::mutex> lock(chunkMeshesMutex);
+            Chunk* c = toBeUpdated.back();
+
+            // Iterate over chunkMeshes to find and delete the matching chunk
+            for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
+                if (c == (*it)->chunk) {
+                    //delete *it; // Delete the chunkMesh
+                    chunkMeshes.erase(it); // Safely remove it from the vector
+                    break;
+                }
+            }
+
+            // Build a new chunk mesh and add it to the chunkMeshes
+            //std::cout << toBeUpdated.size() << std::endl;
+            meshBuildQueue.push_back(cb.buildChunk(c, true, 15));
+
+            // Remove the chunk from the toBeUpdated list
+            toBeUpdated.pop_back();
+
+            // Backwards iteration to remove chunkMeshes with missing chunks
+            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
+                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
+                if (!chunk) {
+                    delete chunkMeshes[i]; // Delete the chunkMesh
+                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
+                }
+            }
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+}
+Camera* camPointer;
+
+// Callback function to handle window resizing
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    // Adjust the viewport to the new window size
+    glViewport(0, 0, width, height);
+    std::cout << "Window resized to: " << width << "x" << height << std::endl;
+    camPointer->updateResolution(width,height);
+}
+
+
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
     // Define a buffer 
@@ -161,7 +166,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.9", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.10", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -173,13 +178,18 @@ int main(int argc, char *argv[]) {
     // Load GLAD so it configure OpenGL
     gladLoadGL();
 
+    // Set the framebuffer size callback to handle resizing
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
     // Define OpenGL Viewport
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
     glViewport(0,0,windowWidth,windowHeight);
 
     // Creates Shader object using shaders default.vsh and .frag
-    Shader shaderProgram("./src/external/shader/default.vsh", "./src/external/shader/minecraft.fsh");
-    shaderProgram.Activate();
+    Shader blockShader("./src/external/shader/default.vsh", "./src/external/shader/minecraft.fsh");
+    //Shader skyShader("./src/external/shader/sky.vsh", "./src/external/shader/sky.fsh");
+    blockShader.Activate();
+    //skyShader.Activate();
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
@@ -188,7 +198,8 @@ int main(int argc, char *argv[]) {
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f, 67.527435f, 90.234566f), glm::vec3(0.604827, -0.490525, 0.627354f));
     //Camera camera(windowWidth, windowHeight, glm::vec3(-12, 65.18, 0.88), glm::vec3(0.0, 0.0, 0.9));    // Draw Clear Color
     Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9));
-    glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
+    camPointer = &camera;
+    //glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
@@ -199,9 +210,12 @@ int main(int argc, char *argv[]) {
     glFrontFace(GL_CCW);
 
     // Load Blockmodel
+    Model* skyModel = new Model("./src/external/models/sky.obj");
     Model* blockModel = new Model("./src/external/models/models.obj");
 
-    World* world = new World(worldName);
+    Sky sky(skyModel);
+
+    World* world = new World(std::string(buffer) + "/" + worldName);
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -218,7 +232,9 @@ int main(int argc, char *argv[]) {
     bool smoothLighting = true;
     bool manualChunkUpdateTrigger = true;
     bool gravity = false;
-    bool collision = true;
+    bool collision = false;
+    bool renderChunks = true;
+    bool renderFog = true;
     bool raycastToBlock = true;
     std::vector<Chunk*> toBeUpdated;
 
@@ -226,9 +242,10 @@ int main(int argc, char *argv[]) {
     double fpsTime = 0;
     int previousRenderedChunks = 0;
     int maxSkyLight = 15;
+    int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 5;
+    int renderDistance = 1;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
@@ -262,11 +279,11 @@ int main(int argc, char *argv[]) {
         }
 
         // Draw
-        glClearColor(skyColor[0],skyColor[1],skyColor[2],skyColor[3]);
+        glClearColor(sky.skyColor[0],sky.skyColor[1],sky.skyColor[2],sky.skyColor[3]);
         // Clear the Back and Depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Handle inputs
+        // ---- INPUTS ----
         if (!io.WantCaptureMouse) {
             camera.Inputs(window);
         }
@@ -276,6 +293,16 @@ int main(int argc, char *argv[]) {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         debugText = "Debug Text:\n";
+
+        // ---- RENDERING ----
+
+        // Render Sky
+        // Disable Depth Test
+        //glDepthFunc(GL_LEQUAL);
+        // Bind and render skybox
+        //sky.Draw(skyShader, camera);
+        // Re-enable Depth Test
+        //glDepthFunc(GL_LESS);
 
         std::unique_lock<std::mutex> lock(chunkMeshesMutex, std::try_to_lock);
         // TODO: Fix chunks corrupting
@@ -329,8 +356,11 @@ int main(int argc, char *argv[]) {
                 });
         }
 
-        for (uint i = 0; i < chunkMeshes.size(); i++) {
-            chunkMeshes[i]->Draw(shaderProgram, camera);
+        // Render all chunks
+        if (renderChunks) {
+            for (uint i = 0; i < chunkMeshes.size(); i++) {
+                chunkMeshes[i]->Draw(blockShader, camera);
+            }
         }
 
         ImGui::Begin("Options");
@@ -339,12 +369,12 @@ int main(int argc, char *argv[]) {
         std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camera.Position.x/16))) + ", " + std::to_string(int(std::floor(camera.Position.z/16)));
         std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
-        ImGui::Text(msTime.c_str());
-        ImGui::Text(camPos.c_str());
-        ImGui::Text(chunkPos.c_str());
-        ImGui::Text(camRot.c_str());
-        ImGui::Text(camSpeed.c_str());
-        ImGui::ColorEdit4("Sky Color", skyColor);
+        ImGui::Text("%s", msTime.c_str());
+        ImGui::Text("%s", camPos.c_str());
+        ImGui::Text("%s", chunkPos.c_str());
+        ImGui::Text("%s", camRot.c_str());
+        ImGui::Text("%s", camSpeed.c_str());
+        ImGui::ColorEdit4("Sky Color", sky.skyColor);
         ImGui::Checkbox("Vsync", &vsync);
         ImGui::Checkbox("Backface Culling", &cullFace);
         ImGui::Checkbox("Polygon", &polygon);
@@ -354,6 +384,9 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Collision", &collision);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
+        ImGui::SliderInt("Time of Day",&timeOfDay, 1, 24000);
+
+        ImGui::Checkbox("Render Chunks", &renderChunks);
 
         float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -377,10 +410,16 @@ int main(int argc, char *argv[]) {
                 //camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(groundHit.blockPos);
                 camera.Position.y = groundHit.blockPos.y + 2.8;
                 ground = true;
+                if (camera.Velocity.y < 0.0) {
+                    camera.Velocity.y = 0.0;
+                }
             }
             if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.2)) {
                 camera.Position.y = ceilingHit.blockPos.y - 0.2;
                 ceiling = false;
+                if (camera.Velocity.y > 0.0) {
+                    camera.Velocity.y = 0.0;
+                }
             }
             if (ground && ceiling) {
                 camera.Position = previousPosition;
@@ -404,41 +443,38 @@ int main(int argc, char *argv[]) {
 
             if (northBlock && camera.Position.x > northHit.blockPos.x - 0.2) {
                 camera.Position.x = northHit.blockPos.x - 0.2;
+                if (camera.Velocity.x < 0.0) {
+                    camera.Velocity.x = 0.0;
+                }
             }
 
             if (southBlock && camera.Position.x < southHit.blockPos.x + 1.2) {
                 camera.Position.x = southHit.blockPos.x + 1.2;
+                if (camera.Velocity.x > 0.0) {
+                    camera.Velocity.x = 0.0;
+                }
             }
 
             if (eastBlock && camera.Position.z < eastHit.blockPos.z + 1.2) {
                 camera.Position.z = eastHit.blockPos.z + 1.2;
+                if (camera.Velocity.z > 0.0) {
+                    camera.Velocity.z = 0.0;
+                }
             }
 
             if (westBlock && camera.Position.z > westHit.blockPos.z - 0.2) {
                 camera.Position.z = westHit.blockPos.z - 0.2;
+                if (camera.Velocity.z < 0.0) {
+                    camera.Velocity.z = 0.0;
+                }
             }
             
             //camera.Speed = 4.317;
         }
         
-        if (ImGui::Button("Clear Chunks")) {
-            // Clear pointers in world->chunks if needed
-            for (Chunk* chunk : world->chunks) {
-                delete chunk;  // Delete each chunk pointer to avoid memory leaks
-            }
-            world->chunks.clear();  // Now clear the vector
-
-            // Clear chunkMeshes
-            for (uint i = 0; i < chunkMeshes.size(); i++) {
-                delete chunkMeshes[i];  // Delete each mesh
-            }
-            chunkMeshes.clear();  // Clear the vector
-
-            manualChunkUpdateTrigger = true;
-        }
-        
         // Get list of chunks that're to be updated
         if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
+            sky.UpdateFog(blockShader, renderDistance*16);
             float x = camera.Position.x;
             float z = camera.Position.z;
             std::vector<Chunk*> toBeAdded = world->getChunksInRadius(int(x),int(z),renderDistance);
@@ -487,7 +523,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        ImGui::Text(debugText.c_str());
+        ImGui::Text("%s", debugText.c_str());
         ImGui::End();
 
         ImGui::Render();
