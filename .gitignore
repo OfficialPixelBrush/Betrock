@@ -29,7 +29,4 @@
 *.exe
 *.out
 *.app
-/build/.cmake
-/build/CMakeFiles
-/build/Betrock
-/build/logs
+/build

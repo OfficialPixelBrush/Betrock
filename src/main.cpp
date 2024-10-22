@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.8", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.9", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -218,6 +218,8 @@ int main(int argc, char *argv[]) {
     bool smoothLighting = true;
     bool manualChunkUpdateTrigger = true;
     bool gravity = false;
+    bool collision = true;
+    bool raycastToBlock = true;
     std::vector<Chunk*> toBeUpdated;
 
     double prevTime = glfwGetTime();
@@ -331,31 +333,6 @@ int main(int argc, char *argv[]) {
             chunkMeshes[i]->Draw(shaderProgram, camera);
         }
 
-        // Debug Raycast to looked-at Block
-        float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
-        BlockHitResult hit = raycast(camera.Position, camera.Orientation, maxDistance, world);
-
-        if (!hit.hit) {
-            debugText += "No block hit.\n";
-        } else {
-            debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
-            Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
-            if (b) {
-                debugText += "Name: " + b->getName() + "\n";
-                debugText += "Id: " + std::to_string(b->blockType) + "\n";
-                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                debugText += "Facing: " + b->getFacing() + "\n";
-                debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
-                debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
-                debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
-            }
-            Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
-            if (bn) {
-                debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
-                debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
-            }
-        }
-
         ImGui::Begin("Options");
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
@@ -374,15 +351,73 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Update when Moving", &updateWhenMoving);
         ImGui::Checkbox("Smooth Lighting", &smoothLighting);
         ImGui::Checkbox("Gravity", &gravity);
+        ImGui::Checkbox("Collision", &collision);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
 
-        hit = raycast(camera.Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
-        Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+        float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
-        if (b && gravity) {
-            camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(hit.blockPos);
-            camera.Position.y = hit.blockPos.y + 2.0;
+        if (gravity) {
+            camera.Position.y -= 0.24;
+        }
+
+        if (collision) {
+            // Which collisions occured
+            bool ground = false;
+            bool ceiling = false;
+            // Ground
+            BlockHitResult groundHit = raycast(camera.Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
+            Block* groundBlock = world->getBlock(groundHit.blockPos.x,groundHit.blockPos.y,groundHit.blockPos.z);
+
+            // Ceiling
+            BlockHitResult ceilingHit = raycast(camera.Position, glm::vec3(0.0,1.0,0.0), maxDistance, world, true);
+            Block* ceilingBlock = world->getBlock(ceilingHit.blockPos.x,ceilingHit.blockPos.y,ceilingHit.blockPos.z);
+
+            if (groundBlock && camera.Position.y < (groundHit.blockPos.y + 2.8)) {
+                //camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(groundHit.blockPos);
+                camera.Position.y = groundHit.blockPos.y + 2.8;
+                ground = true;
+            }
+            if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.2)) {
+                camera.Position.y = ceilingHit.blockPos.y - 0.2;
+                ceiling = false;
+            }
+            if (ground && ceiling) {
+                camera.Position = previousPosition;
+            }
+
+            // North
+            BlockHitResult northHit = raycast(camera.Position, glm::vec3(1.0,0.0,0.0), 2, world, true);
+            Block* northBlock = world->getBlock(northHit.blockPos.x,northHit.blockPos.y,northHit.blockPos.z);
+
+            // East
+            BlockHitResult eastHit = raycast(camera.Position, glm::vec3(0.0,0.0,-1.0), 2, world, true);
+            Block* eastBlock = world->getBlock(eastHit.blockPos.x,eastHit.blockPos.y,eastHit.blockPos.z);
+
+            // South
+            BlockHitResult southHit = raycast(camera.Position, glm::vec3(-1.0,0.0,0.0), 2, world, true);
+            Block* southBlock = world->getBlock(southHit.blockPos.x,southHit.blockPos.y,southHit.blockPos.z);
+
+            // West
+            BlockHitResult westHit = raycast(camera.Position, glm::vec3(0.0,0.0,1.0), 2, world, true);
+            Block* westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
+
+            if (northBlock && camera.Position.x > northHit.blockPos.x - 0.2) {
+                camera.Position.x = northHit.blockPos.x - 0.2;
+            }
+
+            if (southBlock && camera.Position.x < southHit.blockPos.x + 1.2) {
+                camera.Position.x = southHit.blockPos.x + 1.2;
+            }
+
+            if (eastBlock && camera.Position.z < eastHit.blockPos.z + 1.2) {
+                camera.Position.z = eastHit.blockPos.z + 1.2;
+            }
+
+            if (westBlock && camera.Position.z > westHit.blockPos.z - 0.2) {
+                camera.Position.z = westHit.blockPos.z - 0.2;
+            }
+            
             //camera.Speed = 4.317;
         }
         
@@ -412,6 +447,44 @@ int main(int argc, char *argv[]) {
             }
             toBeAdded.clear();
             manualChunkUpdateTrigger = false;
+        }
+
+        ImGui::Checkbox("Raycast Block", &raycastToBlock);
+        if (raycastToBlock) {
+            // Debug Raycast to looked-at Block
+            BlockHitResult hit = raycast(camera.Position, camera.Orientation, maxDistance, world);
+
+            if (!hit.hit) {
+                debugText += "No block hit.\n";
+            } else {
+                debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
+                Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+                if (b) {
+                    debugText += "Name: " + b->getName() + "\n";
+                    debugText += "Id: " + std::to_string(b->blockType) + "\n";
+                    debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
+                    debugText += "Facing: " + b->getFacing() + "\n";
+                    debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
+                    debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
+                    debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+                }
+                Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
+                if (bn) {
+                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
+                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+                }
+            }
+        } else {
+            Block* b = world->getBlock(camera.Position.x,camera.Position.y,camera.Position.z);
+            if (b) {
+                debugText += "Name: " + b->getName() + "\n";
+                debugText += "Id: " + std::to_string(b->blockType) + "\n";
+                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
+                debugText += "Facing: " + b->getFacing() + "\n";
+                debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
+                debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
+                debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+            }
         }
 
         ImGui::Text(debugText.c_str());

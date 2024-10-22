@@ -17,7 +17,6 @@ sudo apt install libgl1-mesa-dev libglfw3-dev libzip-dev libdeflate-dev libglm-d
 # Setting up the repo
 git clone --recurse-submodules https://github.com/OfficialPixelBrush/Betrock.git
 cd Betrock
-rm -rf build
 mkdir build
 cmake -B build -S.
 ```

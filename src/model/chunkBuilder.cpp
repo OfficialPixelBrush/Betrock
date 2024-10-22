@@ -184,11 +184,14 @@ uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::ve
     Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
     // No adjacent Block, not hidden
     if (adjacentBlock == nullptr) {
-        return false;
+        return true;
     }
 
     // If it's the same as the checking block
     if (currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11 || (!currentBlock->getPartialBlock() && currentBlock->getTransparent() && currentBlock->getBlockType() != 18)) {
+        if (!adjacentBlock->getTransparent() && normal.y <= 0.0) {
+            return true;
+        }
         if (adjacentBlock->getBlockType() == currentBlock->getBlockType() && currentBlock->getBlockMetaData() == 0) {
             return true;
         }
@@ -354,7 +357,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         offset = glm::vec3(0.0,0.0,0.0);
                     }
 
-                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos + offset);
+                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos + offset + 0.5f);
                     glm::vec2 finalUV = blockModel->vertices[v].textureUV;
                     // Only affects the side
                     if (blockModel->vertices[v].normal.y == 0) {

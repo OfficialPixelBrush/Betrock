@@ -29,24 +29,24 @@ void Camera::Inputs(GLFWwindow* window) {
     float tSpeed = speed * delta;
     // WASD
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        Position += tSpeed * Orientation;
+        Velocity += tSpeed * Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        Position += tSpeed * -glm::normalize(glm::cross(Orientation, Up));
+        Velocity += tSpeed * -glm::normalize(glm::cross(Orientation, Up));
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        Position += tSpeed * -Orientation;
+        Velocity += tSpeed * -Orientation;
     }
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        Position += tSpeed * glm::normalize(glm::cross(Orientation, Up));
+        Velocity += tSpeed * glm::normalize(glm::cross(Orientation, Up));
     }
     // Going up
     if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-        Position += tSpeed * Up;
+        Velocity += tSpeed * Up;
     }
     // Going down
     if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
-        Position += tSpeed * -Up;
+        Velocity += tSpeed * -Up;
     }
     
     // 0 to Reset Speed
@@ -108,5 +108,17 @@ void Camera::Inputs(GLFWwindow* window) {
 
         // Reset the mouse cursor position to the center of the screen
         glfwSetCursorPos(window, (width / 2), (height / 2));
+    }
+    Position += Velocity;
+
+    // Apply Drag
+    if (Velocity.x != 0.0) {
+        Velocity.x /= 1.1;
+    }
+    if (Velocity.y != 0.0) {
+        Velocity.y /= 1.1;
+    }
+    if (Velocity.z != 0.0) {
+        Velocity.z /= 1.1;
     }
 }

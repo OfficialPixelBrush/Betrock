@@ -16,6 +16,8 @@ class Camera {
         bool firstClick = true;
         // Used to keep track of Camera Position, Orientation and Up Vector
         glm::vec3 Position;
+        glm::vec3 Velocity = glm::vec3(0.0f,0.0f,0.0f);
+        glm::vec3 Drag = glm::vec3(0.09f,0.02f,0.09f);
         glm::vec3 Orientation;
         glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
         glm::mat4 cameraMatrix = glm::mat4(1.0f);
@@ -24,7 +26,7 @@ class Camera {
         int width, height;
 
         // Movement Settings
-        float speed = 0.1;
+        float speed = 0.01;
         bool speedModified = false;
         double delta = 1.0f;
         float sensitivity = 150.0f;
