@@ -57,9 +57,9 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
 glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert) {
     glm::vec3 color = glm::vec3(0.57, 0.73, 0.34);
     // Biome Colored
-    if ((blockType == 2 && vert->normal.y > 0.0f) || (blockType == 31)) {
+    if ((blockType == GRASS && vert->normal.y > 0.0f) || (blockType == TALLGRASS)) {
         return color;
-    } else if (blockType == 18) {
+    } else if (blockType == LEAVES) {
         // Spruce
         if (blockMetaData == 1) {
             return glm::vec3(0.38,0.6,0.38);    
@@ -111,7 +111,155 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
     }
 }
 
-float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint8_t maxSkyLight) {
+uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
+    if (currentBlock == nullptr) {
+        return true;
+    }
+    // Calculate adjacent block coordinates
+    int adjX = x + static_cast<int>(normal.x);
+    int adjY = y + static_cast<int>(normal.y);
+    int adjZ = z + static_cast<int>(normal.z);
+
+    // Get the adjacent block
+    Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
+    // No adjacent Block, not hidden
+    if (adjacentBlock == nullptr) {
+        return true;
+    }
+
+    // If it's the same as the checking block
+    if (currentBlock->getBlockType() >= FLOWING_WATER && currentBlock->getBlockType() <= LAVA || 
+        !currentBlock->getPartialBlock() && currentBlock->getTransparent() && currentBlock->getBlockType() != LEAVES) {
+        if (!adjacentBlock->getTransparent() && normal.y <= 0.0) {
+            return true;
+        }
+        if (adjacentBlock->getBlockType() == currentBlock->getBlockType() && currentBlock->getBlockMetaData() == 0) {
+            return true;
+        }
+    } else {
+        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock() || currentBlock->getPartialBlock()) {
+            return false;
+        } else {
+            return adjacentBlock->getBlockType();
+        }
+    }
+    return false;
+}
+
+std::vector<std::string> splitString(const std::string& str, char delimiter) {
+    std::vector<std::string> result;
+    std::stringstream ss(str);
+    std::string token;
+    
+    while (std::getline(ss, token, delimiter)) {
+        result.push_back(token);
+    }
+    
+    return result;
+}
+
+Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
+
+    std::string specialQuery = "";
+    if (blockType == AIR) {
+        return nullptr;
+    }
+
+    // Bed
+    if (blockType == BED) {
+        // Check top-most bit to check if head of bed
+        if (blockMetaData & 0x08) {
+            specialQuery = "Head";
+        } else {
+            specialQuery = "End";
+        }
+    }
+
+    std::vector<std::string> compareTo;
+    // Check Cached Mesh first to save time
+    if (cachedMesh != nullptr) {
+        compareTo = splitString(cachedMesh->name,'_');
+        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
+            return cachedMesh;
+        }
+    }
+    
+    // Search for the mesh
+    for (auto& m : model->meshes) {
+        compareTo = splitString(m.name,'_');
+        if (blockType == std::stoi(compareTo[0])) {
+            // TODO: Temp while some metadata situations aren't accounted for
+            if (blockType == LEAVES ||
+                blockType == LOG ||
+                blockType == TALLGRASS ||
+                blockType == TORCH ||
+                blockType == OAK_STAIRS ||
+                blockType == WOODEN_DOOR) {
+                if (blockMetaData == std::stoi(compareTo[1])) {
+                    return &m;
+                } else {
+                    continue;
+                }
+            }
+            
+            if (specialQuery == "") {
+                return &m;
+            }
+            if (specialQuery == compareTo[3]) {
+                return &m;
+            }
+        }
+    }
+    return &model->meshes[0];
+}
+
+float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal) {
+    Block* b1;
+    Block* b2;
+    Block* bc;
+    glm::vec3 off1;
+    glm::vec3 off2;
+    glm::vec3 offc;
+    if (normal.x != 0.0f) {
+        off1 = position + glm::vec3(vertexPosition.x, vertexPosition.y,-vertexPosition.z);
+        off2 = position + glm::vec3(vertexPosition.x,-vertexPosition.y, vertexPosition.z);
+        offc = position + glm::vec3(vertexPosition.x, vertexPosition.y, vertexPosition.z);
+    }
+    if (normal.y != 0.0f) {
+        off1 = position + glm::vec3( vertexPosition.x,vertexPosition.y,-vertexPosition.z);
+        off2 = position + glm::vec3(-vertexPosition.x,vertexPosition.y, vertexPosition.z);
+        offc = position + glm::vec3( vertexPosition.x,vertexPosition.y, vertexPosition.z);
+    }
+    if (normal.z != 0.0f) {
+        off1 = position + glm::vec3(-vertexPosition.x, vertexPosition.y,vertexPosition.z);
+        off2 = position + glm::vec3( vertexPosition.x,-vertexPosition.y,vertexPosition.z);
+        offc = position + glm::vec3( vertexPosition.x, vertexPosition.y,vertexPosition.z);
+    }
+    b1 = world->getBlock(floor(off1.x), floor(off1.y), floor(off1.z));
+    b2 = world->getBlock(floor(off2.x), floor(off2.y), floor(off2.z));
+    bc = world->getBlock(floor(offc.x), floor(offc.y), floor(offc.z));
+    int side1  = 0;
+    int side2  = 0;
+    int corner = 0;
+    if (b1 && !b1->getTransparent() && !b1->getPartialBlock()) { side1  = b1->getBlockType(); }
+    if (b2 && !b2->getTransparent() && !b2->getPartialBlock()) { side2  = b2->getBlockType(); }
+    if (bc && !bc->getTransparent() && !bc->getPartialBlock()) { corner = bc->getBlockType(); }
+
+    // Convert block existence to integer (1 if block exists, 0 otherwise)
+    int side1Int = side1 ? 1 : 0;
+    int side2Int = side2 ? 1 : 0;
+    int cornerInt = corner ? 1 : 0;
+
+    // Apply vertexAO formula
+    float ao = 4.0f - static_cast<float>(side1Int + side2Int + cornerInt);
+
+    // Normalize the AO level (between 0 and 1)
+    ao /= 4.0f;
+
+    return ao;
+}
+
+float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal, uint8_t maxSkyLight) {
     // Array for light values
 
     try {
@@ -123,16 +271,16 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
         Block* b;
 
         // Get the adjacent blocks along face
-        for (float aOff = -0.5; aOff <= 0.5; aOff++) {
-            for (float bOff = -0.5; bOff <= 0.5; bOff++) {
-                if (normal.x) {
-                    b = world->getBlock(floor(x+normal.x*0.5f), floor(y+aOff), floor(z+bOff));
+        for (int aOff = -1; aOff < 1; aOff++) {
+            for (int bOff = -1; bOff < 1; bOff++) {
+                if (normal.x != 0.0) {
+                    b = world->getBlock(floor(x+normal.x), floor(y+aOff), floor(z+bOff));
                 }
-                if (normal.y) {
-                    b = world->getBlock(floor(x+aOff), floor(y+normal.y*0.5f), floor(z+bOff));
+                if (normal.y != 0.0) {
+                    b = world->getBlock(floor(x+aOff), floor(y+normal.y), floor(z+bOff));
                 }
-                if (normal.z) {
-                    b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z*0.5f));
+                if (normal.z != 0.0) {
+                    b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z));
                 }
                 if (b) {
                     // Air is transparent, so we can ignore it too
@@ -168,103 +316,6 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 normal, uint
     } catch (const std::exception& e) {
         return 1.0f;  // Return a default value in case of an error
     }
-}
-
-
-uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
-    if (currentBlock == nullptr) {
-        return true;
-    }
-    // Calculate adjacent block coordinates
-    int adjX = x + static_cast<int>(normal.x);
-    int adjY = y + static_cast<int>(normal.y);
-    int adjZ = z + static_cast<int>(normal.z);
-
-    // Get the adjacent block
-    Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
-    // No adjacent Block, not hidden
-    if (adjacentBlock == nullptr) {
-        return true;
-    }
-
-    // If it's the same as the checking block
-    if (currentBlock->getBlockType() >= 8 && currentBlock->getBlockType() <= 11 || (!currentBlock->getPartialBlock() && currentBlock->getTransparent() && currentBlock->getBlockType() != 18)) {
-        if (!adjacentBlock->getTransparent() && normal.y <= 0.0) {
-            return true;
-        }
-        if (adjacentBlock->getBlockType() == currentBlock->getBlockType() && currentBlock->getBlockMetaData() == 0) {
-            return true;
-        }
-    } else {
-        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock() || currentBlock->getPartialBlock()) {
-            return false;
-        } else {
-            return adjacentBlock->getBlockType();
-        }
-    }
-    return false;
-}
-
-std::vector<std::string> splitString(const std::string& str, char delimiter) {
-    std::vector<std::string> result;
-    std::stringstream ss(str);
-    std::string token;
-    
-    while (std::getline(ss, token, delimiter)) {
-        result.push_back(token);
-    }
-    
-    return result;
-}
-
-Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
-
-    std::string specialQuery = "";
-    if (blockType == 0) {
-        return nullptr;
-    }
-
-    // Bed
-    if (blockType == 26) {
-        // Check top-most bit to check if head of bed
-        if (blockMetaData & 0x08) {
-            specialQuery = "Head";
-        } else {
-            specialQuery = "End";
-        }
-    }
-
-    std::vector<std::string> compareTo;
-    // Check Cached Mesh first to save time
-    if (cachedMesh != nullptr) {
-        compareTo = splitString(cachedMesh->name,'_');
-        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
-            return cachedMesh;
-        }
-    }
-    
-    // Search for the mesh
-    for (auto& m : model->meshes) {
-        compareTo = splitString(m.name,'_');
-        if (blockType == std::stoi(compareTo[0])) {
-            // TODO: Temp while some metadata situations aren't accounted for
-            if (blockType == 18 || blockType == 17 || blockType == 31 || blockType == 50) {
-                if (blockMetaData == std::stoi(compareTo[1])) {
-                    return &m;
-                } else {
-                    continue;
-                }
-            }
-            
-            if (specialQuery == "") {
-                return &m;
-            }
-            if (specialQuery == compareTo[3]) {
-                return &m;
-            }
-        }
-    }
-    return &model->meshes[0];
 }
 
 std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
@@ -309,20 +360,20 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
 
                 cachedMesh = getBlockMesh(blockType,x,y,z,blockMetaData);
-                Mesh* blockModel = cachedMesh;
-                if (!blockModel) {
+                Mesh* mesh = cachedMesh;
+                if (!mesh) {
                     continue;
                 }
                 glm::vec3 offset;
-                for (uint v = 0; v < blockModel->vertices.size(); v++) {
-                    if (isHidden(world,x,y,z,b,blockModel->vertices[v].normal)) {
+                for (uint v = 0; v < mesh->vertices.size(); v++) {
+                    if (isHidden(world,x,y,z,b,mesh->vertices[v].normal)) {
                         continue;
                     }
-                    glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &blockModel->vertices[v]);
+                    glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);
 
                     // Liquid change model
                     // If we're dealing with the upper verts of  water or lava
-                    if (blockType >= 8 && blockType <= 11 && blockModel->vertices[v].position.y > 0.2f) {
+                    if (blockType >= 8 && blockType <= 11 && mesh->vertices[v].position.y > 0.2f) {
                         Block* wb = world->getBlock(x,y+1,z);
                         // Offset liquid height based on metadata
                         if (wb->getBlockType() != blockType) {
@@ -357,20 +408,21 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         offset = glm::vec3(0.0,0.0,0.0);
                     }
 
-                    glm::vec3 finalPos = glm::vec3(blockModel->vertices[v].position + pos + offset + 0.5f);
-                    glm::vec2 finalUV = blockModel->vertices[v].textureUV;
+                    glm::vec3 vertPos = glm::vec3(mesh->vertices[v].position + offset);
+                    glm::vec3 worldPos = vertPos + pos + 0.5f;
+                    glm::vec2 finalUV = mesh->vertices[v].textureUV;
                     // Only affects the side
-                    if (blockModel->vertices[v].normal.y == 0) {
+                    if (mesh->vertices[v].normal.y == 0) {
                         finalUV.y = finalUV.y + (offset.y/16);
                     }
                     
                     // Water in it's own thing
-                    if (blockType == 8 || blockType == 9) {
-                        color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
+                    if (blockType == WATER || blockType == LAVA) {
+                        color *= getLighting(world,x,y,z,mesh->vertices[v].normal, maxSkyLight);
                         waterVertices.push_back(
                             Vertex(
-                                finalPos,
-                                blockModel->vertices[v].normal,
+                                worldPos,
+                                mesh->vertices[v].normal,
                                 color,
                                 finalUV
                             )
@@ -379,15 +431,18 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         // Apply light if the block isn't a lightsource
                         if (!b->lightSource) {
                             if (smoothLighting) {
-                                color *= getSmoothLighting(world,finalPos,blockModel->vertices[v].normal,maxSkyLight);
+                                color *= getSmoothLighting(world,worldPos,vertPos, mesh->vertices[v].normal,maxSkyLight);
+                                if (!b->getTransparent()) {
+                                    color *= getAmbientOcclusion(world,worldPos,vertPos, mesh->vertices[v].normal);
+                                }
                             } else {
-                                color *= getLighting(world,x,y,z,blockModel->vertices[v].normal, maxSkyLight);
+                                color *= getLighting(world,x,y,z,mesh->vertices[v].normal, maxSkyLight);
                             }
                         }
                         worldVertices.push_back(
                             Vertex(
-                                finalPos,
-                                blockModel->vertices[v].normal,
+                                worldPos,
+                                mesh->vertices[v].normal,
                                 color,
                                 finalUV
                             )
@@ -398,14 +453,14 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 GLuint totalWaterIndices = waterIndices.size();
                 GLuint totalWorldIndices = worldIndices.size();
 
-                if (blockType == 8 || blockType == 9) {
-                    for (uint i = 0; i < blockModel->indices.size(); i++) {
-                        GLuint newInd = totalWaterIndices + blockModel->indices[i];
+                if (blockType == WATER || blockType == LAVA) {
+                    for (uint i = 0; i < mesh->indices.size(); i++) {
+                        GLuint newInd = totalWaterIndices + mesh->indices[i];
                         waterIndices.push_back(newInd);
                     }
                 } else {
-                    for (uint i = 0; i < blockModel->indices.size(); i++) {
-                        GLuint newInd = totalWorldIndices + blockModel->indices[i];
+                    for (uint i = 0; i < mesh->indices.size(); i++) {
+                        GLuint newInd = totalWorldIndices + mesh->indices[i];
                         worldIndices.push_back(newInd);
                     }
                 }

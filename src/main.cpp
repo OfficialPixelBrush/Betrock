@@ -44,7 +44,7 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
         Block* b = world->getBlock(currentBlock.x, currentBlock.y, currentBlock.z);
         if (b != nullptr) {
             // We can't hit air!
-            if (b->getBlockType() != 0) {
+            if (b->getBlockType() != AIR) {
                 if (checkForSolidity) {
                     if (!b->getNonSolid()) {
                         hitPos = origin + direction * rayLength;  // Calculate the exact hit position
@@ -81,10 +81,11 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
 }
 
 std::vector<ChunkMesh*> chunkMeshes;
-std::mutex chunkMeshesMutex;
 std::vector<DummyMesh> meshBuildQueue;
+std::mutex chunkMeshesMutex;
+std::mutex chunkRadiusMutex;
 
-void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdated) {
+void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& skyLight, std::vector<Chunk*>& toBeUpdated) {
     ChunkBuilder cb(blockModel, world);
     std::cout << "BuildChunk Thread lives!" << std::endl;
     while (true) {
@@ -103,7 +104,7 @@ void buildChunks(Model* blockModel, World* world, std::vector<Chunk*>& toBeUpdat
 
             // Build a new chunk mesh and add it to the chunkMeshes
             //std::cout << toBeUpdated.size() << std::endl;
-            meshBuildQueue.push_back(cb.buildChunk(c, true, 15));
+            meshBuildQueue.push_back(cb.buildChunk(c, smoothLighting, skyLight));
 
             // Remove the chunk from the toBeUpdated list
             toBeUpdated.pop_back();
@@ -130,6 +131,15 @@ void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, s
     }
     toBeAdded.clear();
 }
+
+void updateChunks(Shader& shader, Camera& camera, Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated) {
+    std::lock_guard<std::mutex> lock(chunkRadiusMutex);
+    sky.UpdateFog(shader, renderDistance*16);
+    int x = int(camera.Position.x);
+    int z = int(camera.Position.z);
+    std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated));
+    chunkRadiusThread.detach();
+}
 Camera* camPointer;
 
 // Callback function to handle window resizing
@@ -138,6 +148,45 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
     std::cout << "Window resized to: " << width << "x" << height << std::endl;
     camPointer->updateResolution(width,height);
+}
+
+std::string generateFilename() {
+    // Get current time
+    std::time_t now = std::time(nullptr);
+    std::tm* localTime = std::localtime(&now);
+
+    // Format the time into a string (YYYY-MM-DD_HH.MM.SS.png)
+    std::ostringstream oss;
+    oss << std::put_time(localTime, "%Y-%m-%d_%H.%M.%S") << ".png";
+    return oss.str();
+}
+
+void takeScreenshot(GLFWwindow* window) {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    // Allocate memory to store the pixels (4 bytes per pixel for RGBA)
+    std::vector<unsigned char> pixels(4 * width * height);
+
+    // Read the pixels from the framebuffer
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+    // Flip the image vertically (OpenGL origin is bottom-left, images typically top-left)
+    for (int y = 0; y < height / 2; ++y) {
+        for (int x = 0; x < width * 4; ++x) {
+            std::swap(pixels[y * width * 4 + x], pixels[(height - 1 - y) * width * 4 + x]);
+        }
+    }
+
+    // Generate the filename with the current date and time
+    std::string filename = generateFilename();
+
+    // Save the image using stb_image_write
+    if (!stbi_write_png(filename.c_str(), width, height, 4, pixels.data(), width * 4)) {
+        std::cerr << "Failed to save screenshot!" << std::endl;
+    } else {
+        std::cout << "Screenshot saved to " << filename << std::endl;
+    }
 }
 
 // Targeting OpenGL 3.3
@@ -178,7 +227,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.11", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.12", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -209,7 +258,9 @@ int main(int argc, char *argv[]) {
     // Create a camera
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
+    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
 
     // Makes it so OpenGL shows the triangles in the right order
@@ -258,14 +309,14 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 8;
+    int renderDistance = 2;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
     std::string debugText = "Debug Text:\n";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
-    std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(toBeUpdated));
-
+    updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+    std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -377,6 +428,9 @@ int main(int argc, char *argv[]) {
         }
 
         ImGui::Begin("Options");
+        if (ImGui::Button("Screenshot")) {
+            takeScreenshot(window);
+        }
         std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
         std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camera.Position.x/16))) + ", " + std::to_string(int(std::floor(camera.Position.z/16)));
@@ -388,6 +442,7 @@ int main(int argc, char *argv[]) {
         ImGui::Text("%s", camRot.c_str());
         ImGui::Text("%s", camSpeed.c_str());
         ImGui::ColorEdit4("Sky Color", sky.skyColor);
+        ImGui::ColorEdit4("Fog Color", sky.fogColor);
         ImGui::Checkbox("Vsync", &vsync);
         ImGui::Checkbox("Fullscreen", &fullscreen);
         ImGui::Checkbox("Backface Culling", &cullFace);
@@ -397,7 +452,7 @@ int main(int argc, char *argv[]) {
         ImGui::Checkbox("Gravity", &gravity);
         ImGui::Checkbox("Collision", &collision);
         ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
-        int fovTemp = 7;
+        int fovTemp = int(fieldOfView/10);
         ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
         fieldOfView = float(fovTemp*10);
         ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
@@ -521,11 +576,7 @@ int main(int argc, char *argv[]) {
         
         // Get list of chunks that're to be updated
         if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
-            sky.UpdateFog(blockShader, renderDistance*16);
-            int x = int(camera.Position.x);
-            int z = int(camera.Position.z);
-            std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated));
-            chunkRadiusThread.detach();
+            updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
             manualChunkUpdateTrigger = false;
         }
 

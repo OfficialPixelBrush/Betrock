@@ -2,6 +2,106 @@
 #include "../global.h"
 #include "../compat.h"
 
+enum BLOCK {
+    AIR,
+    STONE,
+    GRASS,
+    DIRT,
+    COBBLESTONE,
+    PLANKS,
+    SAPLING,
+    BEDROCK,
+    FLOWING_WATER,
+    WATER,
+    FLOWING_LAVA,
+    LAVA,
+    SAND,
+    GRAVEL,
+    GOLD_ORE,
+    IRON_ORE,
+    COAL_ORE,
+    LOG,
+    LEAVES,
+    SPONGE,
+    GLASS,
+    LAPIS_ORE,
+    LAPIS_BLOCK,
+    DISPENSER,
+    SANDSTONE,
+    NOTEBLOCK,
+    BED,
+    GOLDEN_RAIL,
+    DETECTOR_RAIL,
+    STICKY_PISTON,
+    WEB,
+    TALLGRASS,
+    DEADBUSH,
+    PISTON,
+    PISTON_HEAD,
+    WOOL,
+    MISSING_BLOCK_36,
+    YELLOW_FLOWER,
+    RED_FLOWER,
+    BROWN_MUSHROOM,
+    RED_MUSHROOM,
+    GOLD_BLOCK,
+    IRON_BLOCK,
+    DOUBLE_STONE_SLAB,
+    STONE_SLAB,
+    BRICKS,
+    TNT,
+    BOOKSHELF,
+    MOSSY_COBBLESTONE,
+    OBSIDIAN,
+    TORCH,
+    FIRE,
+    MOB_SPAWNER,
+    OAK_STAIRS,
+    CHEST,
+    REDSTONE_WIRE,
+    DIAMOND_ORE,
+    DIAMOND_BLOCK,
+    CRAFTING_TABLE,
+    WHEAT,
+    FARMLAND,
+    FURNACE,
+    LIT_FURNACE,
+    STANDING_SIGN,
+    WOODEN_DOOR,
+    LADDER,
+    RAIL,
+    STONE_STAIRS,
+    WALL_SIGN,
+    LEVER,
+    STONE_PRESSURE_PLATE,
+    IRON_DOOR,
+    WOODEN_PRESSURE_PLATE,
+    REDSTONE_ORE,
+    LIT_REDSTONE_ORE,
+    UNLIT_REDSTONE_TORCH,
+    REDSTONE_TORCH,
+    STONE_BUTTON,
+    SNOW_LAYER,
+    ICE,
+    SNOW,
+    CACTUS,
+    CLAY,
+    REEDS,
+    JUKEBOX,
+    FENCE,
+    PUMPKIN,
+    NETHERRACK,
+    SOUL_SAND,
+    GLOWSTONE,
+    PORTAL,
+    LIT_PUMPKIN,
+    CAKE,
+    UNPOWERED_REPEATER,
+    POWERED_REPEATER,
+    STAINED_GLASS,
+    TRAPDOOR
+};
+
 class Block {
     public:
         uint8_t blockType;
@@ -12,7 +112,7 @@ class Block {
         bool lightSource;
         bool partialBlock;
         bool nonSolidBlock;
-        Block(uint8_t blockType = 0, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0);
+        Block(uint8_t blockType = AIR, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0);
 
         void setBlockType(uint8_t pBlockType) {
             this->blockType = pBlockType;
@@ -56,7 +156,14 @@ class Block {
              * - Pumpkins (86)
              * - Jack o'Lantern (91)
             */
-            if (blockType == 50 || blockType == 61 ||blockType == 62 || blockType == 65 || blockType == 75 || blockType == 76 || blockType == 86 || blockType == 91) {
+            if (blockType == TORCH ||
+                blockType == FURNACE ||
+                blockType == LIT_FURNACE || 
+                blockType == WOODEN_DOOR || 
+                blockType == UNLIT_REDSTONE_TORCH || 
+                blockType == REDSTONE_TORCH || 
+                blockType == PUMPKIN || 
+                blockType == LIT_PUMPKIN) {
                 switch(metaData) {
                     case 1:
                         return "South";
@@ -86,19 +193,19 @@ class Block {
                 case 4:
                     return "Cobblestone";
                 case 5:
-                    return "Wood Plank";
+                    return "Planks";
                 case 6:
-                    return "Oak Sapling";
+                    return "Sapling";
                 case 7:
                     return "Bedrock";
                 case 8:
                     return "Flowing Water";
                 case 9:
-                    return "Still Water";
+                    return "Water";
                 case 10:
                     return "Flowing Lava";
                 case 11:
-                    return "Still Lava";
+                    return "Lava";
                 case 12:
                     return "Sand";
                 case 13:
@@ -112,7 +219,7 @@ class Block {
                 case 17:
                     return "Oak Wood";
                 case 18:
-                    return "Oak Leaves";
+                    return "Leaves";
                 case 19:
                     return "Sponge";
                 case 20:
@@ -138,7 +245,7 @@ class Block {
                 case 30:
                     return "Cobweb";
                 case 31:
-                    return "Dead Shrub/Grass";
+                    return "Tallgrass";
                 case 32:
                     return "Dead Bush";
                 case 33:
@@ -202,9 +309,9 @@ class Block {
                 case 62:
                     return "Burning Furnace";
                 case 63:
-                    return "Standing Sign Block";
+                    return "Standing Sign";
                 case 64:
-                    return "Oak Door Block";
+                    return "Oak Door";
                 case 65:
                     return "Ladder";
                 case 66:
@@ -212,13 +319,13 @@ class Block {
                 case 67:
                     return "Cobblestone Stairs";
                 case 68:
-                    return "Wall-mounted Sign Block";
+                    return "Wall-mounted Sign";
                 case 69:
                     return "Lever";
                 case 70:
                     return "Stone Pressure Plate";
                 case 71:
-                    return "Iron Door Block";
+                    return "Iron Door";
                 case 72:
                     return "Wooden Pressure Plate";
                 case 73:
@@ -232,17 +339,17 @@ class Block {
                 case 77:
                     return "Stone Button";
                 case 78:
-                    return "Snow";
+                    return "Snow Layer";
                 case 79:
-                    return "Snow";
+                    return "Ice";
                 case 80:
-                    return "Snow Block";
+                    return "Snow";
                 case 81:
                     return "Cactus";
                 case 82:
                     return "Clay";
                 case 83:
-                    return "Sugar Canes";
+                    return "Reeds";
                 case 84:
                     return "Jukebox";
                 case 85:
@@ -258,13 +365,13 @@ class Block {
                 case 90:
                     return "Nether Portal";
                 case 91:
-                    return "Jack o'Lantern";
+                    return "Jack o' Lantern";
                 case 92:
-                    return "Cake Block";
+                    return "Cake";
                 case 93:
-                    return "Redstone Repeater Block (off)";
+                    return "Unpowered Redstone Repeater";
                 case 94:
-                    return "Redstone Repeater Block (on)";
+                    return "Powered Redstone Repeater";
                 default:
                     return "Unknown";
             }

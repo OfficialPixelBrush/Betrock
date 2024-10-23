@@ -31,12 +31,6 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
     vao.Unbind();
     vbo.Unbind();
     ebo.Unbind();
-    /*
-    std::cout << name << " is born!" << std::endl;
-    std::cout << "Model with " << std::to_string(vertices.size()) << " verts, ";
-    std::cout << std::to_string(indices.size()) << " indices ";
-    std::cout << "and " << std::to_string(textures.size()) << " textures loaded"<< std::endl;
-    */
 }
 
 Mesh::~Mesh() {

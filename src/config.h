@@ -10,6 +10,8 @@
 #include "include/imgui/imgui.h"
 #include "include/imgui/backends/imgui_impl_glfw.h"
 #include "include/imgui/backends/imgui_impl_opengl3.h"
+#include "include/stb/stb_image_write.h"
+
 
 #include "include/glad/glad.h"
 #include <GLFW/glfw3.h>
