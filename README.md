@@ -59,7 +59,7 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
     - [x] Fog
         - [ ] Make fog act in world space, not view space!
     - [x] Smooth Lighting
-    - [ ] Ambient Occlusion
+    - [x] Ambient Occlusion
     - [ ] Sky
     - [ ] Biome Visuals
 - Gameplay

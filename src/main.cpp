@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "saves/glacier/";
+        worldName = "saves/publicbeta/";
         //return 1;
     } else {
         worldName = argv[1];
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.13", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.14", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -256,11 +256,11 @@ int main(int argc, char *argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Create a camera
-    Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
 
@@ -456,13 +456,13 @@ int main(int argc, char *argv[]) {
         // Determine the direction based on the angle
         // TODO: Fix orientation
         if (angle > -M_PI_4 && angle <= M_PI_4) {
-            facing += "South";
-        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
-            facing += "West";
-        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
             facing += "North";
-        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
             facing += "East";
+        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
+            facing += "South";
+        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+            facing += "West";
         }
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
         ImGui::Text("%s", msTime.c_str());

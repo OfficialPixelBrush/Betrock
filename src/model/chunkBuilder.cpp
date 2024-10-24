@@ -205,7 +205,8 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
                 blockType == STONE_STAIRS ||
                 blockType == WOODEN_DOOR ||
                 blockType == WOOL ||
-                blockType == PISTON) {
+                blockType == PISTON ||
+                blockType == LADDER) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
                 } else {
@@ -292,7 +293,7 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPositi
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                if (b->getBlockType() == 0 || b->getTransparent()) {
+                if (b->getBlockType() == 0 || b->getTransparent() || b->getPartialBlock()) {
                     light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
                     relevantLights++;
                 }
@@ -429,7 +430,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         if (!b->lightSource) {
                             if (smoothLighting) {
                                 color *= getSmoothLighting(world,worldPos,vertPos, mesh->vertices[v].normal,maxSkyLight);
-                                if (!b->getTransparent()) {
+                                if (!b->getTransparent() ) {
                                     color *= getAmbientOcclusion(world,worldPos,vertPos, mesh->vertices[v].normal);
                                 }
                             } else {
