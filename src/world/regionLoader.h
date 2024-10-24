@@ -8,12 +8,18 @@
 #include "chunk.h"
 #include "../compat.h"
 
-class regionLoader {
+class RegionLoader {
     std::string path;
     public:
-        regionLoader(std::string pPath);
+        RegionLoader(std::string pPath);
         Chunk* loadRegion(int x, int z);
     private:
+        bool debug = false;
+	    nbt* nbtLoader;
+        TAG_Compound* chunkLevel = nullptr;
+        int lastX, lastZ;
+        std::ifstream f;
+        std::string lastAccessedRegion = "";
         std::string compressionSchemeString(uint cs);
         uint8_t* decompressChunk(uint chunkIndex, size_t length, uint8_t compressionScheme, size_t* nbtLength);
         Chunk* decodeRegion(int x, int z);

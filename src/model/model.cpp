@@ -77,7 +77,7 @@ void Model::getMeshData() {
             if (firstObject) {
                 firstObject = false;
             } else {
-                std::cout << "Saved " << objectName << std::endl;
+                //std::cout << "Saved " << objectName << std::endl;
                 /*std::cout << "\t Verts: " << vertices.size() << " - Indicies: " << indices.size() << std::endl;
                 std::cout << "\t" << vertices.size() << std::endl << "\t\t";
                 for (int i = 0; i < indices.size(); i++) {
@@ -96,9 +96,10 @@ void Model::getMeshData() {
 
     // After the loop, handle the last object (if any)
     if (!firstObject) {
-        std::cout << "Saved " << objectName << std::endl;
+        //std::cout << "Saved " << objectName << std::endl;
         meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
     }
+    std::cout << "Saved " << meshes.size() << " Meshes" << std::endl;
 }
 
 std::vector<Texture> Model::getTextures() {

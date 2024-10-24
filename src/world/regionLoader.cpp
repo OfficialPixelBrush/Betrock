@@ -2,10 +2,9 @@
 
 uint offset;
 uint sector;
-std::ifstream f;
 
 // Get Compression Scheme String
-std::string regionLoader::compressionSchemeString(uint cs) {
+std::string RegionLoader::compressionSchemeString(uint cs) {
 	switch (cs) {
 	case 1:
 		return "GZip";
@@ -21,7 +20,7 @@ std::string regionLoader::compressionSchemeString(uint cs) {
 	return "Unsupported";
 }
 
-uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t compressionScheme, size_t* nbtLength) {
+uint8_t* RegionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t compressionScheme, size_t* nbtLength) {
 	// Read Compressed Data from Region File
 	char* compressedData = new char[length];
 	f.read(reinterpret_cast<char*>(compressedData), length);
@@ -71,7 +70,7 @@ uint8_t* regionLoader::decompressChunk(uint chunkIndex, size_t length, uint8_t c
 }
 
 // Returns an array of Chunks
-Chunk* regionLoader::decodeRegion(int chunkX, int chunkZ) {
+Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 	//for (uint chunkIndex = 0; chunkIndex < 32*32; chunkIndex++) {
 	uint chunkIndex = (chunkX&31) + (chunkZ&31)*32;
 	f.seekg(chunkIndex*4,std::ios::beg);
@@ -80,24 +79,29 @@ Chunk* regionLoader::decodeRegion(int chunkX, int chunkZ) {
 	sector = intReadFile(f,1)*4096;
 	if (!(offset | sector)) {
 		// No Chunk Present
-		//std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
-		//continue;
+		if (debug) {
+			std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
+		}
 		return nullptr;
 	}
-	//std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
 	f.seekg(offset, std::ios::beg);
 	// Determine Chunk metadata
 	size_t length = intReadFile(f,4)-1;
 	uint8_t compressionScheme = intReadFile(f,1);
-	//std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
+	if (debug) {
+		std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
+		std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
+	}
 
 	// Load compressed data
 	size_t nbtLength;
 	uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme, &nbtLength);
 
 	// Extract Block Data
-	nbt nbtLoader;
-	auto* chunkLevel = dynamic_cast<TAG_Compound*>(nbtLoader.loadNbt(nbtData, nbtLength)->getData(0));
+	if (lastX != chunkX && lastZ != chunkZ) {
+		chunkLevel = dynamic_cast<TAG_Compound*>(nbtLoader->loadNbt(nbtData, nbtLength)->getData(0));
+	}
+	free(nbtData);
 	if (!chunkLevel) {
 		std::cerr << "The entry is not of type TAG_Compound!" << std::endl;
 		//continue;
@@ -162,22 +166,33 @@ Chunk* regionLoader::decodeRegion(int chunkX, int chunkZ) {
 	return new Chunk(chunkX,chunkZ,blockData,blockSkyLightData,blockLightData,blockMetaData);
 }
 
-regionLoader::regionLoader(std::string pPath) {
-	this->path = pPath;
+RegionLoader::RegionLoader(std::string pPath) {
+	RegionLoader::path = pPath;
+	RegionLoader::nbtLoader = new nbt();
 }
 
 // Get the Region data from the associated regionX and regionZ file
-Chunk* regionLoader::loadRegion(int chunkX, int chunkZ) {
+Chunk* RegionLoader::loadRegion(int chunkX, int chunkZ) {
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
+
 	std::string regionfile = path + "region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
-	f.open(regionfile, std::ios::binary);
-	if (!f.is_open()) {
-		std::cerr << "Region File " << regionfile << " not found!" << std::endl;
-		return nullptr;
+	if (lastAccessedRegion != regionfile) {
+		// If f is already used, close it
+		if (f.is_open()) {
+			nbtLoader->freeNbt(chunkLevel);
+			chunkLevel = nullptr;
+			f.close();
+		}
+
+		f.open(regionfile, std::ios::binary);
+		if (!f.is_open()) {
+			std::cerr << "Region File " << regionfile << " not found!" << std::endl;
+			return nullptr;
+		}
+		lastAccessedRegion = regionfile;
 	}
 	//std::cout << "Decoding " << regionfile << std::endl;
 	Chunk* chunk = decodeRegion(chunkX,chunkZ);
-	f.close();
 	return chunk;
 }

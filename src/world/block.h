@@ -372,6 +372,10 @@ class Block {
                     return "Unpowered Redstone Repeater";
                 case 94:
                     return "Powered Redstone Repeater";
+                case 95:
+                    return "Stained Glass";
+                case 96:
+                    return "Trapdoor";
                 default:
                     return "Unknown";
             }

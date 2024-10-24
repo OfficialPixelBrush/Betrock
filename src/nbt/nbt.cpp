@@ -105,3 +105,36 @@ TAG_Compound* nbt::loadNbt(uint8_t* data, size_t length) {
     recursiveNbt(rootTag, data,length,&index);
     return rootTag;
 }
+
+void cleanupNbtTag(nbtTag* tag) {
+    if (!tag) return;
+
+    // Handle compound tags
+    if (auto* compoundTag = dynamic_cast<TAG_Compound*>(tag)) {
+        // Clean up all contained tags
+        for (auto& childTag : compoundTag->data) {
+            cleanupNbtTag(childTag.get());
+        }
+    }
+    // Handle list tags
+    else if (auto* listTag = dynamic_cast<TAG_List*>(tag)) {
+        // Clean up all contained tags
+        for (auto& childTag : listTag->data) {
+            cleanupNbtTag(childTag.get());
+        }
+    }
+    // Other tag types don't need special cleanup as they don't own other tags
+    
+    // Note: We don't delete the tag here because the unique_ptr will handle that
+    // when it goes out of scope
+}
+
+void nbt::freeNbt(TAG_Compound* rootTag) {
+    if (!rootTag) return;
+    
+    // Clean up all tags recursively
+    cleanupNbtTag(rootTag);
+    
+    // Delete the root tag itself
+    delete rootTag;
+}

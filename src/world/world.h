@@ -9,6 +9,7 @@
 
 class World {
     public:
+        RegionLoader* rl;
         std::vector<Chunk*> chunks;
         Chunk* cachedChunk = nullptr;
         Block* cachedBlock = nullptr;

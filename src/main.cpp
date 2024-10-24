@@ -83,6 +83,7 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
 std::vector<ChunkMesh*> chunkMeshes;
 std::vector<DummyMesh> meshBuildQueue;
 std::mutex chunkMeshesMutex;
+std::mutex meshBuildQueueMutex;
 std::mutex chunkRadiusMutex;
 
 void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& skyLight, std::vector<Chunk*>& toBeUpdated) {
@@ -90,24 +91,23 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
     std::cout << "BuildChunk Thread lives!" << std::endl;
     while (true) {
         if (!toBeUpdated.empty()) {
-            std::lock_guard<std::mutex> lock(chunkMeshesMutex);
+            // Remove the chunk from the toBeUpdated list
             Chunk* c = toBeUpdated.back();
+            toBeUpdated.pop_back();
 
+            std::lock_guard<std::mutex> cmLock(chunkMeshesMutex);
             // Iterate over chunkMeshes to find and delete the matching chunk
             for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
                 if (c == (*it)->chunk) {
-                    //delete *it; // Delete the chunkMesh
+                    delete *it; // Delete the chunkMesh
                     chunkMeshes.erase(it); // Safely remove it from the vector
                     break;
                 }
             }
 
             // Build a new chunk mesh and add it to the chunkMeshes
-            //std::cout << toBeUpdated.size() << std::endl;
+            std::lock_guard<std::mutex> mbLock(meshBuildQueueMutex);
             meshBuildQueue.push_back(cb.buildChunk(c, smoothLighting, skyLight));
-
-            // Remove the chunk from the toBeUpdated list
-            toBeUpdated.pop_back();
 
             // Backwards iteration to remove chunkMeshes with missing chunks
             for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
@@ -118,7 +118,7 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
                 }
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
 
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     std::string worldName;
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "saves/publicbeta/";
+        worldName = "saves/glacier/";
         //return 1;
     } else {
         worldName = argv[1];
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.12", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.13", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -256,10 +256,11 @@ int main(int argc, char *argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Create a camera
-    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
 
@@ -294,13 +295,15 @@ int main(int argc, char *argv[]) {
     bool polygon = false;
     bool updateWhenMoving = false;
     bool smoothLighting = true;
-    bool manualChunkUpdateTrigger = true;
+    bool manualChunkUpdateTrigger = false;
     bool gravity = false;
     bool collision = false;
     bool renderChunks = true;
     bool renderFog = true;
+    bool optimalViewDistance = false;
     bool raycastToBlock = true;
     std::vector<Chunk*> toBeUpdated;
+    float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
     double prevTime = glfwGetTime();
     double fpsTime = 0;
@@ -309,11 +312,11 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 2;
+    int renderDistance = 4;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
-    std::string debugText = "Debug Text:\n";
+    std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
     updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
@@ -351,12 +354,19 @@ int main(int argc, char *argv[]) {
         if (!io.WantCaptureMouse) {
             camera.Inputs(window);
         }
-        camera.updateMatrix(fieldOfView, 0.1f, 300.0f);
+        // World height is 128 blocks, thus our minimum view distance is 128 units,
+        // after 9 chunks, the view distance needs to grow to account for the further away chunks
+        if (optimalViewDistance) {
+            float maxViewDistance = std::max(128.0f,(float(renderDistance)*16.0f));
+            camera.updateMatrix(fieldOfView, 0.01f, maxViewDistance);
+        } else {
+            camera.updateMatrix(fieldOfView, 0.01f, 10000);
+        }
         
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        debugText = "Debug Text:\n";
+        debugText = "";
 
         // ---- RENDERING ----
 
@@ -368,9 +378,10 @@ int main(int argc, char *argv[]) {
         // Re-enable Depth Test
         //glDepthFunc(GL_LESS);
 
-        std::unique_lock<std::mutex> lock(chunkMeshesMutex, std::try_to_lock);
+        std::unique_lock<std::mutex> cmLock(chunkMeshesMutex, std::try_to_lock);
+        std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex, std::try_to_lock);
         // TODO: Fix chunks corrupting
-        if (lock.owns_lock()) {
+        if (cmLock.owns_lock() && mbLock.owns_lock()) {
             if (!meshBuildQueue.empty()) {
                 DummyMesh mesh = meshBuildQueue.back();
                 std::vector<Mesh*> meshes;
@@ -435,62 +446,78 @@ int main(int argc, char *argv[]) {
         std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
         std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camera.Position.x/16))) + ", " + std::to_string(int(std::floor(camera.Position.z/16)));
         std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
+        std::string facing =  "Facing: ";
+        // Calculate the angle in radians based on the camera's orientation
+        float angle = atan2(camera.Orientation.z, camera.Orientation.x); // Angle in radians
+
+        // Convert radians to degrees (optional, for easier understanding)
+        float degrees = angle * 180.0f / M_PI;
+
+        // Determine the direction based on the angle
+        // TODO: Fix orientation
+        if (angle > -M_PI_4 && angle <= M_PI_4) {
+            facing += "South";
+        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
+            facing += "West";
+        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
+            facing += "North";
+        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+            facing += "East";
+        }
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
         ImGui::Text("%s", msTime.c_str());
         ImGui::Text("%s", camPos.c_str());
         ImGui::Text("%s", chunkPos.c_str());
         ImGui::Text("%s", camRot.c_str());
+        ImGui::Text("%s", facing.c_str());
         ImGui::Text("%s", camSpeed.c_str());
-        ImGui::ColorEdit4("Sky Color", sky.skyColor);
-        ImGui::ColorEdit4("Fog Color", sky.fogColor);
-        ImGui::Checkbox("Vsync", &vsync);
-        ImGui::Checkbox("Fullscreen", &fullscreen);
-        ImGui::Checkbox("Backface Culling", &cullFace);
-        ImGui::Checkbox("Polygon", &polygon);
-        ImGui::Checkbox("Update when Moving", &updateWhenMoving);
-        ImGui::Checkbox("Smooth Lighting", &smoothLighting);
-        ImGui::Checkbox("Gravity", &gravity);
-        ImGui::Checkbox("Collision", &collision);
-        ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
-        int fovTemp = int(fieldOfView/10);
-        ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
-        fieldOfView = float(fovTemp*10);
-        ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
-        std::string renderDistancePreset = "";
-        if (renderDistance==16) {
-            renderDistancePreset = "Far";
+        if (ImGui::CollapsingHeader("Colors")) {
+            ImGui::ColorEdit4("Sky Color", sky.skyColor);
+            ImGui::ColorEdit4("Fog Color", sky.fogColor);
         }
-        if (renderDistance==8) {
-            renderDistancePreset = "Normal";
-        }
-        if (renderDistance==4) {
-            renderDistancePreset = "Short";
-        }
-        if (renderDistance==2) {
-            renderDistancePreset = "Tiny";
-        }
-        ImGui::Text("%s", renderDistancePreset.c_str());
-        ImGui::SliderInt("Time of Day",&timeOfDay, 1, 24000);
-
-        ImGui::Checkbox("Render Chunks", &renderChunks);
-
-        if (fullscreen && !wasFullscreen) {
-            // Get the primary monitor and its video mode
-            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-            // Save windowed mode position and size
-            glfwGetWindowPos(window, &windowedX, &windowedY);
-            glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
-
-            // Set the window to fullscreen on the primary monitor
-            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-        } else if (wasFullscreen && !fullscreen) {
-            // Restore the window to windowed mode
-            glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedWidth, windowedHeight, 0);
+        if (ImGui::CollapsingHeader("Graphical")) {
+            ImGui::Checkbox("Vsync", &vsync);
+            ImGui::Checkbox("Fullscreen", &fullscreen);
+            ImGui::Checkbox("Backface Culling", &cullFace);
+            ImGui::Checkbox("Polygon", &polygon);
+            ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
+            ImGui::Checkbox("Render Chunks", &renderChunks);
         }
 
-        float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
+        if (ImGui::CollapsingHeader("Chunks")) {
+            ImGui::Checkbox("Smooth Lighting", &smoothLighting);
+            ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
+            std::string renderDistancePreset = "";
+            if (renderDistance==16) {
+                renderDistancePreset = "Far";
+            }
+            if (renderDistance==8) {
+                renderDistancePreset = "Normal";
+            }
+            if (renderDistance==4) {
+                renderDistancePreset = "Short";
+            }
+            if (renderDistance==2) {
+                renderDistancePreset = "Tiny";
+            }
+            ImGui::Text("%s", renderDistancePreset.c_str());
+            ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
+        
+            // Get list of chunks that're to be updated
+            if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
+                updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+                manualChunkUpdateTrigger = false;
+            }
+        }
+        if (ImGui::CollapsingHeader("Misc")) {
+            int fovTemp = int(fieldOfView/10);
+            ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
+            fieldOfView = float(fovTemp*10);
+            ImGui::Checkbox("Update when Moving", &updateWhenMoving);
+            ImGui::Checkbox("Gravity", &gravity);
+            ImGui::Checkbox("Collision", &collision);
+            ImGui::Checkbox("Raycast Block", &raycastToBlock);
+        }
 
         if (gravity) {
             camera.Position.y -= 0.24;
@@ -512,20 +539,21 @@ int main(int argc, char *argv[]) {
                 //camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(groundHit.blockPos);
                 camera.Position.y = groundHit.blockPos.y + 2.8;
                 ground = true;
-                if (camera.Velocity.y > 0.0) {
+                if (camera.Velocity.y < 0.0) {
                     camera.Velocity.y = 0.0;
                 }
             }
+            /*
             if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.2)) {
                 camera.Position.y = ceilingHit.blockPos.y - 0.2;
-                ceiling = false;
+                ceiling = true;
                 if (camera.Velocity.y < 0.0) {
                     camera.Velocity.y = 0.0;
                 }
             }
             if (ground && ceiling) {
                 camera.Position = previousPosition;
-            }
+            }*/
 
             // North
             BlockHitResult northHit = raycast(camera.Position, glm::vec3(1.0,0.0,0.0), 2, world, true);
@@ -544,43 +572,52 @@ int main(int argc, char *argv[]) {
             Block* westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
 
             if (northBlock && camera.Position.x > northHit.blockPos.x - 0.2) {
-                camera.Position.x = northHit.blockPos.x - 0.2;
                 if (camera.Velocity.x < 0.0) {
                     camera.Velocity.x = 0.0;
                 }
+                camera.Position.x = previousPosition.x;
             }
 
             if (southBlock && camera.Position.x < southHit.blockPos.x + 1.2) {
-                camera.Position.x = southHit.blockPos.x + 1.2;
                 if (camera.Velocity.x > 0.0) {
                     camera.Velocity.x = 0.0;
                 }
+                camera.Position.x = previousPosition.x;
             }
 
             if (eastBlock && camera.Position.z < eastHit.blockPos.z + 1.2) {
-                camera.Position.z = eastHit.blockPos.z + 1.2;
                 if (camera.Velocity.z > 0.0) {
                     camera.Velocity.z = 0.0;
                 }
+                camera.Position.z = previousPosition.z;
             }
 
             if (westBlock && camera.Position.z > westHit.blockPos.z - 0.2) {
-                camera.Position.z = westHit.blockPos.z - 0.2;
                 if (camera.Velocity.z < 0.0) {
                     camera.Velocity.z = 0.0;
                 }
+                camera.Position.z = previousPosition.z;
             }
             
             //camera.Speed = 4.317;
         }
-        
-        // Get list of chunks that're to be updated
-        if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
-            updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
-            manualChunkUpdateTrigger = false;
+
+        if (fullscreen && !wasFullscreen) {
+            // Get the primary monitor and its video mode
+            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+            // Save windowed mode position and size
+            glfwGetWindowPos(window, &windowedX, &windowedY);
+            glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
+
+            // Set the window to fullscreen on the primary monitor
+            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+        } else if (wasFullscreen && !fullscreen) {
+            // Restore the window to windowed mode
+            glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedWidth, windowedHeight, 0);
         }
 
-        ImGui::Checkbox("Raycast Block", &raycastToBlock);
         if (raycastToBlock) {
             // Debug Raycast to looked-at Block
             BlockHitResult hit = raycast(camera.Position, camera.Orientation, maxDistance, world);
@@ -617,7 +654,7 @@ int main(int argc, char *argv[]) {
                 debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
             }
         }
-
+        ImGui::SeparatorText("Debug");
         ImGui::Text("%s", debugText.c_str());
         ImGui::End();
 

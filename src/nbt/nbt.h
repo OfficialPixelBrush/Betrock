@@ -7,4 +7,5 @@
 class nbt {
     public:
         TAG_Compound* loadNbt(uint8_t* data, size_t length);
+        void freeNbt(TAG_Compound* rootTag);
 };

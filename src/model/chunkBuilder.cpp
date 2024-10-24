@@ -165,6 +165,14 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
         return nullptr;
     }
 
+    // Snow
+    if (blockType == GRASS) {
+        Block* b = world->getBlock(x,y+1,z);
+        if (b && b->getBlockType() == SNOW_LAYER) {
+            specialQuery = "Snow";
+        }
+    }
+
     // Bed
     if (blockType == BED) {
         // Check top-most bit to check if head of bed
@@ -194,7 +202,10 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
                 blockType == TALLGRASS ||
                 blockType == TORCH ||
                 blockType == OAK_STAIRS ||
-                blockType == WOODEN_DOOR) {
+                blockType == STONE_STAIRS ||
+                blockType == WOODEN_DOOR ||
+                blockType == WOOL ||
+                blockType == PISTON) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
                 } else {
@@ -260,62 +271,48 @@ float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosi
 }
 
 float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal, uint8_t maxSkyLight) {
-    // Array for light values
+    float x = position.x;
+    float y = position.y;
+    float z = position.z;
+    int light = 0;
+    int relevantLights = 0;
+    Block* b;
 
-    try {
-        float x = position.x;
-        float y = position.y;
-        float z = position.z;
-        int light = 0;
-        int relevantLights = 0;
-        Block* b;
-
-        // Get the adjacent blocks along face
-        for (int aOff = -1; aOff < 1; aOff++) {
-            for (int bOff = -1; bOff < 1; bOff++) {
-                if (normal.x != 0.0) {
-                    b = world->getBlock(floor(x+normal.x), floor(y+aOff), floor(z+bOff));
-                }
-                if (normal.y != 0.0) {
-                    b = world->getBlock(floor(x+aOff), floor(y+normal.y), floor(z+bOff));
-                }
-                if (normal.z != 0.0) {
-                    b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z));
-                }
-                if (b) {
-                    // Air is transparent, so we can ignore it too
-                    if (b->getBlockType() == 0 || b->getTransparent()) {
-                        light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
-                        relevantLights++;
-                    }
+    // Get the adjacent blocks along face
+    for (int aOff = -1; aOff < 1; aOff++) {
+        for (int bOff = -1; bOff < 1; bOff++) {
+            if (normal.x != 0.0) {
+                b = world->getBlock(floor(x+normal.x), floor(y+aOff), floor(z+bOff));
+            }
+            if (normal.y != 0.0) {
+                b = world->getBlock(floor(x+aOff), floor(y+normal.y), floor(z+bOff));
+            }
+            if (normal.z != 0.0) {
+                b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z));
+            }
+            if (b) {
+                // Air is transparent, so we can ignore it too
+                if (b->getBlockType() == 0 || b->getTransparent()) {
+                    light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
+                    relevantLights++;
                 }
             }
         }
-
-        if (!relevantLights) {
-            return lightArray[0];
-        }
-        light = light / relevantLights;
-        /*
-        if (adjacentBlock == nullptr) {
-            throw std::runtime_error("Adjacent block pointer is null.");
-        }
-
-        // Get lighting values from the adjacent block
-        int light = adjacentBlock->getBlockLight() + std::min(adjacentBlock->getSkyLight(), maxSkyLight);
-        */
-        // Ensure light index is within bounds
-        if (light < 0) {
-            light = 0;
-        } else if (light > 15) {
-            light = 15;
-        }
-
-        return lightArray[light];
-
-    } catch (const std::exception& e) {
-        return 1.0f;  // Return a default value in case of an error
     }
+
+    if (!relevantLights) {
+        return lightArray[0];
+    }
+    light = light / relevantLights;
+
+    // Ensure light index is within bounds
+    if (light < 0) {
+        light = 0;
+    } else if (light > 15) {
+        light = 15;
+    }
+
+    return lightArray[light];
 }
 
 std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {

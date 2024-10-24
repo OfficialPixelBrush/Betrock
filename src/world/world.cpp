@@ -1,7 +1,8 @@
 #include "world.h"
 
 World::World(std::string pName) {
-    this->name = pName;
+    World::name = pName;
+    World::rl = new RegionLoader(pName);
 }
 /*
 Region* World::findRegion(int x, int z) {
@@ -47,9 +48,9 @@ Chunk* World::findChunk(int x, int z) {
 
 Chunk* World::loadChunk(int x, int z) {
     //std::cout << "Load Chunk at " << x/16 << ", " << z/16 << std::endl;
-    regionLoader rL(name);
-    chunks.push_back(rL.loadRegion(x,z));
-    return findChunk(x,z);
+    Chunk* c = rl->loadRegion(x,z);
+    chunks.push_back(c);
+    return c;
 }
 
 Chunk* World::getChunk(int x, int z) {
@@ -82,15 +83,18 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
 
     std::vector<Chunk*> containedChunks;  // Use raw pointers if you don't want ownership
     std::vector<Chunk*> newChunks;  // Use raw pointers if you don't want ownership
+    std::cout << "Getting Chunks" << std::endl;
 
     // Collect new chunks
     for (int cx = -radius; cx <= radius; cx++) {
         for (int cz = -radius; cz <= radius; cz++) {
             bool newChunk = false;
-            if (!findChunk(ix + cx, iz + cz)) {
+            Chunk* c = findChunk(ix + cx, iz + cz);
+            if (!c) {
                 newChunk = true;
+                c = loadChunk(ix + cx, iz + cz);
             }
-            Chunk* c = getChunk(ix + cx, iz + cz);
+
             if (c) {
                 containedChunks.push_back(c);
                 if (newChunk) {
@@ -141,6 +145,7 @@ std::vector<Chunk*> World::getChunksInRadius(int x, int z, int radius) {
     for (Chunk* chunk : containedChunks) {
         chunks.push_back(chunk);  // Insert back into the main chunk vector
     }
+    std::cout << "Got " << newChunks.size() << " Chunks" << std::endl;
 
     return newChunks;
 }
