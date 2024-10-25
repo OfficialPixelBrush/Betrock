@@ -146,40 +146,6 @@ class Block {
             return nonSolidBlock;
         }
 
-        std::string getFacing() {
-            /* True for:
-             * - Torches (50)
-             * - Furnace (61)
-             * - Burning Furnace (62)
-             * - Ladders (65)
-             * - Redstone Torches (75/76)
-             * - Pumpkins (86)
-             * - Jack o'Lantern (91)
-            */
-            if (blockType == TORCH ||
-                blockType == FURNACE ||
-                blockType == LIT_FURNACE || 
-                blockType == WOODEN_DOOR || 
-                blockType == UNLIT_REDSTONE_TORCH || 
-                blockType == REDSTONE_TORCH || 
-                blockType == PUMPKIN || 
-                blockType == LIT_PUMPKIN) {
-                switch(metaData) {
-                    case 1:
-                        return "South";
-                    case 2:
-                        return "North";
-                    case 3:
-                        return "West";
-                    case 4:
-                        return "East";
-                    case 5:
-                        return "Floor";
-                }
-            }
-            return "No Direction";
-        }
-
         std::string getName() {
             switch(blockType) {
                 case 0:

@@ -29,6 +29,10 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
                 tagName += data[*index + nL];
             }
             *index += nameLength;
+            if (nbtDebug) {
+                std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName << std::endl;
+                //std::cout << std::to_string(*index) << ":\t" << std::to_string(tagType) << "/"<<nbtIdentifierName(tagType) << " - " << std::to_string(nameLength) << "->" << tagName << std::endl;
+            }
         }
 
         // Create each kind of Tag

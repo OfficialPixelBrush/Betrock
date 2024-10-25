@@ -205,7 +205,6 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
                 blockType == STONE_STAIRS ||
                 blockType == WOOL ||
                 blockType == PISTON ||
-                blockType == LADDER ||
                 blockType == TRAPDOOR) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
@@ -316,12 +315,45 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPositi
     return lightArray[light];
 }
 
+glm::vec3 rotateVertexAroundOrigin(glm::vec3 vertexPosition, float angle, glm::vec3 axis) {
+    // Create a rotation matrix for the given angle and axis
+    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis);
+    
+    // Apply the rotation to the vertex position
+    glm::vec4 rotatedPosition = rotationMatrix * glm::vec4(vertexPosition, 1.0f);
+    
+    // Return the rotated vertex position as a vec3
+    return glm::vec3(rotatedPosition);
+}
+
+
 std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<DummyMesh> meshes;
     for (auto c : chunks) {
         meshes.push_back(buildChunk(c,smoothLighting,maxSkyLight));
     }
     return meshes;
+}
+
+void rotateBlockAccordingToMetaData(glm::vec3& vertPos, uint8_t& blockType, uint8_t& blockMetaData) {
+    if (blockType == STANDING_SIGN) {
+        vertPos = rotateVertexAroundOrigin(vertPos, (16-float(blockMetaData))*22.5f, glm::vec3(0.0,1.0,0.0));
+    }
+    if (blockType == LADDER) {
+        switch(blockMetaData) {
+            case 3: // South
+                vertPos = rotateVertexAroundOrigin(vertPos, 180, glm::vec3(0.0,1.0,0.0));
+                break;
+            case 4: // West
+                vertPos = rotateVertexAroundOrigin(vertPos, 90, glm::vec3(0.0,1.0,0.0));
+                break;
+            case 5: // East
+                vertPos = rotateVertexAroundOrigin(vertPos, -90, glm::vec3(0.0,1.0,0.0));
+                break;
+            default: // North
+                break;
+        }
+    }
 }
 
 DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
@@ -407,6 +439,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     }
 
                     glm::vec3 vertPos = glm::vec3(mesh->vertices[v].position + offset);
+                    rotateBlockAccordingToMetaData(vertPos,blockType,blockMetaData);
                     glm::vec3 worldPos = vertPos + pos + 0.5f;
                     glm::vec2 finalUV = mesh->vertices[v].textureUV;
                     // Only affects the side

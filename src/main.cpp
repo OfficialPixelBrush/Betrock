@@ -101,8 +101,10 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
         if (!toBeUpdated.empty()) {
             building = true;
             // Remove the chunk from the toBeUpdated list
-            Chunk* c = toBeUpdated.back();
-            toBeUpdated.pop_back();
+            std::unique_lock<std::mutex> crLock(chunkRadiusMutex);
+            Chunk* c = toBeUpdated.front();
+            toBeUpdated.erase(toBeUpdated.begin());
+            crLock.unlock();
 
             std::lock_guard<std::mutex> cmLock(chunkMeshesMutex);
             // Iterate over chunkMeshes to find and delete the matching chunk
@@ -137,15 +139,15 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
 void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, std::vector<Chunk*>& toBeUpdated) {
     std::cout << "Get Chunk Render Distance Thread Called" << std::endl;
     //std::lock_guard<std::mutex> lock(chunkMeshesMutex);
-    std::vector<Chunk*> toBeAdded = world->getChunksInRadius(x,z,renderDistance);
-    for (uint i = 0; i < toBeAdded.size(); i++) {
+    //std::vector<Chunk*> toBeAdded = 
+    world->getChunksInRadius(x,z,renderDistance,toBeUpdated,chunkRadiusMutex);
+    /*for (uint i = 0; i < toBeAdded.size(); i++) {
         toBeUpdated.push_back(toBeAdded[i]);
     }
-    toBeAdded.clear();
+    toBeAdded.clear();*/
 }
 
 void updateChunks(Shader& shader, Camera& camera, Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated) {
-    std::lock_guard<std::mutex> lock(chunkRadiusMutex);
     sky.UpdateFog(shader, renderDistance*16);
     int x = int(camera.Position.x);
     int z = int(camera.Position.z);
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    char worldName[256] = "publicbeta";
+    char worldName[256] = "NyareativeMod";
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
         //return 1;
@@ -241,7 +243,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.0", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.1", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -272,9 +274,9 @@ int main(int argc, char *argv[]) {
     // Create a camera
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
 
@@ -332,7 +334,6 @@ int main(int argc, char *argv[]) {
     float z = camera.Position.z;
     std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
-    //updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
     // Main while loop
@@ -462,7 +463,7 @@ int main(int argc, char *argv[]) {
             std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
             world->chunks.clear();
             world->LoadWorld(worldPath);
-            updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+            //updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
         }
         std::string msTime = std::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
         std::string camPos =  std::format("Position: {:.2f},{:.2f},{:.2f}", camera.Position.x, camera.Position.y,camera.Position.z);
@@ -478,13 +479,13 @@ int main(int argc, char *argv[]) {
         // Determine the direction based on the angle
         // TODO: Fix orientation
         if (angle > -M_PI_4 && angle <= M_PI_4) {
-            facing += "North";
-        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
             facing += "East";
-        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
+        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
             facing += "South";
-        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
             facing += "West";
+        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+            facing += "North";
         }
         std::string camSpeed =  "Speed: " + std::to_string(camera.speed);
         ImGui::Text("%s", msTime.c_str());
@@ -653,7 +654,6 @@ int main(int argc, char *argv[]) {
                     debugText += "Name: " + b->getName() + "\n";
                     debugText += "Id: " + std::to_string(b->blockType) + "\n";
                     debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                    debugText += "Facing: " + b->getFacing() + "\n";
                     debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
                     debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
                     debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
@@ -670,7 +670,6 @@ int main(int argc, char *argv[]) {
                 debugText += "Name: " + b->getName() + "\n";
                 debugText += "Id: " + std::to_string(b->blockType) + "\n";
                 debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                debugText += "Facing: " + b->getFacing() + "\n";
                 debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
                 debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
                 debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";

@@ -79,7 +79,7 @@ Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 	sector = intReadFile(f,1)*4096;
 	if (!(offset | sector)) {
 		// No Chunk Present
-		if (debug) {
+		if (regionLoaderDebug) {
 			std::cerr << "Chunk #" << chunkIndex << " does not exist" << std::endl;
 		}
 		return nullptr;
@@ -88,7 +88,7 @@ Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 	// Determine Chunk metadata
 	size_t length = intReadFile(f,4)-1;
 	uint8_t compressionScheme = intReadFile(f,1);
-	if (debug) {
+	if (regionLoaderDebug) {
 		std::cout << "Chunk #" << std::to_string(chunkIndex) << ": " << offset << ", " << sector << "KiB" << std::endl;
 		std::cout << "\t" << length << " Bytes\n\tCompression " << compressionSchemeString(compressionScheme) << std::endl;
 	}

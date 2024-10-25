@@ -6,6 +6,7 @@
 #include <cmath>
 #include "regionLoader.h"
 #include <unordered_set>
+#include <mutex>
 
 class World {
     public:
@@ -31,5 +32,5 @@ class World {
         Chunk* loadChunk(int x, int z);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);
-        std::vector<Chunk*> getChunksInRadius(int x, int z, int radius);
+        void getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex);
 };

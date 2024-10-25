@@ -3,6 +3,7 @@
 #include <math.h>
 #include "nbttag.h"
 #include "../helper.h"
+#include "../debug.h"
 
 class nbt {
     public:

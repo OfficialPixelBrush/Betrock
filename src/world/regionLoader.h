@@ -7,6 +7,7 @@
 #include <libdeflate.h>
 #include "chunk.h"
 #include "../compat.h"
+#include "../debug.h"
 
 class RegionLoader {
     std::string path;
@@ -14,7 +15,6 @@ class RegionLoader {
         RegionLoader(std::string pPath);
         Chunk* loadRegion(int x, int z);
     private:
-        bool debug = false;
 	    nbt* nbtLoader;
         TAG_Compound* chunkLevel = nullptr;
         int lastX, lastZ;

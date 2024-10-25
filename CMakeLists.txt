@@ -34,6 +34,7 @@ add_executable(
     src/world/block.cpp
     
     src/helper.cpp
+    src/debug.cpp
     src/main.cpp
 
     src/include/glad.c
