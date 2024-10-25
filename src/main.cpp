@@ -18,61 +18,63 @@ bool checkIfChunkBoundaryCrossed(glm::vec3 cameraPosition, glm::vec3 previousPos
 }
 
 BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance, World* world, bool checkForSolidity = false) {
-    glm::ivec3 currentBlock = glm::floor(origin);  // Start from the block containing the origin
+    if (world) {
+        glm::ivec3 currentBlock = glm::floor(origin);  // Start from the block containing the origin
 
-    glm::vec3 deltaDist = glm::abs(glm::vec3(1.0f) / direction);  // How far to move in each axis
-    glm::ivec3 step;
-    glm::vec3 sideDist;
+        glm::vec3 deltaDist = glm::abs(glm::vec3(1.0f) / direction);  // How far to move in each axis
+        glm::ivec3 step;
+        glm::vec3 sideDist;
 
-    // Determine step direction and initial side distances, taking the fractional origin into account
-    for (int i = 0; i < 3; i++) {
-        if (direction[i] < 0) {
-            step[i] = -1;
-            sideDist[i] = (origin[i] - currentBlock[i]) * deltaDist[i];  // Fractional part considered
-        } else {
-            step[i] = 1;
-            sideDist[i] = (currentBlock[i] + 1.0f - origin[i]) * deltaDist[i];  // Fractional part considered
-        }
-    }
-
-    float rayLength = 0.0f;
-    glm::vec3 hitPos;
-    glm::vec3 hitNormal(0.0f);  // Used to store the face normal that the ray hits
-
-    while (rayLength < maxDistance) {
-        // Check if the current block contains something
-        Block* b = world->getBlock(currentBlock.x, currentBlock.y, currentBlock.z);
-        if (b != nullptr) {
-            // We can't hit air!
-            if (b->getBlockType() != AIR) {
-                if (checkForSolidity) {
-                    if (!b->getNonSolid()) {
-                        hitPos = origin + direction * rayLength;  // Calculate the exact hit position
-                        return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
-                    }
-                } else {
-                    hitPos = origin + direction * rayLength;  // Calculate the exact hit position
-                    return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
-                }
+        // Determine step direction and initial side distances, taking the fractional origin into account
+        for (int i = 0; i < 3; i++) {
+            if (direction[i] < 0) {
+                step[i] = -1;
+                sideDist[i] = (origin[i] - currentBlock[i]) * deltaDist[i];  // Fractional part considered
+            } else {
+                step[i] = 1;
+                sideDist[i] = (currentBlock[i] + 1.0f - origin[i]) * deltaDist[i];  // Fractional part considered
             }
         }
 
-        // Move to the next block, keeping track of the face the ray crosses
-        if (sideDist.x < sideDist.y && sideDist.x < sideDist.z) {
-            currentBlock.x += step.x;
-            rayLength = sideDist.x;
-            sideDist.x += deltaDist.x;
-            hitNormal = glm::vec3(-step.x, 0.0f, 0.0f);  // Crossing an x face
-        } else if (sideDist.y < sideDist.z) {
-            currentBlock.y += step.y;
-            rayLength = sideDist.y;
-            sideDist.y += deltaDist.y;
-            hitNormal = glm::vec3(0.0f, -step.y, 0.0f);  // Crossing a y face
-        } else {
-            currentBlock.z += step.z;
-            rayLength = sideDist.z;
-            sideDist.z += deltaDist.z;
-            hitNormal = glm::vec3(0.0f, 0.0f, -step.z);  // Crossing a z face
+        float rayLength = 0.0f;
+        glm::vec3 hitPos;
+        glm::vec3 hitNormal(0.0f);  // Used to store the face normal that the ray hits
+
+        while (rayLength < maxDistance) {
+            // Check if the current block contains something
+            Block* b = world->getBlock(currentBlock.x, currentBlock.y, currentBlock.z);
+            if (b != nullptr) {
+                // We can't hit air!
+                if (b->getBlockType() != AIR) {
+                    if (checkForSolidity) {
+                        if (!b->getNonSolid()) {
+                            hitPos = origin + direction * rayLength;  // Calculate the exact hit position
+                            return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
+                        }
+                    } else {
+                        hitPos = origin + direction * rayLength;  // Calculate the exact hit position
+                        return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
+                    }
+                }
+            }
+
+            // Move to the next block, keeping track of the face the ray crosses
+            if (sideDist.x < sideDist.y && sideDist.x < sideDist.z) {
+                currentBlock.x += step.x;
+                rayLength = sideDist.x;
+                sideDist.x += deltaDist.x;
+                hitNormal = glm::vec3(-step.x, 0.0f, 0.0f);  // Crossing an x face
+            } else if (sideDist.y < sideDist.z) {
+                currentBlock.y += step.y;
+                rayLength = sideDist.y;
+                sideDist.y += deltaDist.y;
+                hitNormal = glm::vec3(0.0f, -step.y, 0.0f);  // Crossing a y face
+            } else {
+                currentBlock.z += step.z;
+                rayLength = sideDist.z;
+                sideDist.z += deltaDist.z;
+                hitNormal = glm::vec3(0.0f, 0.0f, -step.z);  // Crossing a z face
+            }
         }
     }
 
@@ -88,9 +90,16 @@ std::mutex chunkRadiusMutex;
 
 void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& skyLight, std::vector<Chunk*>& toBeUpdated) {
     ChunkBuilder cb(blockModel, world);
+    bool building = false;
+    bool wasBuilding = false;
     std::cout << "BuildChunk Thread lives!" << std::endl;
     while (true) {
+        if (wasBuilding && !building) {
+            std::cout << "Finished building Chunks" << std::endl;
+            wasBuilding = building;
+        }
         if (!toBeUpdated.empty()) {
+            building = true;
             // Remove the chunk from the toBeUpdated list
             Chunk* c = toBeUpdated.back();
             toBeUpdated.pop_back();
@@ -117,6 +126,9 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
                     chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
                 }
             }
+            wasBuilding = building;
+        } else {
+            building = false;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
@@ -165,23 +177,26 @@ void takeScreenshot(GLFWwindow* window) {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
-    // Allocate memory to store the pixels (4 bytes per pixel for RGBA)
+    // Allocate memory to store the pixels
     std::vector<unsigned char> pixels(4 * width * height);
 
     // Read the pixels from the framebuffer
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
-    // Flip the image vertically (OpenGL origin is bottom-left, images typically top-left)
+    // Flip image vertically and adjust transparency
     for (int y = 0; y < height / 2; ++y) {
         for (int x = 0; x < width * 4; ++x) {
             std::swap(pixels[y * width * 4 + x], pixels[(height - 1 - y) * width * 4 + x]);
         }
     }
 
-    // Generate the filename with the current date and time
-    std::string filename = generateFilename();
+    // Optionally clear alpha values if needed to make pixels opaque
+    for (size_t i = 3; i < pixels.size(); i += 4) {
+        if (pixels[i] < 255) { pixels[i] = 255; } // Forces full opacity for each pixel
+    }
 
-    // Save the image using stb_image_write
+    // Save the image
+    std::string filename = generateFilename();
     if (!stbi_write_png(filename.c_str(), width, height, 4, pixels.data(), width * 4)) {
         std::cerr << "Failed to save screenshot!" << std::endl;
     } else {
@@ -205,13 +220,12 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    std::string worldName;
+    char worldName[256] = "publicbeta";
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
-        worldName = "saves/publicbeta/";
         //return 1;
     } else {
-        worldName = argv[1];
+        strncpy(worldName,argv[1],sizeof(worldName)-1);
     }
     float fieldOfView = 70.0f;
     int windowWidth = 1280;
@@ -227,7 +241,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.2.14", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.0", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -278,7 +292,7 @@ int main(int argc, char *argv[]) {
 
     Sky sky(skyModel);
 
-    World* world = new World(std::string(buffer) + "/" + worldName);
+    World* world = new World();
 
     // ImGui Addition
     IMGUI_CHECKVERSION();
@@ -318,7 +332,7 @@ int main(int argc, char *argv[]) {
     float z = camera.Position.z;
     std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
-    updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+    //updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
     // Main while loop
@@ -442,10 +456,18 @@ int main(int argc, char *argv[]) {
         if (ImGui::Button("Screenshot")) {
             takeScreenshot(window);
         }
-        std::string msTime =  "Frame time: " + std::to_string(fpsTime) + "ms/" + std::to_string(1000/fpsTime) + "fps";
-        std::string camPos =  "Position: " + std::to_string(camera.Position.x) + ", " + std::to_string(camera.Position.y) + ", " + std::to_string(camera.Position.z);
+        ImGui::InputText("##",worldName, 256);
+        ImGui::SameLine(0,0);
+        if (ImGui::Button("Load") && worldName != "") {
+            std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
+            world->chunks.clear();
+            world->LoadWorld(worldPath);
+            updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+        }
+        std::string msTime = std::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
+        std::string camPos =  std::format("Position: {:.2f},{:.2f},{:.2f}", camera.Position.x, camera.Position.y,camera.Position.z);
         std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camera.Position.x/16))) + ", " + std::to_string(int(std::floor(camera.Position.z/16)));
-        std::string camRot =  "Orientation: " + std::to_string(camera.Orientation.x) + ", " + std::to_string(camera.Orientation.y) + ", " + std::to_string(camera.Orientation.z);
+        std::string camRot =  std::format("Orientation: {:.2f},{:.2f},{:.2f}",camera.Orientation.x,camera.Orientation.y,camera.Orientation.z);
         std::string facing =  "Facing: ";
         // Calculate the angle in radians based on the camera's orientation
         float angle = atan2(camera.Orientation.z, camera.Orientation.x); // Angle in radians
@@ -643,7 +665,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         } else {
-            Block* b = world->getBlock(camera.Position.x,camera.Position.y,camera.Position.z);
+            Block* b = world->getBlock(floor(camera.Position.x),floor(camera.Position.y),floor(camera.Position.z));
             if (b) {
                 debugText += "Name: " + b->getName() + "\n";
                 debugText += "Id: " + std::to_string(b->blockType) + "\n";
@@ -669,7 +691,9 @@ int main(int argc, char *argv[]) {
         prevTime = glfwGetTime();
         camera.setDelta(fpsTime);
         previousPosition = camera.Position;
-        previousRenderedChunks = world->chunks.size();
+        if (world) {
+            previousRenderedChunks = world->chunks.size();
+        }
         wasFullscreen = fullscreen;
      }
 

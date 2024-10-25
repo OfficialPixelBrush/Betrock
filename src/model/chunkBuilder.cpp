@@ -203,10 +203,10 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
                 blockType == TORCH ||
                 blockType == OAK_STAIRS ||
                 blockType == STONE_STAIRS ||
-                blockType == WOODEN_DOOR ||
                 blockType == WOOL ||
                 blockType == PISTON ||
-                blockType == LADDER) {
+                blockType == LADDER ||
+                blockType == TRAPDOOR) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
                 } else {
@@ -277,23 +277,23 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPositi
     float z = position.z;
     int light = 0;
     int relevantLights = 0;
-    Block* b;
+    Block* b = nullptr;
 
     // Get the adjacent blocks along face
     for (int aOff = -1; aOff < 1; aOff++) {
         for (int bOff = -1; bOff < 1; bOff++) {
             if (normal.x != 0.0) {
-                b = world->getBlock(floor(x+normal.x), floor(y+aOff), floor(z+bOff));
-            }
-            if (normal.y != 0.0) {
-                b = world->getBlock(floor(x+aOff), floor(y+normal.y), floor(z+bOff));
-            }
-            if (normal.z != 0.0) {
-                b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z));
+                b = world->getBlock(floor(x+normal.x*0.9), floor(y+aOff), floor(z+bOff));
+            } else if (normal.y != 0.0) {
+                b = world->getBlock(floor(x+aOff), floor(y+normal.y*0.9), floor(z+bOff));
+            } else if (normal.z != 0.0) {
+                b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z*0.9));
+            } else {
+                b = nullptr;
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                if (b->getBlockType() == 0 || b->getTransparent() || b->getPartialBlock()) {
+                if (b->getTransparent() && !b->getPartialBlock()) {
                     light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
                     relevantLights++;
                 }

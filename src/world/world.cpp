@@ -1,8 +1,23 @@
 #include "world.h"
 
-World::World(std::string pName) {
-    World::name = pName;
-    World::rl = new RegionLoader(pName);
+World::World(const std::string& pName) {
+    if (pName != "") {
+        LoadWorld(pName);
+    }
+}
+
+void World::LoadWorld(const std::string& pName) {  // Use const reference
+    // First assign the new name
+    name = pName;  // No need for World:: inside member functions
+    
+    // Safely delete old RegionLoader
+    if (rl != nullptr) {  // Better null check
+        delete rl;
+        rl = nullptr;     // Good practice to null after delete
+    }
+    
+    // Create new RegionLoader
+    rl = new RegionLoader(pName);
 }
 /*
 Region* World::findRegion(int x, int z) {
