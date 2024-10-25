@@ -39,7 +39,7 @@ class Chunk {
             x = x%16;
             z = z%16;
             if (x > 15 || z > 15 || y > 127) {
-                return new Block();
+                return nullptr;
             }
             return &blocks[y + z*128 + (x*128*16)];
         }

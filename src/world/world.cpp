@@ -47,17 +47,13 @@ Chunk* World::findChunk(int x, int z) {
         return cachedChunk;
     }
 
-    // Then check elsewhere
-    for (uint i = 0; i < chunks.size(); i++) {
-        Chunk* c = chunks[i];
-        if (!c) {
-            continue;
-        }
-        if (c->x == x && c->z == z) {
-            cachedChunk = c;
-            return c;
-        }
+    // Look up in the hash map
+    auto it = chunkMap.find({x, z});
+    if (it != chunkMap.end()) {
+        cachedChunk = it->second; // Update cache
+        return it->second;
     }
+
     return nullptr;
 }
 
@@ -65,6 +61,7 @@ Chunk* World::loadChunk(int x, int z) {
     //std::cout << "Load Chunk at " << x/16 << ", " << z/16 << std::endl;
     Chunk* c = rl->loadRegion(x,z);
     chunks.push_back(c);
+    addChunk(c);
     return c;
 }
 
@@ -77,20 +74,26 @@ Chunk* World::getChunk(int x, int z) {
 }
 
 Block* World::getBlock(int x, int y, int z) {
-    if (cachedBlock && cachedBlockX == x && cachedBlockY == y && cachedBlockZ == z) {
-        return cachedBlock;
-    }
-    //std::cout << x << "," << y << "," << z << std::endl;
     Chunk* c = findChunk(floor(float(x)/16.0f),floor(float(z)/16.0f));
     if (c) {
-        cachedBlock = c->getBlock(x,y,z);
-        cachedBlockX = x;
-        cachedBlockY = y;
-        cachedBlockZ = z;
-        return cachedBlock;
+        return c->getBlock(x,y,z);
     }
     return nullptr;
 }
+
+
+void World::addChunk(Chunk* chunk) {
+    chunks.push_back(chunk);
+    chunkMap[{chunk->x, chunk->z}] = chunk;
+}
+
+void World::removeChunk(int x, int z) {
+    auto key = std::make_pair(x, z);
+    chunkMap.erase(key);
+
+    // Optional: remove from chunks vector if necessary
+}
+
 
 void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex) {
     int ix = int(float(x) / 16.0f);

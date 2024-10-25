@@ -111,8 +111,8 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
     }
 }
 
-uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
-    if (currentBlock == nullptr) {
+bool isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
+    if (!currentBlock) {
         return true;
     }
     // Calculate adjacent block coordinates
@@ -123,7 +123,7 @@ uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::ve
     // Get the adjacent block
     Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
     // No adjacent Block, not hidden
-    if (adjacentBlock == nullptr) {
+    if (!adjacentBlock) {
         return true;
     }
 
@@ -140,7 +140,8 @@ uint8_t isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::ve
         if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock() || currentBlock->getPartialBlock()) {
             return false;
         } else {
-            return adjacentBlock->getBlockType();
+            //return adjacentBlock->getBlockType();
+            return true;
         }
     }
     return false;

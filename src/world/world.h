@@ -7,9 +7,19 @@
 #include "regionLoader.h"
 #include <unordered_set>
 #include <mutex>
+#include <unordered_map>
+
+// Hash function for std::pair<int, int>
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator()(const std::pair<T1, T2>& pair) const {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 
 class World {
     public:
+        std::unordered_map<std::pair<int, int>, Chunk*, pair_hash> chunkMap;
         RegionLoader* rl = nullptr;
         std::vector<Chunk*> chunks;
         Chunk* cachedChunk = nullptr;
@@ -32,5 +42,7 @@ class World {
         Chunk* loadChunk(int x, int z);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);
+        void addChunk(Chunk* chunk);
+        void removeChunk(int x, int z);
         void getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex);
 };
