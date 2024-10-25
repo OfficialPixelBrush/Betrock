@@ -14,5 +14,5 @@ void main() {
     vec3 normal = normalize(Normal);
 
     // The final color of the pixel
-    FragColor = vec4(0.5+normal/2,1.0f);
+    FragColor = vec4(normal,1.0f);
 }

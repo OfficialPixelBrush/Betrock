@@ -6,6 +6,7 @@
 #include <math.h>
 #include <thread>
 #include <mutex>
+#include <format>
 
 #include "include/imgui/imgui.h"
 #include "include/imgui/backends/imgui_impl_glfw.h"

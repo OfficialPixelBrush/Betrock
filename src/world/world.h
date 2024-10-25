@@ -9,7 +9,7 @@
 
 class World {
     public:
-        RegionLoader* rl;
+        RegionLoader* rl = nullptr;
         std::vector<Chunk*> chunks;
         Chunk* cachedChunk = nullptr;
         Block* cachedBlock = nullptr;
@@ -17,7 +17,15 @@ class World {
         int cachedBlockY;
         int cachedBlockZ;
         std::string name;
-        World(std::string pName);
+        World(const std::string& pName = "");
+        void LoadWorld(const std::string& pName);
+        // Also add a destructor if you haven't already
+        ~World() {
+            if (rl != nullptr) {
+                delete rl;
+                rl = nullptr;
+            }
+        }
 
         Chunk* findChunk(int x, int z);
         Chunk* loadChunk(int x, int z);

@@ -54,14 +54,20 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 
 
 ## Progress
+### Goals for Version 0.3.0
+- [ ] Make fog act in world space, not view space!
+- [ ] Smooth Lighting Fixes
+- [ ] Sky
+- [ ] Biome Visuals
+- [ ] Fix Chunk Loading Memory leak
+- [ ] Windows Version
+      - stb causing issues here
+
 ### Goals for Version 0.2.0
 - Visual Flair
     - [x] Fog
-        - [ ] Make fog act in world space, not view space!
     - [x] Smooth Lighting
     - [x] Ambient Occlusion
-    - [ ] Sky
-    - [ ] Biome Visuals
 - Gameplay
     - [x] Chunk Loading
         - [x] Chunk Queue
@@ -72,8 +78,6 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
     - [x] Dynamic Chunk Loading as one moves
     - [x] Gravity
     - [x] Smooth Movement
-- [ ] Windows Version
-      - stb causing issues here
 
 ### Goals for Version 0.1.0
 - [x] Import Beta 1.7.3 compliant Minecraft worlds
@@ -109,3 +113,5 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 ### YouTube
 - ["Why You Shouldn't Nest Your Code" by CodeAesthetic](https://www.youtube.com/watch?v=CFRhGnuXG-4)
 - ["OpenGL Course - Create 3D and 2D Graphics With C++" by freeCodeCamp.org](https://youtu.be/45MIykWJ-C4)
+### Other
+- [Minecraft ID List](https://minecraft-ids.grahamedgecombe.com/)
