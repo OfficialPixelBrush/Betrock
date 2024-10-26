@@ -19,9 +19,8 @@ struct pair_hash {
 
 class World {
     public:
-        std::unordered_map<std::pair<int, int>, Chunk*, pair_hash> chunkMap;
+        std::unordered_map<std::pair<int, int>, Chunk*, pair_hash> chunks;
         RegionLoader* rl = nullptr;
-        std::vector<Chunk*> chunks;
         Chunk* cachedChunk = nullptr;
         Block* cachedBlock = nullptr;
         int cachedBlockX;

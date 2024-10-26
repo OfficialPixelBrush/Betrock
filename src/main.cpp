@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.2", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.3", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -511,6 +511,9 @@ int main(int argc, char *argv[]) {
             ImGui::Checkbox("Smooth Lighting", &smoothLighting);
             ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
             std::string renderDistancePreset = "";
+            if (renderDistance==32) {
+                renderDistancePreset = "Extreme";
+            }
             if (renderDistance==16) {
                 renderDistancePreset = "Far";
             }
@@ -524,7 +527,7 @@ int main(int argc, char *argv[]) {
                 renderDistancePreset = "Tiny";
             }
             ImGui::Text("%s", renderDistancePreset.c_str());
-            ImGui::SliderInt("Render Distance",&renderDistance, 1, 16);
+            ImGui::SliderInt("Render Distance",&renderDistance, 1, 32);
         
             // Get list of chunks that're to be updated
             if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camera.Position, previousPosition) && updateWhenMoving)) {
@@ -542,23 +545,25 @@ int main(int argc, char *argv[]) {
             ImGui::Checkbox("Raycast Block", &raycastToBlock);
         }
 
-        if (gravity) {
-            camera.Position.y -= 0.24;
-        }
-
         if (collision) {
             // Which collisions occured
             bool ground = false;
             bool ceiling = false;
+            Block* groundBlock = nullptr;
+            Block* ceilingBlock = nullptr;
             // Ground
             BlockHitResult groundHit = raycast(camera.Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
-            Block* groundBlock = world->getBlock(groundHit.blockPos.x,groundHit.blockPos.y,groundHit.blockPos.z);
+            if (groundHit.hit) {
+                groundBlock = world->getBlock(groundHit.blockPos.x,groundHit.blockPos.y,groundHit.blockPos.z);
+            }
 
             // Ceiling
             BlockHitResult ceilingHit = raycast(camera.Position, glm::vec3(0.0,1.0,0.0), maxDistance, world, true);
-            Block* ceilingBlock = world->getBlock(ceilingHit.blockPos.x,ceilingHit.blockPos.y,ceilingHit.blockPos.z);
+            if (ceilingHit.hit) {
+                ceilingBlock = world->getBlock(ceilingHit.blockPos.x,ceilingHit.blockPos.y,ceilingHit.blockPos.z);
+            }
 
-            if (groundBlock && camera.Position.y < (groundHit.blockPos.y + 2.8)) {
+            if (groundBlock && camera.Position.y < (groundHit.blockPos.y + 2.75)) {
                 //camera.Position = camera.Position-glm::vec3(glm::ivec3(camera.Position)) + glm::vec3(groundHit.blockPos);
                 camera.Position.y = groundHit.blockPos.y + 2.8;
                 ground = true;
@@ -566,60 +571,66 @@ int main(int argc, char *argv[]) {
                     camera.Velocity.y = 0.0;
                 }
             }
-            /*
-            if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.2)) {
+            
+            if (ceilingBlock && camera.Position.y > (ceilingHit.blockPos.y - 0.15)) {
                 camera.Position.y = ceilingHit.blockPos.y - 0.2;
                 ceiling = true;
-                if (camera.Velocity.y < 0.0) {
+                if (camera.Velocity.y > 0.0) {
                     camera.Velocity.y = 0.0;
                 }
             }
             if (ground && ceiling) {
                 camera.Position = previousPosition;
-            }*/
+            }
 
-            // North
-            BlockHitResult northHit = raycast(camera.Position, glm::vec3(1.0,0.0,0.0), 2, world, true);
-            Block* northBlock = world->getBlock(northHit.blockPos.x,northHit.blockPos.y,northHit.blockPos.z);
+            Block* northBlock = nullptr;    
+            Block* southBlock = nullptr;
+            Block*  eastBlock = nullptr;
+            Block*  westBlock = nullptr;
 
             // East
-            BlockHitResult eastHit = raycast(camera.Position, glm::vec3(0.0,0.0,-1.0), 2, world, true);
-            Block* eastBlock = world->getBlock(eastHit.blockPos.x,eastHit.blockPos.y,eastHit.blockPos.z);
-
-            // South
-            BlockHitResult southHit = raycast(camera.Position, glm::vec3(-1.0,0.0,0.0), 2, world, true);
-            Block* southBlock = world->getBlock(southHit.blockPos.x,southHit.blockPos.y,southHit.blockPos.z);
+            BlockHitResult eastHit = raycast(camera.Position, glm::vec3(1.0,0.0,0.0), 1, world, true);
+            if (eastHit.hit) {
+                eastBlock = world->getBlock(eastHit.blockPos.x,eastHit.blockPos.y,eastHit.blockPos.z);
+            }
 
             // West
-            BlockHitResult westHit = raycast(camera.Position, glm::vec3(0.0,0.0,1.0), 2, world, true);
-            Block* westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
+            BlockHitResult westHit = raycast(camera.Position, glm::vec3(-1.0,0.0,0.0), 1, world, true);
+            if (westHit.hit) {
+                westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
+            }
 
-            if (northBlock && camera.Position.x > northHit.blockPos.x - 0.2) {
-                if (camera.Velocity.x < 0.0) {
-                    camera.Velocity.x = 0.0;
-                }
+            // North
+            BlockHitResult northHit = raycast(camera.Position, glm::vec3(0.0,0.0,1.0), 1, world, true);
+            if (northHit.hit) {
+                northBlock = world->getBlock(northHit.blockPos.x,northHit.blockPos.y,northHit.blockPos.z);
+            }
+
+            // South
+            BlockHitResult southHit = raycast(camera.Position, glm::vec3(0.0,0.0,-1.0), 1, world, true);
+            if (southHit.hit) {
+                southBlock = world->getBlock(southHit.blockPos.x,southHit.blockPos.y,southHit.blockPos.z);
+            }
+
+            // 
+            if (eastBlock && camera.Position.x > eastHit.blockPos.x - 0.2) {
                 camera.Position.x = previousPosition.x;
+                camera.Velocity.x = 0.0;
             }
 
-            if (southBlock && camera.Position.x < southHit.blockPos.x + 1.2) {
-                if (camera.Velocity.x > 0.0) {
-                    camera.Velocity.x = 0.0;
-                }
+            if (westBlock && camera.Position.x < westHit.blockPos.x + 1.2) {
                 camera.Position.x = previousPosition.x;
+                camera.Velocity.x = 0.0;
             }
 
-            if (eastBlock && camera.Position.z < eastHit.blockPos.z + 1.2) {
-                if (camera.Velocity.z > 0.0) {
-                    camera.Velocity.z = 0.0;
-                }
+            if (northBlock && camera.Position.z < northHit.blockPos.z + 1.2) {
                 camera.Position.z = previousPosition.z;
+                camera.Velocity.z = 0.0;
             }
 
-            if (westBlock && camera.Position.z > westHit.blockPos.z - 0.2) {
-                if (camera.Velocity.z < 0.0) {
-                    camera.Velocity.z = 0.0;
-                }
+            if (southBlock && camera.Position.z > southHit.blockPos.z - 0.2) {
                 camera.Position.z = previousPosition.z;
+                camera.Velocity.z = 0.0;
             }
             
             //camera.Speed = 4.317;

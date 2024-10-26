@@ -48,8 +48,8 @@ Chunk* World::findChunk(int x, int z) {
     }
 
     // Look up in the hash map
-    auto it = chunkMap.find({x, z});
-    if (it != chunkMap.end()) {
+    auto it = chunks.find({x, z});
+    if (it != chunks.end()) {
         cachedChunk = it->second; // Update cache
         return it->second;
     }
@@ -60,7 +60,6 @@ Chunk* World::findChunk(int x, int z) {
 Chunk* World::loadChunk(int x, int z) {
     //std::cout << "Load Chunk at " << x/16 << ", " << z/16 << std::endl;
     Chunk* c = rl->loadRegion(x,z);
-    chunks.push_back(c);
     addChunk(c);
     return c;
 }
@@ -81,32 +80,30 @@ Block* World::getBlock(int x, int y, int z) {
     return nullptr;
 }
 
-
 void World::addChunk(Chunk* chunk) {
-    chunks.push_back(chunk);
-    chunkMap[{chunk->x, chunk->z}] = chunk;
+    if (chunk) {
+        chunks[{chunk->x, chunk->z}] = chunk;
+    }
 }
 
 void World::removeChunk(int x, int z) {
     auto key = std::make_pair(x, z);
-    chunkMap.erase(key);
+    chunks.erase(key);
 
     // Optional: remove from chunks vector if necessary
 }
-
 
 void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex) {
     int ix = int(float(x) / 16.0f);
     int iz = int(float(z) / 16.0f);
 
-    std::vector<Chunk*> containedChunks;  // Use raw pointers if you don't want ownership
-    //std::vector<Chunk*> newChunks;  // Use raw pointers if you don't want ownership
+    std::vector<Chunk*> containedChunks;
     std::cout << "Getting Chunks" << std::endl;
 
-    // Collect new chunks
+    // Collect new chunks within the radius
     for (int ring = 0; ring <= radius; ring++) {
-        for (int cx = -ring; cx < ring; cx ++) {
-            for (int cz = -ring; cz < ring; cz ++) {
+        for (int cx = -ring; cx < ring; cx++) {
+            for (int cz = -ring; cz < ring; cz++) {
                 bool newChunk = false;
                 Chunk* c = findChunk(ix + cx, iz + cz);
                 if (!c) {
@@ -119,24 +116,15 @@ void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& new
                     if (newChunk) {
                         std::unique_lock<std::mutex> lock(chunkRadiusMutex);
                         newChunks.push_back(c);
-                        // If a chunk neighbors this chunk, add it to the chunk regen queue
-                        Chunk* nc = findChunk(ix + cx, iz + cz - 1);
-                        Chunk* sc = findChunk(ix + cx, iz + cz + 1);
-                        Chunk* ec = findChunk(ix + cx - 1, iz + cz);
-                        Chunk* wc = findChunk(ix + cx + 1, iz + cz);
+
+                        // Check neighboring chunks
+                        Chunk* neighbors[] = {findChunk(ix + cx, iz + cz - 1), findChunk(ix + cx, iz + cz + 1),
+                                              findChunk(ix + cx - 1, iz + cz), findChunk(ix + cx + 1, iz + cz)};
                         
-                        // Check and add neighboring chunks only if they are not already in newChunks
-                        if (nc && std::find(newChunks.begin(), newChunks.end(), nc) == newChunks.end()) {
-                            newChunks.push_back(nc);
-                        }
-                        if (sc && std::find(newChunks.begin(), newChunks.end(), sc) == newChunks.end()) {
-                            newChunks.push_back(sc);
-                        }
-                        if (ec && std::find(newChunks.begin(), newChunks.end(), ec) == newChunks.end()) {
-                            newChunks.push_back(ec);
-                        }
-                        if (wc && std::find(newChunks.begin(), newChunks.end(), wc) == newChunks.end()) {
-                            newChunks.push_back(wc);
+                        for (Chunk* neighbor : neighbors) {
+                            if (neighbor && std::find(newChunks.begin(), newChunks.end(), neighbor) == newChunks.end()) {
+                                newChunks.push_back(neighbor);
+                            }
                         }
                         lock.unlock();
                     }
@@ -145,31 +133,25 @@ void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& new
         }
     }
 
-    // Sort newChunks by distance from the point (x, z)
-    /*
+    // Delete chunks outside the radius
     std::unique_lock<std::mutex> lock(chunkRadiusMutex);
-    std::sort(newChunks.begin(), newChunks.end(), [ix, iz](Chunk* a, Chunk* b) {
-        // Assuming Chunk has methods getX() and getZ() that return its coordinates
-        int ax = a->x;
-        int az = a->z;
-        int bx = b->x;
-        int bz = b->z;
+    for (auto it = newChunks.begin(); it != newChunks.end();) {
+        Chunk* chunk = *it;
+        int chunkX = chunk->x;
+        int chunkZ = chunk->z;
 
-        // Calculate squared distance to avoid the cost of sqrt
-        int distA = (ax - ix) * (ax - ix) + (az - iz) * (az - iz);
-        int distB = (bx - ix) * (bx - ix) + (bz - iz) * (bz - iz);
-        return distA > distB;  // Sort in ascending order (closest first)
-    });
-    lock.unlock();
-    */
+        int distX = abs(chunkX - ix);
+        int distZ = abs(chunkZ - iz);
 
-    // Clear old chunks if necessary
-    chunks.clear();  // Clear the old chunks safely (assuming proper ownership elsewhere)
-
-    // If needed, manually reset chunks to ensure no memory leaks
-    // Repopulate the old chunks with the new set of pointers
-    for (Chunk* chunk : containedChunks) {
-        chunks.push_back(chunk);  // Insert back into the main chunk vector
+        // Check if the chunk is outside the radius
+        if (distX > radius || distZ > radius) {
+            delete chunk;
+            it = newChunks.erase(it);
+        } else {
+            ++it;
+        }
     }
+    lock.unlock();
+
     std::cout << "Got " << newChunks.size() << " Chunks" << std::endl;
 }

@@ -36,11 +36,11 @@ class Chunk {
         }
 
         Block* getBlock(uint x, uint y, uint z) {
-            x = x%16;
-            z = z%16;
-            if (x > 15 || z > 15 || y > 127) {
+            if (y > 127) {
                 return nullptr;
             }
+            x = x%16;
+            z = z%16;
             return &blocks[y + z*128 + (x*128*16)];
         }
 };

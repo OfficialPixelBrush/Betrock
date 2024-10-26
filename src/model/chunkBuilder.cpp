@@ -160,11 +160,10 @@ std::vector<std::string> splitString(const std::string& str, char delimiter) {
 }
 
 Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
-
-    std::string specialQuery = "";
     if (blockType == AIR) {
         return nullptr;
     }
+    std::string specialQuery = "";
 
     // Snow
     if (blockType == GRASS) {
@@ -174,14 +173,9 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
         }
     }
 
-    // Bed
-    if (blockType == BED) {
-        // Check top-most bit to check if head of bed
-        if (blockMetaData & 0x08) {
-            specialQuery = "Head";
-        } else {
-            specialQuery = "End";
-        }
+    // Blocks that should ignore rotation data
+    if (blockType == BED  || blockType == WOODEN_DOOR || blockType == IRON_DOOR) {
+        blockMetaData &= 0x8;
     }
 
     std::vector<std::string> compareTo;
@@ -202,11 +196,15 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
                 blockType == LOG ||
                 blockType == TALLGRASS ||
                 blockType == TORCH ||
-                blockType == OAK_STAIRS ||
                 blockType == STONE_STAIRS ||
+                blockType == OAK_STAIRS ||
                 blockType == WOOL ||
                 blockType == PISTON ||
-                blockType == TRAPDOOR) {
+                blockType == TRAPDOOR ||
+                blockType == WOODEN_DOOR ||
+                blockType == IRON_DOOR ||
+                blockType == BED
+            ) {
                 if (blockMetaData == std::stoi(compareTo[1])) {
                     return &m;
                 } else {
@@ -327,6 +325,18 @@ glm::vec3 rotateVertexAroundOrigin(glm::vec3 vertexPosition, float angle, glm::v
     return glm::vec3(rotatedPosition);
 }
 
+glm::vec3 rotateNormalAroundOrigin(glm::vec3 normal, float angle, glm::vec3 axis) {
+    // Create a rotation matrix for the given angle and axis
+    glm::mat3 rotationMatrix = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(angle), axis));
+    
+    // Apply the rotation to the normal
+    glm::vec3 rotatedNormal = rotationMatrix * normal;
+    
+    // Return the rotated normal
+    return rotatedNormal;
+}
+
+
 
 std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<DummyMesh> meshes;
@@ -336,24 +346,82 @@ std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, boo
     return meshes;
 }
 
-void rotateBlockAccordingToMetaData(glm::vec3& vertPos, uint8_t& blockType, uint8_t& blockMetaData) {
+void rotateBlockAccordingToMetaData(glm::vec3& vertPos, glm::vec3& normal, uint8_t& blockType, uint8_t& blockMetaData) {
+    bool changed = false;
+    float angle = 0;
+    glm::vec3 rotationAxis = glm::vec3(0.0,1.0,0.0);
+    // Dynamic rotations
     if (blockType == STANDING_SIGN) {
-        vertPos = rotateVertexAroundOrigin(vertPos, (16-float(blockMetaData))*22.5f, glm::vec3(0.0,1.0,0.0));
-    }
-    if (blockType == LADDER) {
-        switch(blockMetaData) {
-            case 3: // South
-                vertPos = rotateVertexAroundOrigin(vertPos, 180, glm::vec3(0.0,1.0,0.0));
-                break;
-            case 4: // West
-                vertPos = rotateVertexAroundOrigin(vertPos, 90, glm::vec3(0.0,1.0,0.0));
-                break;
-            case 5: // East
-                vertPos = rotateVertexAroundOrigin(vertPos, -90, glm::vec3(0.0,1.0,0.0));
-                break;
+        changed = true;
+        angle = (16-float(blockMetaData))*22.5f;
+    // Group I
+    } else if (blockType == PUMPKIN || blockType == LIT_PUMPKIN) {
+        changed = true;
+        switch(blockMetaData & 0x07) {
             default: // North
                 break;
+            case 0: // South
+                angle = 180;
+                break;
+            case 3: // East
+                angle = -90;
+                break;
+            case 1: // West
+                angle = 90;
+                break;
         }
+    // Group H
+    } else if (blockType == WOODEN_DOOR || blockType == IRON_DOOR) {
+        changed = true;
+        switch(blockMetaData & 0x07) {
+            default: // North
+                break;
+            case 1: // South
+                angle = 180;
+                break;
+            case 0: // East
+                angle = -90;
+                break;
+            case 2: // West
+                angle = 90;
+                break;
+        }
+    // Group C
+    } else if (blockType == BED) {
+        changed = true;
+        switch(blockMetaData & 0x07) {
+            default: // North
+                break;
+            case 2: // South
+                angle = 180;
+                break;
+            case 1: // East
+                angle = -90;
+                break;
+            case 3: // West
+                angle = 90;
+                break;
+        }
+    // Group E
+    } else if (blockType == LADDER) {
+        changed = true;
+        switch(blockMetaData) {
+            default: // North
+                break;
+            case 3: // South
+                angle = 180;
+                break;
+            case 5: // East
+                angle = -90;
+                break;
+            case 4: // West
+                angle = 90;
+                break;
+        }
+    }
+    if (changed) {
+        vertPos = rotateVertexAroundOrigin(vertPos, angle, rotationAxis);
+        normal = rotateNormalAroundOrigin(normal, angle, rotationAxis);
     }
 }
 
@@ -397,7 +465,8 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 }
                 glm::vec3 offset;
                 for (uint v = 0; v < mesh->vertices.size(); v++) {
-                    if (isHidden(world,x,y,z,b,mesh->vertices[v].normal)) {
+                    glm::vec3 normal = glm::vec3(mesh->vertices[v].normal);
+                    if (isHidden(world,x,y,z,b,normal)) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);
@@ -440,21 +509,22 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     }
 
                     glm::vec3 vertPos = glm::vec3(mesh->vertices[v].position + offset);
-                    rotateBlockAccordingToMetaData(vertPos,blockType,blockMetaData);
+                    rotateBlockAccordingToMetaData(vertPos,normal,blockType,blockMetaData);
+
                     glm::vec3 worldPos = vertPos + pos + 0.5f;
                     glm::vec2 finalUV = mesh->vertices[v].textureUV;
                     // Only affects the side
-                    if (mesh->vertices[v].normal.y == 0) {
+                    if (normal.y == 0) {
                         finalUV.y = finalUV.y + (offset.y/16);
                     }
                     
                     // Water in it's own thing
                     if (blockType == WATER || blockType == LAVA) {
-                        color *= getLighting(world,x,y,z,mesh->vertices[v].normal, maxSkyLight);
+                        color *= getLighting(world,x,y,z,normal,maxSkyLight);
                         waterVertices.push_back(
                             Vertex(
                                 worldPos,
-                                mesh->vertices[v].normal,
+                                normal,
                                 color,
                                 finalUV
                             )
@@ -463,18 +533,18 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         // Apply light if the block isn't a lightsource
                         if (!b->lightSource) {
                             if (smoothLighting) {
-                                color *= getSmoothLighting(world,worldPos,vertPos, mesh->vertices[v].normal,maxSkyLight);
+                                color *= getSmoothLighting(world,worldPos,vertPos,normal,maxSkyLight);
                                 if (!b->getTransparent() ) {
-                                    color *= getAmbientOcclusion(world,worldPos,vertPos, mesh->vertices[v].normal);
+                                    color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
                                 }
                             } else {
-                                color *= getLighting(world,x,y,z,mesh->vertices[v].normal, maxSkyLight);
+                                color *= getLighting(world,x,y,z,normal,maxSkyLight);
                             }
                         }
                         worldVertices.push_back(
                             Vertex(
                                 worldPos,
-                                mesh->vertices[v].normal,
+                                normal,
                                 color,
                                 finalUV
                             )
