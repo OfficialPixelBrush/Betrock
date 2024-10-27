@@ -1,4 +1,4 @@
-#include "config.h"
+#include "main.h"
 
 // TODO: Yeet these elsewhere
 struct BlockHitResult {
@@ -47,7 +47,7 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
                 // We can't hit air!
                 if (b->getBlockType() != AIR) {
                     if (checkForSolidity) {
-                        if (!b->getNonSolid()) {
+                        if (!isNonSolid(b->getBlockType())) {
                             hitPos = origin + direction * rayLength;  // Calculate the exact hit position
                             return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
                         }
@@ -93,6 +93,7 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
     bool building = false;
     bool wasBuilding = false;
     std::cout << "BuildChunk Thread lives!" << std::endl;
+
     while (true) {
         if (wasBuilding && !building) {
             std::cout << "Finished building Chunks" << std::endl;
@@ -117,8 +118,9 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
             }
 
             // Build a new chunk mesh and add it to the chunkMeshes
-            std::lock_guard<std::mutex> mbLock(meshBuildQueueMutex);
+            std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex);
             meshBuildQueue.push_back(cb.buildChunk(c, smoothLighting, skyLight));
+            mbLock.unlock();
 
             // Backwards iteration to remove chunkMeshes with missing chunks
             for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
@@ -222,7 +224,7 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    char worldName[256] = "NyareativeMod";
+    char worldName[256] = "publicbeta";
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
         //return 1;
@@ -243,7 +245,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.3", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.4", NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -274,9 +276,9 @@ int main(int argc, char *argv[]) {
     // Create a camera
     //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
     camPointer = &camera;
 
@@ -287,6 +289,9 @@ int main(int argc, char *argv[]) {
     // Face Ordering
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    // Initialize Block Property LUT
+    initializeBlockLUTs();
 
     // Load Blockmodel
     Model* skyModel = new Model("./src/external/models/sky.obj");
@@ -328,7 +333,7 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 4;
+    int renderDistance = 32;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
@@ -392,11 +397,9 @@ int main(int argc, char *argv[]) {
         //sky.Draw(skyShader, camera);
         // Re-enable Depth Test
         //glDepthFunc(GL_LESS);
-
-        std::unique_lock<std::mutex> cmLock(chunkMeshesMutex, std::try_to_lock);
         std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex, std::try_to_lock);
         // TODO: Fix chunks corrupting
-        if (cmLock.owns_lock() && mbLock.owns_lock()) {
+        if (mbLock.owns_lock()) {
             if (!meshBuildQueue.empty()) {
                 DummyMesh mesh = meshBuildQueue.back();
                 std::vector<Mesh*> meshes;
@@ -410,43 +413,42 @@ int main(int argc, char *argv[]) {
                 chunkMeshes.push_back(cm);
                 meshBuildQueue.pop_back();
             }
+        }
+        
+        // Sort Chunks by Manhattan Distance
+        std::sort(chunkMeshes.begin(), chunkMeshes.end(),
+            [&camera](const auto& a, const auto& b) {
+                // Only compare if the second mesh is "water" for both chunks
+                if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
+                    b->meshes.size() > 1 && b->meshes[1]->name == "water") {
 
-            // Sort Chunks with improved precision
-            std::sort(chunkMeshes.begin(), chunkMeshes.end(),
-                [&camera](const auto& a, const auto& b) {
-                    // Only compare if the second mesh is "water" for both chunks
-                    if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
-                        b->meshes.size() > 1 && b->meshes[1]->name == "water") {
+                    // Calculate chunk center positions
+                    glm::vec2 aChunkPosition = glm::vec2(a->chunk->x * 16 + 8, a->chunk->z * 16 + 8);
+                    glm::vec2 bChunkPosition = glm::vec2(b->chunk->x * 16 + 8, b->chunk->z * 16 + 8);
+                    glm::vec2 cameraXZ = glm::vec2(camera.Position.x, camera.Position.z);
 
-                        // Calculate chunk center positions
-                        glm::vec2 aChunkPosition = glm::vec2(a->chunk->x * 16 + 8, a->chunk->z * 16 + 8);
-                        glm::vec2 bChunkPosition = glm::vec2(b->chunk->x * 16 + 8, b->chunk->z * 16 + 8);
-                        glm::vec2 cameraXZ = glm::vec2(camera.Position.x, camera.Position.z);
+                    // Calculate Manhattan distances from the camera
+                    float distA = std::abs(aChunkPosition.x - cameraXZ.x) + std::abs(aChunkPosition.y - cameraXZ.y);
+                    float distB = std::abs(bChunkPosition.x - cameraXZ.x) + std::abs(bChunkPosition.y - cameraXZ.y);
 
-                        // Calculate squared distances from the camera
-                        float distA = glm::length2(aChunkPosition - cameraXZ);
-                        float distB = glm::length2(bChunkPosition - cameraXZ);
-
-                        // Primary sorting condition: Compare distances (larger distance comes first)
-                        if (std::abs(distA - distB) > 1e-4f) {  // Add epsilon tolerance to avoid precision issues
-                            return distA > distB;
-                        }
-
-                        // Secondary sorting condition: Compare chunk x positions as tie-breaker
-                        if (a->chunk->x != b->chunk->x) {
-                            return a->chunk->x > b->chunk->x;
-                        }
-
-                        // Final tie-breaker: Compare chunk z positions
-                        return a->chunk->z > b->chunk->z;
+                    // Primary sorting condition: Compare distances (larger distance comes first)
+                    if (std::abs(distA - distB) > 1e-4f) {  // Add epsilon tolerance to avoid precision issues
+                        return distA > distB;
                     }
 
-                    // If one or both chunks don't have water, maintain original order
-                    return false;
-                });
-        }
+                    // Secondary sorting condition: Compare chunk x positions as tie-breaker
+                    if (a->chunk->x != b->chunk->x) {
+                        return a->chunk->x > b->chunk->x;
+                    }
+
+                    // Final tie-breaker: Compare chunk z positions
+                    return a->chunk->z > b->chunk->z;
+                }
+                return false;
+            });
 
         // Render all chunks
+        // TODO: Only render chunks that're actually visible
         if (renderChunks) {
             for (uint i = 0; i < chunkMeshes.size(); i++) {
                 chunkMeshes[i]->Draw(blockShader, camera);
@@ -461,9 +463,9 @@ int main(int argc, char *argv[]) {
         ImGui::SameLine(0,0);
         if (ImGui::Button("Load") && worldName != "") {
             std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
-            world->chunks.clear();
+            world->clearChunks();
             world->LoadWorld(worldPath);
-            //updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
+            updateChunks(blockShader, camera, sky, renderDistance, world, toBeUpdated);
         }
         std::string msTime = std::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
         std::string camPos =  std::format("Position: {:.2f},{:.2f},{:.2f}", camera.Position.x, camera.Position.y,camera.Position.z);
@@ -662,12 +664,13 @@ int main(int argc, char *argv[]) {
                 debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
                 Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
                 if (b) {
-                    debugText += "Name: " + b->getName() + "\n";
-                    debugText += "Id: " + std::to_string(b->blockType) + "\n";
-                    debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                    debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
-                    debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
-                    debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+                    uint8_t blockType = b->getBlockType();
+                    debugText += "Name: " + getBlockName(blockType) + "\n";
+                    debugText += "Id: " + std::to_string(b->getBlockType()) + "\n";
+                    debugText += "MetaData: " + std::to_string(b->getMetaData()) + "\n";
+                    debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
+                    debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
+                    debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
                 }
                 Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
                 if (bn) {
@@ -678,12 +681,13 @@ int main(int argc, char *argv[]) {
         } else {
             Block* b = world->getBlock(floor(camera.Position.x),floor(camera.Position.y),floor(camera.Position.z));
             if (b) {
-                debugText += "Name: " + b->getName() + "\n";
-                debugText += "Id: " + std::to_string(b->blockType) + "\n";
-                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                debugText += "Transparent: " + std::to_string(b->transparent) + "\n";
-                debugText += "LightSource: " + std::to_string(b->lightSource) + "\n";
-                debugText += "PartialBlock: " + std::to_string(b->partialBlock) + "\n";
+                uint8_t blockType = b->getBlockType();
+                debugText += "Name: " + getBlockName(blockType) + "\n";
+                debugText += "Id: " + std::to_string(b->getBlockType()) + "\n";
+                debugText += "MetaData: " + std::to_string(b->getMetaData()) + "\n";
+                    debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
+                    debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
+                    debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
             }
         }
         ImGui::SeparatorText("Debug");
@@ -702,7 +706,7 @@ int main(int argc, char *argv[]) {
         camera.setDelta(fpsTime);
         previousPosition = camera.Position;
         if (world) {
-            previousRenderedChunks = world->chunks.size();
+            previousRenderedChunks = world->getNumberOfChunks();
         }
         wasFullscreen = fullscreen;
      }

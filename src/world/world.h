@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <mutex>
 #include <unordered_map>
+#include <shared_mutex>
 
 // Hash function for std::pair<int, int>
 struct pair_hash {
@@ -18,8 +19,10 @@ struct pair_hash {
 };
 
 class World {
-    public:
+    private:
         std::unordered_map<std::pair<int, int>, Chunk*, pair_hash> chunks;
+        std::shared_mutex chunk_mutex;
+    public:
         RegionLoader* rl = nullptr;
         Chunk* cachedChunk = nullptr;
         Block* cachedBlock = nullptr;
@@ -43,5 +46,7 @@ class World {
         Block* getBlock(int x, int y, int z);
         void addChunk(Chunk* chunk);
         void removeChunk(int x, int z);
+        void clearChunks();
+        size_t getNumberOfChunks();
         void getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex);
 };

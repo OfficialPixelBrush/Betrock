@@ -32,6 +32,7 @@ add_executable(
     src/world/region.cpp
     src/world/chunk.cpp
     src/world/block.cpp
+    src/world/blockProperties.cpp
     
     src/helper.cpp
     src/debug.cpp

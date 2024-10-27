@@ -46,15 +46,9 @@ Chunk* World::findChunk(int x, int z) {
     if (cachedChunk && cachedChunk->x == x && cachedChunk->z == z) {
         return cachedChunk;
     }
-
-    // Look up in the hash map
-    auto it = chunks.find({x, z});
-    if (it != chunks.end()) {
-        cachedChunk = it->second; // Update cache
-        return it->second;
-    }
-
-    return nullptr;
+    std::unique_lock<std::shared_mutex> lock(chunk_mutex);
+    auto it = chunks.find(std::make_pair(x, z));
+    return it != chunks.end() ? it->second : nullptr;
 }
 
 Chunk* World::loadChunk(int x, int z) {
@@ -82,15 +76,24 @@ Block* World::getBlock(int x, int y, int z) {
 
 void World::addChunk(Chunk* chunk) {
     if (chunk) {
-        chunks[{chunk->x, chunk->z}] = chunk;
+        std::unique_lock<std::shared_mutex> lock(chunk_mutex);
+        chunks[std::make_pair(chunk->x, chunk->z)] = chunk;
     }
 }
 
 void World::removeChunk(int x, int z) {
+    std::unique_lock<std::shared_mutex> lock(chunk_mutex);
     auto key = std::make_pair(x, z);
     chunks.erase(key);
+}
 
-    // Optional: remove from chunks vector if necessary
+void World::clearChunks() {
+    std::unique_lock<std::shared_mutex> lock(chunk_mutex);
+    chunks.clear();
+}
+
+size_t World::getNumberOfChunks() {
+    return chunks.size();
 }
 
 void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex) {

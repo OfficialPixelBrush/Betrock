@@ -7,51 +7,52 @@ const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.
 
 bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     bool onlySurroundedBySame = false;
-    try {
-        if (blockIndex >= 8 && blockIndex <= 11) {
-            onlySurroundedBySame = true;
-        }
-        // Cache block pointers
-        Block* blocks[6] = {
-            world->getBlock(x - 1, y, z),
-            world->getBlock(x + 1, y, z),
-            world->getBlock(x, y - 1, z),
-            world->getBlock(x, y + 1, z),
-            world->getBlock(x, y, z - 1),
-            world->getBlock(x, y, z + 1)
-        };
+    if (blockIndex >= 8 && blockIndex <= 11) {
+        onlySurroundedBySame = true;
+    }
+    // Cache block pointers
+    Block* blockPointers[6] = {
+        world->getBlock(x - 1, y, z),
+        world->getBlock(x + 1, y, z),
+        world->getBlock(x, y - 1, z),
+        world->getBlock(x, y + 1, z),
+        world->getBlock(x, y, z - 1),
+        world->getBlock(x, y, z + 1)
+    };
 
-        // Check if any adjacent block is transparent
+    uint8_t blocks[6] = { 0 };
+    for (int i = 0; i < 6; i++) {
+        if (blockPointers[i] != nullptr) {
+            blocks[i] = blockPointers[i]->getBlockType();
+        } else {
+            return false;
+        }
+    }
+
+    // Check if any adjacent block is transparent
+    for (int i = 0; i < 6; ++i) {
+        if (isTransparent(blocks[i])) {
+            return false;
+        }
+    }
+
+    if (onlySurroundedBySame) {
+        // Check if all adjacent blocks have a block type
         for (int i = 0; i < 6; ++i) {
-            if (blocks[i] == nullptr) {
-                throw std::runtime_error("Block pointer is null.");
-            }
-            if (blocks[i]->getTransparent()) {
+            if (blocks[i] == blockIndex) {
                 return false;
             }
         }
-
-        if (onlySurroundedBySame) {
-            // Check if all adjacent blocks have a block type
-            for (int i = 0; i < 6; ++i) {
-                if (blocks[i]->getBlockType() == blockIndex) {
-                    return false;
-                }
-            }
-        } else {
-        // Check if all adjacent blocks have a block type
-            for (int i = 0; i < 6; ++i) {
-                if (blocks[i]->getBlockType() == 0 || blocks[i]->getPartialBlock()) {
-                    return false;
-                }
+    } else {
+    // Check if all adjacent blocks have a block type
+        for (int i = 0; i < 6; ++i) {
+            if (blocks[i] == 0 || isPartialBlock(blocks[i])) {
+                return false;
             }
         }
-
-        return true;
-
-    } catch (const std::exception& e) {
-        return false;
     }
+
+    return true;
 }
 
 glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert) {
@@ -126,18 +127,26 @@ bool isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 
     if (!adjacentBlock) {
         return true;
     }
+    uint8_t cbType = currentBlock->getBlockType();
+    uint8_t abType = adjacentBlock->getBlockType();
+    if (cbType == GRASS && abType == SNOW_LAYER && normal.y > 0.0) {
+        return true;
+    }
+    if (cbType == SNOW_LAYER && abType == GRASS && normal.y < 0.0) {
+        return true;
+    }
 
     // If it's the same as the checking block
-    if (currentBlock->getBlockType() >= FLOWING_WATER && currentBlock->getBlockType() <= LAVA || 
-        !currentBlock->getPartialBlock() && currentBlock->getTransparent() && currentBlock->getBlockType() != LEAVES) {
-        if (!adjacentBlock->getTransparent() && normal.y <= 0.0) {
+    if (cbType >= FLOWING_WATER && cbType <= LAVA || 
+        !isPartialBlock(cbType) && isTransparent(cbType) && cbType != LEAVES) {
+        if (!isTransparent(abType) && normal.y <= 0.0) {
             return true;
         }
-        if (adjacentBlock->getBlockType() == currentBlock->getBlockType() && currentBlock->getBlockMetaData() == 0) {
+        if (abType == cbType && currentBlock->getMetaData() == 0) {
             return true;
         }
     } else {
-        if (adjacentBlock->getTransparent() || adjacentBlock->getPartialBlock() || currentBlock->getPartialBlock()) {
+        if (isTransparent(abType) || isPartialBlock(abType) || isPartialBlock(cbType)) {
             return false;
         } else {
             //return adjacentBlock->getBlockType();
@@ -245,15 +254,28 @@ float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosi
         off2 = position + glm::vec3( vertexPosition.x,-vertexPosition.y,vertexPosition.z);
         offc = position + glm::vec3( vertexPosition.x, vertexPosition.y,vertexPosition.z);
     }
-    b1 = world->getBlock(floor(off1.x), floor(off1.y), floor(off1.z));
-    b2 = world->getBlock(floor(off2.x), floor(off2.y), floor(off2.z));
-    bc = world->getBlock(floor(offc.x), floor(offc.y), floor(offc.z));
+    uint8_t b1Type = 0; 
+    uint8_t b2Type = 0;
+    uint8_t bcType = 0;
     int side1  = 0;
     int side2  = 0;
     int corner = 0;
-    if (b1 && !b1->getTransparent() && !b1->getPartialBlock()) { side1  = b1->getBlockType(); }
-    if (b2 && !b2->getTransparent() && !b2->getPartialBlock()) { side2  = b2->getBlockType(); }
-    if (bc && !bc->getTransparent() && !bc->getPartialBlock()) { corner = bc->getBlockType(); }
+    // Get Blocks
+    b1 = world->getBlock(floor(off1.x), floor(off1.y), floor(off1.z));
+    if (b1) {
+        b1Type = b1->getBlockType();
+    }
+    b2 = world->getBlock(floor(off2.x), floor(off2.y), floor(off2.z));
+    if (b2) {
+        b2Type = b2->getBlockType();
+    }
+    bc = world->getBlock(floor(offc.x), floor(offc.y), floor(offc.z));
+    if (bc) {
+        bcType = bc->getBlockType();
+    }
+    if (b1 && !isTransparent(b1Type) && !isPartialBlock(b1Type)) { side1  = b1Type; }
+    if (b2 && !isTransparent(b2Type) && !isPartialBlock(b2Type)) { side2  = b2Type; }
+    if (bc && !isTransparent(bcType) && !isPartialBlock(bcType)) { corner  = bcType; }
 
     // Convert block existence to integer (1 if block exists, 0 otherwise)
     int side1Int = side1 ? 1 : 0;
@@ -291,7 +313,7 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPositi
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                if (b->getTransparent() && !b->getPartialBlock()) {
+                if (isTransparent(b->getBlockType()) && !isPartialBlock(b->getBlockType())) {
                     light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
                     relevantLights++;
                 }
@@ -453,7 +475,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 if (isSurrounded(x,y,z,blockType)) {
                     continue;
                 }
-                unsigned char blockMetaData = b->getBlockMetaData();
+                unsigned char blockMetaData = b->getMetaData();
 
                 // Figure out the blocks coordinates in the world
                 glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
@@ -519,7 +541,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     }
                     
                     // Water in it's own thing
-                    if (blockType == WATER || blockType == LAVA) {
+                    if (blockType == WATER || blockType == ICE) {
                         color *= getLighting(world,x,y,z,normal,maxSkyLight);
                         waterVertices.push_back(
                             Vertex(
@@ -531,10 +553,10 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         );
                     } else {
                         // Apply light if the block isn't a lightsource
-                        if (!b->lightSource) {
+                        if (!isLightSource(blockType)) {
                             if (smoothLighting) {
                                 color *= getSmoothLighting(world,worldPos,vertPos,normal,maxSkyLight);
-                                if (!b->getTransparent() ) {
+                                if (!isTransparent(blockType)) {
                                     color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
                                 }
                             } else {

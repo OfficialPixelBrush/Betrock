@@ -27,6 +27,7 @@
 
 #include "world/world.h"
 #include "world/block.h"
+#include "world/blockProperties.h"
 
 #define GL_MAJOR 3
 #define GL_MINOR 3

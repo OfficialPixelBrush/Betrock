@@ -7,6 +7,7 @@
 #include "chunkMesh.h"
 #include "dummyMesh.h"
 #include <algorithm>
+#include "../world/blockProperties.h"
 
 class ChunkBuilder {
     public:
