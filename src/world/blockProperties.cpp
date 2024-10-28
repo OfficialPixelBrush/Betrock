@@ -2,6 +2,7 @@
 #include "blockProperties.h"
 
 // Define the global lookup tables
+std::array<bool, MAX_BLOCK_TYPES> cubeLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> transparentBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> lightSourceBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> partialBlocksLUT = { false };
@@ -10,6 +11,11 @@ std::array<bool, MAX_BLOCK_TYPES> fluidBlocksLUT = { false };
 
 // Initialize the lookup tables
 void initializeBlockLUTs() {
+    // The block is always a full block in size
+    for (uint8_t blockType : {1,2,3,4,5,7,12,13,14,15,16,17,18,19,20,21,22,23,24,25,35,41,42,43,45,46,47,48,49,52,54,56,57,58,61,62,73,73,78,79,80,82,84,86,87,88,89,90,91,95}) {
+        cubeLUT[blockType] = true;
+    }
+
     // Transparent blocks
     for (uint8_t blockType : {0, 6, 8, 9, 10, 11, 18, 20, 27, 28, 30, 31, 32, 37, 38, 39, 40, 51, 52, 55, 59, 65, 66, 79, 81, 83, 90, 96}) {
         transparentBlocksLUT[blockType] = true;
@@ -36,6 +42,10 @@ void initializeBlockLUTs() {
         fluidBlocksLUT[blockType] = true;
     }
 }
+
+bool isCube(uint8_t blockType) {
+    return cubeLUT[blockType];
+};
 
 bool isTransparent(uint8_t blockType) {
     return transparentBlocksLUT[blockType];

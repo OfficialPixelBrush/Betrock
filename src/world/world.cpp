@@ -19,27 +19,6 @@ void World::LoadWorld(const std::string& pName) {  // Use const reference
     // Create new RegionLoader
     rl = new RegionLoader(pName);
 }
-/*
-Region* World::findRegion(int x, int z) {
-    for (uint i = 0; i < regions.size(); i++) {
-        Region* r = &regions[i];
-        if (r->x == x && r->z == z) {
-            return r;
-        }
-    }
-    return nullptr;
-}
-
-Region* World::getRegion(int x, int z) {
-    regionLoader rL(name);
-    Region* r = findRegion(x,z);
-    if (!r) {
-        std::vector<Chunk> chunks = rL.loadRegion(x,z);
-        regions.push_back(Region(chunks,x,z));
-        return &regions[regions.size()-1];
-    }
-    return r;
-}*/
 
 Chunk* World::findChunk(int x, int z) {
     std::unique_lock<std::shared_mutex> lock(chunk_mutex);
@@ -84,11 +63,16 @@ void World::addChunk(Chunk* chunk) {
 void World::removeChunk(int x, int z) {
     std::unique_lock<std::shared_mutex> lock(chunk_mutex);
     auto key = std::make_pair(x, z);
-    chunks.erase(key);
+    auto it = chunks.find(key);
+    if (it != chunks.end()) {
+        delete it->second;  // Delete the Chunk pointed to by the pointer
+        chunks.erase(it);   // Remove the pointer from the map
+    }
 }
 
 void World::clearChunks() {
     std::unique_lock<std::shared_mutex> lock(chunk_mutex);
+    // TODO: THIS WILL LEAK!!!
     chunks.clear();
 }
 

@@ -282,8 +282,8 @@ int main(int argc, char *argv[]) {
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(-158, 90, 316), glm::vec3(0.67, -0.57, -0.13)); // Testing
+    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //Camera camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
     camPointer = &camera;
 
     // Makes it so OpenGL shows the triangles in the right order
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
     double prevTime = glfwGetTime();
     double fpsTime = 0;
     int previousRenderedChunks = 0;
-    int maxSkyLight = 15;
+    int maxSkyLight = 0;
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
@@ -443,14 +443,13 @@ int main(int argc, char *argv[]) {
                         return distA > distB;
                     }
 
-                    /*
                     // Secondary sorting condition: Compare chunk x positions as tie-breaker
                     if (a->chunk->x != b->chunk->x) {
                         return a->chunk->x > b->chunk->x;
                     }
 
                     // Final tie-breaker: Compare chunk z positions
-                    return a->chunk->z > b->chunk->z;*/
+                    return a->chunk->z > b->chunk->z;
                 }
                 return false;
             });
