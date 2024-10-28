@@ -6,11 +6,12 @@ std::array<bool, MAX_BLOCK_TYPES> transparentBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> lightSourceBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> partialBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> nonSolidBlocksLUT = { false };
+std::array<bool, MAX_BLOCK_TYPES> fluidBlocksLUT = { false };
 
 // Initialize the lookup tables
 void initializeBlockLUTs() {
     // Transparent blocks
-    for (uint8_t blockType : {0, 6, 8, 9, 10, 11, 18, 20, 27, 28, 30, 31, 32, 37, 38, 39, 40, 50, 51, 52, 53, 55, 59, 60, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 75, 76, 77, 78, 79, 81, 83, 85, 90, 92, 93, 94, 96}) {
+    for (uint8_t blockType : {0, 6, 8, 9, 10, 11, 18, 20, 27, 28, 30, 31, 32, 37, 38, 39, 40, 51, 52, 55, 59, 65, 66, 79, 81, 83, 90, 96}) {
         transparentBlocksLUT[blockType] = true;
     }
 
@@ -20,13 +21,19 @@ void initializeBlockLUTs() {
     }
 
     // Partial blocks
-    for (uint8_t blockType : {26, 44, 50, 51, 53, 55, 59, 60, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 75, 76, 77, 81, 83, 85, 88, 90, 92, 93, 94, 96}) {
+    // Blocks that do not take up a full Block
+    for (uint8_t blockType : {6,8,9,10,11,26,27,28,30,31,32,34,37,38,44,50,51,53,55,59,60,63,64,65,66,67,68,69,70,71,72,75,76,77,78,81,83,85,88,90,92,93,94,96}) {
         partialBlocksLUT[blockType] = true;
     }
 
     // Non-solid blocks
     for (uint8_t blockType : {0, 6, 8, 9, 10, 11, 27, 28, 30, 31, 32, 37, 38, 39, 40, 50, 51, 55, 59, 63, 64, 65, 66, 68, 69, 72, 75, 76, 77, 78, 83, 93, 94}) {
         nonSolidBlocksLUT[blockType] = true;
+    }
+
+    // Fluid blocks
+    for (uint8_t blockType : {8,9,10,11}) {
+        fluidBlocksLUT[blockType] = true;
     }
 }
 
@@ -42,7 +49,11 @@ bool isLightSource(uint8_t blockType) {
     return lightSourceBlocksLUT[blockType];
 };
 
-uint8_t isNonSolid(uint8_t blockType) {
+bool isFluid(uint8_t blockType) {
+    return fluidBlocksLUT[blockType];
+}
+
+bool isNonSolid(uint8_t blockType) {
     return nonSolidBlocksLUT[blockType];
 }
 

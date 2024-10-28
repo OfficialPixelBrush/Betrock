@@ -128,32 +128,44 @@ bool isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 
         return true;
     }
     uint8_t cbType = currentBlock->getBlockType();
+    uint8_t cbMeta = currentBlock->getMetaData();
     uint8_t abType = adjacentBlock->getBlockType();
-    if (cbType == GRASS && abType == SNOW_LAYER && normal.y > 0.0) {
+    uint8_t abMeta = adjacentBlock->getMetaData();
+
+    // Snow Layer optimization
+    if (cbType == SNOW_LAYER && !isTransparent(abType) && normal.y < 0.0) {
         return true;
     }
-    if (cbType == SNOW_LAYER && abType == GRASS && normal.y < 0.0) {
+
+    if (abType == SNOW_LAYER && !isTransparent(cbType) && normal.y > 0.0) {
         return true;
     }
 
     // If it's the same as the checking block
-    if (cbType >= FLOWING_WATER && cbType <= LAVA || 
-        !isPartialBlock(cbType) && isTransparent(cbType) && cbType != LEAVES) {
-        if (!isTransparent(abType) && normal.y <= 0.0) {
-            return true;
-        }
-        if (abType == cbType && currentBlock->getMetaData() == 0) {
-            return true;
-        }
-    } else {
-        if (isTransparent(abType) || isPartialBlock(abType) || isPartialBlock(cbType)) {
-            return false;
-        } else {
-            //return adjacentBlock->getBlockType();
-            return true;
-        }
+    if (isFluid(cbType) && abType == ICE) {
+        return true;
     }
-    return false;
+
+    // Prevent top faces from getting culled on Liquids
+    if (isFluid(cbType) && cbType != abType && normal.y > 0.0) {
+        return false;
+    }
+
+    if (isTransparent(cbType) || isPartialBlock(cbType) || isTransparent(abType) || isPartialBlock(abType)) {
+        if (cbType == abType) {
+            if (isFluid(cbType)) {
+                return true;
+            }
+            if ((cbType == ICE || cbType == SNOW_LAYER || cbType == GLASS) && cbType != LEAVES) {
+                return true;
+            }
+            return false;
+        } else if (isTransparent(abType) || isPartialBlock(abType)) {
+            return false;
+        }
+        return true;
+    }
+    return true;
 }
 
 std::vector<std::string> splitString(const std::string& str, char delimiter) {
@@ -180,6 +192,11 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
         if (b && b->getBlockType() == SNOW_LAYER) {
             specialQuery = "Snow";
         }
+    }
+
+    // Leaves (removes decay data)
+    if (blockType == LEAVES) {
+        blockMetaData &= 0x3;
     }
 
     // Blocks that should ignore rotation data
@@ -292,9 +309,9 @@ float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosi
 }
 
 float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal, uint8_t maxSkyLight) {
-    float x = position.x;
-    float y = position.y;
-    float z = position.z;
+    int x = int(position.x);
+    int y = int(position.y);
+    int z = int(position.z);
     int light = 0;
     int relevantLights = 0;
     Block* b = nullptr;
@@ -302,18 +319,24 @@ float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPositi
     // Get the adjacent blocks along face
     for (int aOff = -1; aOff < 1; aOff++) {
         for (int bOff = -1; bOff < 1; bOff++) {
-            if (normal.x != 0.0) {
-                b = world->getBlock(floor(x+normal.x*0.9), floor(y+aOff), floor(z+bOff));
-            } else if (normal.y != 0.0) {
-                b = world->getBlock(floor(x+aOff), floor(y+normal.y*0.9), floor(z+bOff));
-            } else if (normal.z != 0.0) {
-                b = world->getBlock(floor(x+aOff), floor(y+bOff), floor(z+normal.z*0.9));
+            if (normal.x > 0.0) {
+                b = world->getBlock(x+1, y+aOff, z+bOff);
+            } else if (normal.x < 0.0) {
+                b = world->getBlock(x-1, y+aOff, z+bOff);
+            } else if (normal.y > 0.0) {
+                b = world->getBlock(x+aOff, y+1, z+bOff);
+            } else if (normal.y < 0.0) {
+                b = world->getBlock(x+aOff, y-1, z+bOff);
+            } else if (normal.z > 0.0) {
+                b = world->getBlock(x+aOff, y+bOff, z+1);
+            } else if (normal.z < 0.0) {
+                b = world->getBlock(x+aOff, y+bOff, z-1);
             } else {
                 b = nullptr;
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                if (isTransparent(b->getBlockType()) && !isPartialBlock(b->getBlockType())) {
+                if (isTransparent(b->getBlockType())) {
                     light += std::max(b->getBlockLight(), std::min(b->getSkyLight(), maxSkyLight));
                     relevantLights++;
                 }
@@ -447,6 +470,101 @@ void rotateBlockAccordingToMetaData(glm::vec3& vertPos, glm::vec3& normal, uint8
     }
 }
 
+glm::vec3 getFluidVertexOffset(uint8_t& blockMetaData) {
+    switch(blockMetaData) {
+        case 2:
+            return glm::vec3(0.0,-1.0+0.75 ,0.0);
+        case 3:
+            return glm::vec3(0.0,-1.0+0.625,0.0);
+        case 4:
+            return glm::vec3(0.0,-1.0+0.5  ,0.0);
+        case 5:
+            return glm::vec3(0.0,-1.0+0.375,0.0);
+        case 6:
+            return glm::vec3(0.0,-1.0+0.25 ,0.0);
+        case 7:
+            return glm::vec3(0.0,-1.0+0.125,0.0);
+        case 8:
+            return glm::vec3(0.0,0.0,0.0);
+        default:
+            return glm::vec3(0.0,-(1.0/8.0),0.0);
+    }
+}
+
+// TODO: Rewrite this to be more accurate
+uint8_t getFluidMetadata(uint8_t& blockType, uint8_t& blockMetaData, int& x, uint& y, int& z, World* world, glm::vec3 vertPos) {
+    Block* xPlus = world->getBlock(x + 1, y, z);
+    Block* xMinus = world->getBlock(x - 1, y, z);
+    Block* zPlus = world->getBlock(x, y, z + 1);
+    Block* zMinus = world->getBlock(x, y, z - 1);
+    Block* xPlusZPlus = world->getBlock(x + 1, y, z + 1);
+    Block* xPlusZMinus = world->getBlock(x + 1, y, z - 1);
+    Block* xMinusZPlus = world->getBlock(x - 1, y, z + 1);
+    Block* xMinusZMinus = world->getBlock(x - 1, y, z - 1);
+    uint8_t metadata = blockMetaData;
+
+    // Check neighboring blocks along the X and Z axes
+    if (xPlus && xPlus->getBlockType() == blockType && vertPos.x > 0.0) {
+        if (xPlus->getMetaData() < blockMetaData) {
+            metadata = xPlus->getMetaData();
+        } else if (xPlus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (xMinus && xMinus->getBlockType() == blockType && vertPos.x < 0.0) {
+        if (xMinus->getMetaData() < blockMetaData) {
+            metadata = xMinus->getMetaData();
+        } else if (xMinus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (zPlus && zPlus->getBlockType() == blockType && vertPos.z > 0.0) {
+        if (zPlus->getMetaData() < blockMetaData) {
+            metadata = zPlus->getMetaData();
+        } else if (zPlus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (zMinus && zMinus->getBlockType() == blockType && vertPos.z < 0.0) {
+        if (zMinus->getMetaData() < blockMetaData) {
+            metadata = zMinus->getMetaData();
+        } else if (zMinus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+
+    // Check diagonal neighbors for lower metadata
+    if (xPlusZPlus && xPlusZPlus->getBlockType() == blockType && vertPos.x > 0.0 && vertPos.z > 0.0) {
+        if (xPlusZPlus->getMetaData() < blockMetaData) {
+            metadata = xPlusZPlus->getMetaData();
+        } else if (xPlusZPlus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (xPlusZMinus && xPlusZMinus->getBlockType() == blockType && vertPos.x > 0.0 && vertPos.z < 0.0) {
+        if (xPlusZMinus->getMetaData() < blockMetaData) {
+            metadata = xPlusZMinus->getMetaData();
+        } else if (xPlusZMinus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (xMinusZPlus && xMinusZPlus->getBlockType() == blockType && vertPos.x < 0.0 && vertPos.z > 0.0) {
+        if (xMinusZPlus->getMetaData() < blockMetaData) {
+            metadata = xMinusZPlus->getMetaData();
+        } else if (xMinusZPlus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    if (xMinusZMinus && xMinusZMinus->getBlockType() == blockType && vertPos.x < 0.0 && vertPos.z < 0.0) {
+        if (xMinusZMinus->getMetaData() < blockMetaData) {
+            metadata = xMinusZMinus->getMetaData();
+        } else if (xMinusZMinus->getMetaData() & 0x8) {
+            metadata = 8;
+        }
+    }
+    return metadata;
+}
+
 DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
@@ -485,52 +603,25 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 if (!mesh) {
                     continue;
                 }
-                glm::vec3 offset;
                 for (uint v = 0; v < mesh->vertices.size(); v++) {
+                    glm::vec3 offset = glm::vec3(0.0f);
                     glm::vec3 normal = glm::vec3(mesh->vertices[v].normal);
-                    if (isHidden(world,x,y,z,b,normal)) {
+                    if (isHidden(world, x, y, z, b, normal)) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);
 
-                    // Liquid change model
-                    // If we're dealing with the upper verts of  water or lava
-                    if (blockType >= 8 && blockType <= 11 && mesh->vertices[v].position.y > 0.2f) {
-                        Block* wb = world->getBlock(x,y+1,z);
-                        // Offset liquid height based on metadata
-                        if (wb->getBlockType() != blockType) {
-                            switch(blockMetaData) {
-                                case 1:
-                                    offset = glm::vec3(0.0,-1.0+0.75 ,0.0);
-                                    break;
-                                case 2:
-                                    offset = glm::vec3(0.0,-1.0+0.75 ,0.0);
-                                    break;
-                                case 3:
-                                    offset = glm::vec3(0.0,-1.0+0.625,0.0);
-                                    break;
-                                case 4:
-                                    offset = glm::vec3(0.0,-1.0+0.5  ,0.0);
-                                    break;
-                                case 5:
-                                    offset = glm::vec3(0.0,-1.0+0.375,0.0);
-                                    break;
-                                case 6:
-                                    offset = glm::vec3(0.0,-1.0+0.25 ,0.0);
-                                    break;
-                                case 7:
-                                    offset = glm::vec3(0.0,-1.0+0.125,0.0);
-                                    break;
-                                default:
-                                    offset = glm::vec3(0.0,-(1.0/8.0),0.0);
-                                    break;
-                            }
+                    // Fluid height adjustment
+                    glm::vec3 vertPos = mesh->vertices[v].position;
+                    if (isFluid(blockType) && vertPos.y > 0.25f) {
+                        Block* aboveBlock = world->getBlock(x, y + 1, z);
+                        if (aboveBlock && aboveBlock->getBlockType() != blockType) {
+                            uint8_t metadata = getFluidMetadata(blockType, blockMetaData, x, y, z, world, vertPos);
+                            offset = getFluidVertexOffset(metadata);
                         }
-                    } else {
-                        offset = glm::vec3(0.0,0.0,0.0);
                     }
+                    vertPos += offset;
 
-                    glm::vec3 vertPos = glm::vec3(mesh->vertices[v].position + offset);
                     rotateBlockAccordingToMetaData(vertPos,normal,blockType,blockMetaData);
 
                     glm::vec3 worldPos = vertPos + pos + 0.5f;
@@ -556,7 +647,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                         if (!isLightSource(blockType)) {
                             if (smoothLighting) {
                                 color *= getSmoothLighting(world,worldPos,vertPos,normal,maxSkyLight);
-                                if (!isTransparent(blockType)) {
+                                if (!isTransparent(blockType) && blockType != SNOW_LAYER) {
                                     color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
                                 }
                             } else {
@@ -577,7 +668,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 GLuint totalWaterIndices = waterIndices.size();
                 GLuint totalWorldIndices = worldIndices.size();
 
-                if (blockType == WATER || blockType == LAVA) {
+                if (isFluid(blockType) || blockType == ICE) {
                     for (uint i = 0; i < mesh->indices.size(); i++) {
                         GLuint newInd = totalWaterIndices + mesh->indices[i];
                         waterIndices.push_back(newInd);

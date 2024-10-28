@@ -42,11 +42,11 @@ Region* World::getRegion(int x, int z) {
 }*/
 
 Chunk* World::findChunk(int x, int z) {
+    std::unique_lock<std::shared_mutex> lock(chunk_mutex);
     // Check Cached Chunk first
     if (cachedChunk && cachedChunk->x == x && cachedChunk->z == z) {
         return cachedChunk;
     }
-    std::unique_lock<std::shared_mutex> lock(chunk_mutex);
     auto it = chunks.find(std::make_pair(x, z));
     return it != chunks.end() ? it->second : nullptr;
 }

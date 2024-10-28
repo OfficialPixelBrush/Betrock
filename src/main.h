@@ -31,3 +31,4 @@
 
 #define GL_MAJOR 3
 #define GL_MINOR 3
+#define WINDOWNAME "Betrock 0.3.5"

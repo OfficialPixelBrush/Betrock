@@ -107,7 +107,7 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
             toBeUpdated.erase(toBeUpdated.begin());
             crLock.unlock();
 
-            std::lock_guard<std::mutex> cmLock(chunkMeshesMutex);
+            /*
             // Iterate over chunkMeshes to find and delete the matching chunk
             for (auto it = chunkMeshes.begin(); it != chunkMeshes.end(); ++it) {
                 if (c == (*it)->chunk) {
@@ -115,7 +115,7 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
                     chunkMeshes.erase(it); // Safely remove it from the vector
                     break;
                 }
-            }
+            }*/
 
             // Build a new chunk mesh and add it to the chunkMeshes
             std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex);
@@ -123,11 +123,14 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
             mbLock.unlock();
 
             // Backwards iteration to remove chunkMeshes with missing chunks
-            for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
-                Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
-                if (!chunk) {
-                    delete chunkMeshes[i]; // Delete the chunkMesh
-                    chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
+            std::unique_lock<std::mutex> cmLock(chunkMeshesMutex, std::try_to_lock);
+            if (cmLock.owns_lock()) {
+                for (int i = static_cast<int>(chunkMeshes.size()) - 1; i >= 0; --i) {
+                    Chunk* chunk = world->findChunk(chunkMeshes[i]->chunk->x, chunkMeshes[i]->chunk->z);
+                    if (!chunk) {
+                        delete chunkMeshes[i]; // Delete the chunkMesh
+                        chunkMeshes.erase(chunkMeshes.begin() + i); // Erase safely
+                    }
                 }
             }
             wasBuilding = building;
@@ -245,7 +248,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,"Betrock 0.3.4", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,WINDOWNAME, NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();
@@ -266,6 +269,7 @@ int main(int argc, char *argv[]) {
 
     // Creates Shader object using shaders default.vsh and .frag
     Shader blockShader("./src/external/shader/default.vsh", "./src/external/shader/minecraft.fsh");
+    Shader normalShader("./src/external/shader/default.vsh", "./src/external/shader/normal.fsh");
     //Shader skyShader("./src/external/shader/sky.vsh", "./src/external/shader/sky.fsh");
     blockShader.Activate();
     //skyShader.Activate();
@@ -278,8 +282,8 @@ int main(int argc, char *argv[]) {
     //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(52, 74, 225), glm::vec3(0.0, 0.0, 0.9)); // Testing
+    //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    Camera camera(windowWidth, windowHeight, glm::vec3(-158, 90, 316), glm::vec3(0.67, -0.57, -0.13)); // Testing
     camPointer = &camera;
 
     // Makes it so OpenGL shows the triangles in the right order
@@ -323,6 +327,7 @@ int main(int argc, char *argv[]) {
     bool renderFog = true;
     bool optimalViewDistance = false;
     bool raycastToBlock = true;
+    bool normals = false;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -340,6 +345,7 @@ int main(int argc, char *argv[]) {
     std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
+    //std::thread chunkBuildingThread2(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
     // Main while loop
     while (!glfwWindowShouldClose(window)) {
@@ -414,8 +420,9 @@ int main(int argc, char *argv[]) {
                 meshBuildQueue.pop_back();
             }
         }
-        
+
         // Sort Chunks by Manhattan Distance
+        std::unique_lock<std::mutex> cmLock(chunkMeshesMutex);
         std::sort(chunkMeshes.begin(), chunkMeshes.end(),
             [&camera](const auto& a, const auto& b) {
                 // Only compare if the second mesh is "water" for both chunks
@@ -436,22 +443,27 @@ int main(int argc, char *argv[]) {
                         return distA > distB;
                     }
 
+                    /*
                     // Secondary sorting condition: Compare chunk x positions as tie-breaker
                     if (a->chunk->x != b->chunk->x) {
                         return a->chunk->x > b->chunk->x;
                     }
 
                     // Final tie-breaker: Compare chunk z positions
-                    return a->chunk->z > b->chunk->z;
+                    return a->chunk->z > b->chunk->z;*/
                 }
                 return false;
             });
-
+        cmLock.unlock();
         // Render all chunks
         // TODO: Only render chunks that're actually visible
         if (renderChunks) {
             for (uint i = 0; i < chunkMeshes.size(); i++) {
-                chunkMeshes[i]->Draw(blockShader, camera);
+                if (normals) {
+                    chunkMeshes[i]->Draw(normalShader, camera);
+                } else {
+                    chunkMeshes[i]->Draw(blockShader, camera);
+                }
             }
         }
 
@@ -507,6 +519,7 @@ int main(int argc, char *argv[]) {
             ImGui::Checkbox("Polygon", &polygon);
             ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
             ImGui::Checkbox("Render Chunks", &renderChunks);
+            ImGui::Checkbox("Normals", &normals);
         }
 
         if (ImGui::CollapsingHeader("Chunks")) {
@@ -671,11 +684,12 @@ int main(int argc, char *argv[]) {
                     debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
                     debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
                     debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
+                    debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
                 }
                 Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
                 if (bn) {
-                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
-                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+                    debugText += "SkyLight: " + std::to_string(bn->getSkyLight()) + "\n";
+                    debugText += "LightLevel: " + std::to_string(bn->getBlockLight()) + "\n";
                 }
             }
         } else {
@@ -685,9 +699,13 @@ int main(int argc, char *argv[]) {
                 debugText += "Name: " + getBlockName(blockType) + "\n";
                 debugText += "Id: " + std::to_string(b->getBlockType()) + "\n";
                 debugText += "MetaData: " + std::to_string(b->getMetaData()) + "\n";
-                    debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
-                    debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
-                    debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
+                debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
+                debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
+                debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
+                debugText += "isNonSolid: " + std::to_string(isNonSolid(blockType)) + "\n";
+                debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
+                debugText += "SkyLight: " + std::to_string(b->getSkyLight()) + "\n";
+                debugText += "LightLevel: " + std::to_string(b->getBlockLight()) + "\n";
             }
         }
         ImGui::SeparatorText("Debug");
