@@ -55,10 +55,10 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     return true;
 }
 
-glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert) {
+glm::vec3 getBiomeBlockColor(uint8_t& blockType, uint8_t& blockMetaData, glm::vec3& normal) {
     glm::vec3 color = glm::vec3(0.57, 0.73, 0.34);
     // Biome Colored
-    if ((blockType == GRASS && vert->normal.y > 0.0f) || (blockType == TALLGRASS)) {
+    if ((blockType == GRASS && normal.y > 0.0f) || (blockType == TALLGRASS)) {
         return color;
     } else if (blockType == LEAVES) {
         // Spruce
@@ -591,11 +591,11 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
     int chunkZ = chunk->z*16;
 
     //std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
-    for (uint y = 60; y < 128; y++) {
-        for (int z = chunkZ; z < 16+chunkZ; z++) {
-            for (int x = chunkX; x < 16+chunkX; x++) {
+    for (uint y = 0; y < 128; y++) {
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
                 // Get next block to process
-                Block* b = world->getBlock(x,y,z);
+                Block* b = world->getBlock(x+chunkX,y,z+chunkZ);
                 // Check if the block is air
                 if (!b || b == nullptr) {
                     continue;
@@ -605,28 +605,24 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     continue;
                 }
                 // If the block is fully surrounded, don't bother loading it
-                if (isSurrounded(x,y,z,blockType)) {
+                /*if (isSurrounded(x,y,z,blockType)) {
                     continue;
-                }
+                }*/
                 unsigned char blockMetaData = b->getMetaData();
 
                 // Figure out the blocks coordinates in the world
-                glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
+                //glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
 
-                if (isCube(blockType)) {
+                if (isCube(blockType) || isFluid(blockType)) {
                     glm::vec3 defaultColor = glm::vec3(1.0,1.0,1.0);
-                    Vertex startVertex1(
-                        glm::vec3(x,y,z),
-                        glm::vec3(0.0,1.0,0.0),
-                        defaultColor,
-                        glm::vec2(0.0,1.0)
-                    );
-                    Vertex startVertex2(
-                        glm::vec3(x,y,z+1),
-                        glm::vec3(0.0,1.0,0.0),
-                        defaultColor,
-                        glm::vec2(0.0625,1.0)
-                    );
+                    glm::vec3 normal = glm::vec3(0.0,1.0,0.0);
+                    glm::vec3 startPos = glm::vec3(x+chunkX,y,z+chunkZ);
+                    /*if (isFluid(blockType)) {
+                        defaultColor = glm::vec3(0.1,0.2,0.9);
+                    }
+                    if (isBiomeColored(blockType)) {
+                        defaultColor = getBiomeBlockColor(blockType,blockMetaData,normal);
+                    }*/
                     Block* xNeighbor = nullptr;
 
                     // Greedy Meshing
@@ -635,25 +631,45 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     int grownBy = 1;
                     while(!differentBlock) {
                         xNeighbor = world->getBlock(x+grownBy,y,z);
-                        if (xNeighbor && xNeighbor->getBlockType() == blockType && (x+grownBy < 16+chunkX) && !isSurrounded(x+grownBy,y,z,blockType)) {
+                        if (xNeighbor && xNeighbor->getBlockType() == blockType && (x+grownBy < 16) && !isSurrounded(x+grownBy,y,z,blockType)) {
                             grownBy++;
                             blockLength += 0.0625;
                         } else {
                             differentBlock = true;
                         }
                     }
+                    glm::vec3 dimensions = glm::vec3(grownBy,0,1);
+
+                    // Creating Quad
+                    Vertex startVertex1(
+                        startPos,
+                        normal,
+                        defaultColor,
+                        glm::vec2(0.0,1.0)
+                    );
+                    glm::vec3 position2 = startPos;
+                    position2.z += dimensions.z;
+                    Vertex startVertex2(
+                        position2,
+                        normal,
+                        defaultColor,
+                        glm::vec2(0.0625,1.0)
+                    );
+                    glm::vec3 position3 = startPos;
+                    position3.x += dimensions.x;
 
                     Vertex endVertex1(
-                        glm::vec3(x+grownBy,y,z),
-                        glm::vec3(0.0,1.0,0.0),
+                        position3,
+                        normal,
                         defaultColor,
-                        glm::vec2(0.0,0.9375-blockLength)
+                        glm::vec2(0.0,0.9375)
                     );
+
                     Vertex endVertex2(
-                        glm::vec3(x+grownBy,y,z+1),
-                        glm::vec3(0.0,1.0,0.0),
+                        startPos+dimensions,
+                        normal,
                         defaultColor,
-                        glm::vec2(0.0625,0.9375-blockLength)
+                        glm::vec2(0.0625,0.9375)
                     );
 
                     worldVertices.push_back(startVertex1);

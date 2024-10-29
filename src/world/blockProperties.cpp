@@ -8,6 +8,7 @@ std::array<bool, MAX_BLOCK_TYPES> lightSourceBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> partialBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> nonSolidBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> fluidBlocksLUT = { false };
+std::array<bool, MAX_BLOCK_TYPES> biomeColoredLUT = { false };
 
 // Initialize the lookup tables
 void initializeBlockLUTs() {
@@ -41,6 +42,11 @@ void initializeBlockLUTs() {
     for (uint8_t blockType : {8,9,10,11}) {
         fluidBlocksLUT[blockType] = true;
     }
+
+    // Biome Colored blocks
+    for (uint8_t blockType : {2,18,31}) {
+        biomeColoredLUT[blockType] = true;
+    }
 }
 
 bool isCube(uint8_t blockType) {
@@ -65,6 +71,14 @@ bool isFluid(uint8_t blockType) {
 
 bool isNonSolid(uint8_t blockType) {
     return nonSolidBlocksLUT[blockType];
+}
+
+bool isBiomeColored(uint8_t blockType) {
+    return biomeColoredLUT[blockType];
+}
+
+bool isEquivalent(uint8_t blockTypeA, uint8_t blockTypeB, uint8_t blockMetaDataA, uint8_t blockMetaDataB) {
+    return (blockTypeA == blockTypeB && blockMetaDataA == blockMetaDataB);
 }
 
 std::string getBlockName(uint8_t blockType) {
