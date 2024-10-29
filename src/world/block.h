@@ -102,27 +102,12 @@ enum BLOCK {
     TRAPDOOR
 };
 
-class Block {
-    public:
-        uint8_t blockType;
-        uint8_t metaData;
-        uint8_t skyLightLevel;
-        uint8_t lightLevel;
-        Block(uint8_t blockType = AIR, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0);
+struct Block {
+    uint8_t blockType;
+    uint8_t metaData;
+    uint8_t skyLightLevel;
+    uint8_t lightLevel;
 
-        uint8_t getBlockType() {
-            return blockType;
-        };
-
-        uint8_t getMetaData() {
-            return metaData;
-        }
-
-        uint8_t getBlockLight() {
-            return lightLevel;
-        }
-
-        uint8_t getSkyLight() {
-            return skyLightLevel;
-        }
+    Block(uint8_t blockType = AIR, uint8_t skyLightLevel = 15, uint8_t lightLevel = 15, uint8_t metaData = 0)
+        : blockType(blockType), metaData(metaData), skyLightLevel(skyLightLevel), lightLevel(lightLevel) {}
 };
