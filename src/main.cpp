@@ -338,7 +338,7 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camera.Position;
 
-    int renderDistance = 32;
+    int renderDistance = 4;
 
     float x = camera.Position.x;
     float z = camera.Position.z;
@@ -412,9 +412,9 @@ int main(int argc, char *argv[]) {
                 if (!mesh.vertices.empty() && !mesh.indices.empty()) {
                     meshes.push_back(new Mesh("world", mesh.vertices, mesh.indices, tex));
                 }
-                if (!mesh.waterVertices.empty() && !mesh.waterIndices.empty()) {
+                /*if (!mesh.waterVertices.empty() && !mesh.waterIndices.empty()) {
                     meshes.push_back(new Mesh("water", mesh.waterVertices, mesh.waterIndices, tex));
-                }
+                }*/
                 ChunkMesh* cm = new ChunkMesh(mesh.chunk, meshes);
                 chunkMeshes.push_back(cm);
                 meshBuildQueue.pop_back();

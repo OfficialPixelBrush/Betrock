@@ -8,6 +8,7 @@
 #include "dummyMesh.h"
 #include <algorithm>
 #include "../world/blockProperties.h"
+#include "../helper.h"
 
 class ChunkBuilder {
     public:
@@ -23,4 +24,5 @@ class ChunkBuilder {
         Mesh* getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData = 0);
         Mesh* searchForMeshName(uint8_t blockType, uint8_t blockMetaData);
         glm::vec2 getBlockTextureOffset(uint8_t blockType, uint8_t blockMetaData);
+        void createRectangle(uint8_t blockType, uint8_t blockMetaData, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, const glm::vec3& startPos, const glm::vec3& dimensions, const glm::vec3& normal, const glm::vec3& color);
 };

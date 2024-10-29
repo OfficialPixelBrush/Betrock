@@ -47,8 +47,8 @@ Chunk* World::getChunk(int x, int z) {
 
 Block* World::getBlock(int x, int y, int z) {
     Chunk* c = findChunk(floor(float(x)/16.0f),floor(float(z)/16.0f));
-    if (c) {
-        return c->getBlock(x,y,z);
+    if (c && y <= 127) {
+        return &c->blocks[y + ((z % 16 + 16) % 16) * 128 + ((x % 16 + 16) % 16) * 128 * 16];
     }
     return nullptr;
 }

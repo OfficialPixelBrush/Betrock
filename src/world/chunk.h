@@ -3,8 +3,8 @@
 #include "../compat.h"
 
 class Chunk {
-    Block blocks [16*128*16];
     public:
+        Block blocks [16*128*16];
         int x,z;
         Chunk(int pX, int pZ, int8_t pBlockData [], int8_t pSkyLightData[], int8_t pBlockLightData [], int8_t pMetaData []) {
             x = pX;
@@ -29,18 +29,5 @@ class Chunk {
 
         ~Chunk() {
             std::cout << "Unloaded Chunk at " << x << ", " << z << std::endl;
-        }
-
-        Block* getAllBlocks() {
-            return blocks;
-        }
-
-        Block* getBlock(uint x, uint y, uint z) {
-            if (y > 127) {
-                return nullptr;
-            }
-            x = x%16;
-            z = z%16;
-            return &blocks[y + z*128 + (x*128*16)];
         }
 };

@@ -5,12 +5,7 @@
 
 const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
-bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
-    bool onlySurroundedBySame = false;
-    if (blockIndex >= 8 && blockIndex <= 11) {
-        onlySurroundedBySame = true;
-    }
-    // Cache block pointers
+bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockType) {
     Block* blockPointers[6] = {
         world->getBlock(x - 1, y, z),
         world->getBlock(x + 1, y, z),
@@ -20,38 +15,11 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
         world->getBlock(x, y, z + 1)
     };
 
-    uint8_t blocks[6] = { 0 };
-    for (int i = 0; i < 6; i++) {
-        if (blockPointers[i] != nullptr) {
-            blocks[i] = blockPointers[i]->blockType;
-        } else {
+    for (auto bp : blockPointers) {
+        if (!bp || bp->blockType == AIR) {
             return false;
         }
     }
-
-    // Check if any adjacent block is transparent
-    for (int i = 0; i < 6; ++i) {
-        if (isTransparent(blocks[i])) {
-            return false;
-        }
-    }
-
-    if (onlySurroundedBySame) {
-        // Check if all adjacent blocks have a block type
-        for (int i = 0; i < 6; ++i) {
-            if (blocks[i] == blockIndex) {
-                return false;
-            }
-        }
-    } else {
-    // Check if all adjacent blocks have a block type
-        for (int i = 0; i < 6; ++i) {
-            if (blocks[i] == 0 || isPartialBlock(blocks[i])) {
-                return false;
-            }
-        }
-    }
-
     return true;
 }
 
@@ -337,15 +305,6 @@ int nearInt(float number) {
     return num;
 }
 
-#include <format>
-std::string printTripleFloat(float x, float y, float z) {
-    return std::format("{}, {}, {}", x,y,z);
-}
-
-std::string printTripleInt(int x, int y, int z) {
-    return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
-}
-
 float getSmoothLighting(World* world, int& x, uint& y, int& z, glm::vec3& vertexPosition, glm::vec3& normal, uint8_t& maxSkyLight) {
     uint8_t light = 0;
     uint8_t finalLight = 0.0;
@@ -360,10 +319,10 @@ float getSmoothLighting(World* world, int& x, uint& y, int& z, glm::vec3& vertex
     }
     
     for (auto b : blocks) {
-        if (b && (isTransparent(b->getBlockType()) || isPartialBlock(b->getBlockType()))) {
+        if (b && (isTransparent(b->blockType) || isPartialBlock(b->blockType))) {
             // Air is transparent, so we can ignore it too
-            light = std::max(light,b->getBlockLight());
-            light = std::max(light, std::min(b->getSkyLight(), maxSkyLight));
+            light = std::max(light,b->lightLevel);
+            light = std::max(light, std::min(b->skyLightLevel, maxSkyLight));
         }
     }
     return lightArray[light];
@@ -575,196 +534,106 @@ uint8_t getFluidMetadata(uint8_t& blockType, uint8_t& blockMetaData, int& x, uin
     return metadata;
 }
 
-DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
-    std::vector<Vertex> worldVertices;
-    std::vector<GLuint> worldIndices;
+// Function to create a rectangle
+void ChunkBuilder::createRectangle(
+    uint8_t blockType,
+    uint8_t blockMetaData,
+    std::vector<Vertex>& vertices,
+    std::vector<GLuint>& indices,
+    const glm::vec3& startPos,
+    const glm::vec3& dimensions,
+    const glm::vec3& normal,
+    const glm::vec3& color
+) {
+    // Define vertices for the rectangle
+    Vertex startVertex1(
+        startPos,
+        normal,
+        color,
+        glm::vec2(0.0f, 1.0f)+getBlockTextureOffset(blockType,blockMetaData)
+    );
 
-    std::vector<Vertex> waterVertices;
-    std::vector<GLuint> waterIndices;
+    glm::vec3 position2 = startPos;
+    position2.z += dimensions.z;
+    Vertex startVertex2(
+        position2,
+        normal,
+        color,
+        glm::vec2(0.0625f, 1.0f)+getBlockTextureOffset(blockType,blockMetaData)
+    );
+
+    glm::vec3 position3 = startPos;
+    position3.x += dimensions.x;
+    Vertex endVertex1(
+        position3,
+        normal,
+        color,
+        glm::vec2(0.0f, 0.9375f)+getBlockTextureOffset(blockType,blockMetaData)
+    );
+
+    Vertex endVertex2(
+        startPos + dimensions,
+        normal,
+        color,
+        glm::vec2(0.0625f, 0.9375f)+getBlockTextureOffset(blockType,blockMetaData)
+    );
+
+    // Add vertices to the list
+    vertices.push_back(startVertex1);
+    vertices.push_back(endVertex2);
+    vertices.push_back(endVertex1);
+    vertices.push_back(startVertex1);
+    vertices.push_back(startVertex2);
+    vertices.push_back(endVertex2);
+
+    // Calculate indices for two triangles (forming a rectangle)
+    GLuint totalIndices = indices.size();
+    for (uint i = 0; i < 6; i++) {
+        indices.push_back(totalIndices + i);
+    }
+}
+
+
+DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
+    std::vector<Vertex> vertices;
+    std::vector<GLuint> indices;
 
     int chunkX = chunk->x*16;
     int chunkZ = chunk->z*16;
 
     //std::cout << "Chunk" << " " << chunk->x << ", " << chunk->z << std::endl;
-    for (uint y = 0; y < 128; y++) {
-        for (int z = 0; z < 16; z++) {
-            for (int x = 0; x < 16; x++) {
+    for (uint8_t y = 0; y < 128; y++) {
+        //bool merged[16][16] = {0};
+        for (int z = chunkZ; z < 16+chunkZ; z++) {
+            for (int x = chunkX; x < 16+chunkX; x++) {
                 // Get next block to process
-                Block* b = world->getBlock(x+chunkX,y,z+chunkZ);
+                Block* b = world->getBlock(x,y,z);
                 // Check if the block is air
-                if (!b || b == nullptr) {
+                if (!b) { continue; }
+                uint8_t blockType = b->blockType;
+                if (blockType == AIR) {
                     continue;
                 }
-                unsigned char blockType = b->blockType;
-                if (blockType == 0) {
-                    continue;
+                uint8_t blockMetaData = b->metaData;
+
+                if (!isHidden(world, x, y, z, blockType, blockMetaData, glm::vec3(0,1,0))) {
+                    bool sameBlockType = true;
+                    int assimilatedTiles = 1;
+                    while(sameBlockType) {
+                        Block* nb = world->getBlock(x+assimilatedTiles,y,z);
+                        if (nb && nb->blockType == blockType && !isHidden(world, x+assimilatedTiles, y, z, blockType, blockMetaData, glm::vec3(0,1,0)) && (x+assimilatedTiles < chunkX+16)) {
+                            assimilatedTiles++;
+                        } else {
+                            sameBlockType = false;
+                        }
+                    }
+
+                    createRectangle(blockType,blockMetaData,vertices,indices,glm::vec3(x,y,z),glm::vec3(assimilatedTiles,0,1),glm::vec3(0,1,0),glm::vec3(1,1,1));
+                    x+=assimilatedTiles;
                 }
-                // If the block is fully surrounded, don't bother loading it
-                /*if (isSurrounded(x,y,z,blockType)) {
-                    continue;
-                }*/
-                unsigned char blockMetaData = b->getMetaData();
-
-                // Figure out the blocks coordinates in the world
-                //glm::vec3 pos = glm::vec3(float(x), float(y), float(z));
-
-                if (isCube(blockType) || isFluid(blockType)) {
-                    glm::vec3 defaultColor = glm::vec3(1.0,1.0,1.0);
-                    glm::vec3 normal = glm::vec3(0.0,1.0,0.0);
-                    glm::vec3 startPos = glm::vec3(x+chunkX,y,z+chunkZ);
-                    /*if (isFluid(blockType)) {
-                        defaultColor = glm::vec3(0.1,0.2,0.9);
-                    }
-                    if (isBiomeColored(blockType)) {
-                        defaultColor = getBiomeBlockColor(blockType,blockMetaData,normal);
-                    }*/
-                    Block* xNeighbor = nullptr;
-
-                    // Greedy Meshing
-                    bool differentBlock = false;
-                    float blockLength = 0.0;
-                    int grownBy = 1;
-                    while(!differentBlock) {
-                        xNeighbor = world->getBlock(x+grownBy,y,z);
-                        if (xNeighbor && xNeighbor->getBlockType() == blockType && (x+grownBy < 16) && !isSurrounded(x+grownBy,y,z,blockType)) {
-                            grownBy++;
-                            blockLength += 0.0625;
-                        } else {
-                            differentBlock = true;
-                        }
-                    }
-                    glm::vec3 dimensions = glm::vec3(grownBy,0,1);
-
-                    // Creating Quad
-                    Vertex startVertex1(
-                        startPos,
-                        normal,
-                        defaultColor,
-                        glm::vec2(0.0,1.0)
-                    );
-                    glm::vec3 position2 = startPos;
-                    position2.z += dimensions.z;
-                    Vertex startVertex2(
-                        position2,
-                        normal,
-                        defaultColor,
-                        glm::vec2(0.0625,1.0)
-                    );
-                    glm::vec3 position3 = startPos;
-                    position3.x += dimensions.x;
-
-                    Vertex endVertex1(
-                        position3,
-                        normal,
-                        defaultColor,
-                        glm::vec2(0.0,0.9375)
-                    );
-
-                    Vertex endVertex2(
-                        startPos+dimensions,
-                        normal,
-                        defaultColor,
-                        glm::vec2(0.0625,0.9375)
-                    );
-
-                    worldVertices.push_back(startVertex1);
-                    worldVertices.push_back(endVertex2);
-                    worldVertices.push_back(endVertex1);
-                    worldVertices.push_back(startVertex1);
-                    worldVertices.push_back(startVertex2);
-                    worldVertices.push_back(endVertex2);
-                    GLuint totalWorldIndices = worldIndices.size();
-                    for (uint i = 0; i < 6; i++) {
-                        GLuint newInd = totalWorldIndices + i;
-                        worldIndices.push_back(newInd);
-                    }
-                    x+=grownBy;
-                }/* else {
-                    cachedMesh = getBlockMesh(blockType,x,y,z,blockMetaData);
-                    Mesh* mesh = cachedMesh;
-                    if (!mesh) {
-                        continue;
-                    }
-                    for (uint v = 0; v < mesh->vertices.size(); v++) {
-                        glm::vec3 offset = glm::vec3(0.0f);
-                        glm::vec3 normal = glm::vec3(mesh->vertices[v].normal);
-                        if (isHidden(world, x, y, z, b, normal)) {
-                            continue;
-                        }
-                        glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);
-
-                        // Fluid height adjustment
-                        glm::vec3 vertPos = mesh->vertices[v].position;
-                        if (isFluid(blockType) && vertPos.y > 0.25f) {
-                            Block* aboveBlock = world->getBlock(x, y + 1, z);
-                            if (aboveBlock && aboveBlock->getBlockType() != blockType) {
-                                uint8_t metadata = getFluidMetadata(blockType, blockMetaData, x, y, z, world, vertPos);
-                                offset = getFluidVertexOffset(metadata);
-                            }
-                        }
-                        vertPos += offset;
-
-                        rotateBlockAccordingToMetaData(vertPos,normal,blockType,blockMetaData);
-
-                        glm::vec3 worldPos = vertPos + pos + 0.5f;
-                        glm::vec2 finalUV = mesh->vertices[v].textureUV;
-                        // Only affects the side
-                        if (normal.y == 0) {
-                            finalUV.y = finalUV.y + (offset.y/16);
-                        }
-                        
-                        // Water in it's own thing
-                        if (blockType == WATER || blockType == ICE) {
-                            color *= getLighting(world,x,y,z,normal,maxSkyLight);
-                            waterVertices.push_back(
-                                Vertex(
-                                    worldPos,
-                                    normal,
-                                    color,
-                                    finalUV
-                                )
-                            );
-                        } else {
-                            // Apply light if the block isn't a lightsource
-                            if (!isLightSource(blockType)) {
-                                if (smoothLighting) {
-                                    //color *= getSmoothLighting(world,x,y,z,vertPos,normal,maxSkyLight);
-                                    if (!isTransparent(blockType) && blockType != SNOW_LAYER) {
-                                        color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
-                                    }
-                                } else {
-                                    color *= getLighting(world,x,y,z,normal,maxSkyLight);
-                                }
-                            }
-                            worldVertices.push_back(
-                                Vertex(
-                                    worldPos,
-                                    normal,
-                                    color,
-                                    finalUV
-                                )
-                            );
-                        }
-                    }
-                    GLuint totalWaterIndices = waterIndices.size();
-                    GLuint totalWorldIndices = worldIndices.size();
-
-                    if (isFluid(blockType) || blockType == ICE) {
-                        for (uint i = 0; i < mesh->indices.size(); i++) {
-                            GLuint newInd = totalWaterIndices + mesh->indices[i];
-                            waterIndices.push_back(newInd);
-                        }
-                    } else {
-                        for (uint i = 0; i < mesh->indices.size(); i++) {
-                            GLuint newInd = totalWorldIndices + mesh->indices[i];
-                            worldIndices.push_back(newInd);
-                        }
-                    }
-                }*/
             }
         }
     }
 
-    return DummyMesh(chunk, std::to_string(chunkX) + "_" + std::to_string(chunkZ),
-        worldVertices, worldIndices, waterVertices, waterIndices);
+    return DummyMesh(chunk, std::to_string(chunkX) + "_" + std::to_string(chunkZ), vertices, indices);
 }

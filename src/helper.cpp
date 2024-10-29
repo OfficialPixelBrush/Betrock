@@ -22,3 +22,11 @@ uint64_t intReadArray(uint8_t* arr, uint* index, uint size) {
 	}
 	return integer;
 }
+
+std::string printTripleFloat(float x, float y, float z) {
+    return std::format("{}, {}, {}", x,y,z);
+}
+
+std::string printTripleInt(int x, int y, int z) {
+    return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
+}
