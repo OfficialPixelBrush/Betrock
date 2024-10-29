@@ -45,9 +45,9 @@ BlockHitResult raycast(glm::vec3 origin, glm::vec3 direction, float maxDistance,
             Block* b = world->getBlock(currentBlock.x, currentBlock.y, currentBlock.z);
             if (b != nullptr) {
                 // We can't hit air!
-                if (b->getBlockType() != AIR) {
+                if (b->blockType != AIR) {
                     if (checkForSolidity) {
-                        if (!isNonSolid(b->getBlockType())) {
+                        if (!isNonSolid(b->blockType)) {
                             hitPos = origin + direction * rayLength;  // Calculate the exact hit position
                             return {true, currentBlock, hitPos, hitNormal};  // Return block position and hit details
                         }
@@ -676,10 +676,10 @@ int main(int argc, char *argv[]) {
                 debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
                 Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
                 if (b) {
-                    uint8_t blockType = b->getBlockType();
+                    uint8_t blockType = b->blockType;
                     debugText += "Name: " + getBlockName(blockType) + "\n";
-                    debugText += "Id: " + std::to_string(b->getBlockType()) + "\n";
-                    debugText += "MetaData: " + std::to_string(b->getMetaData()) + "\n";
+                    debugText += "Id: " + std::to_string(blockType) + "\n";
+                    debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
                     debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
                     debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
                     debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
@@ -687,24 +687,24 @@ int main(int argc, char *argv[]) {
                 }
                 Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
                 if (bn) {
-                    debugText += "SkyLight: " + std::to_string(bn->getSkyLight()) + "\n";
-                    debugText += "LightLevel: " + std::to_string(bn->getBlockLight()) + "\n";
+                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
+                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
                 }
             }
         } else {
             Block* b = world->getBlock(floor(camera.Position.x),floor(camera.Position.y),floor(camera.Position.z));
             if (b) {
-                uint8_t blockType = b->getBlockType();
+                uint8_t blockType = b->blockType;
                 debugText += "Name: " + getBlockName(blockType) + "\n";
-                debugText += "Id: " + std::to_string(b->getBlockType()) + "\n";
-                debugText += "MetaData: " + std::to_string(b->getMetaData()) + "\n";
+                debugText += "Id: " + std::to_string(blockType) + "\n";
+                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
                 debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
                 debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
                 debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
                 debugText += "isNonSolid: " + std::to_string(isNonSolid(blockType)) + "\n";
                 debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
-                debugText += "SkyLight: " + std::to_string(b->getSkyLight()) + "\n";
-                debugText += "LightLevel: " + std::to_string(b->getBlockLight()) + "\n";
+                debugText += "SkyLight: " + std::to_string(b->skyLightLevel) + "\n";
+                debugText += "LightLevel: " + std::to_string(b->lightLevel) + "\n";
             }
         }
         ImGui::SeparatorText("Debug");

@@ -23,7 +23,7 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     uint8_t blocks[6] = { 0 };
     for (int i = 0; i < 6; i++) {
         if (blockPointers[i] != nullptr) {
-            blocks[i] = blockPointers[i]->getBlockType();
+            blocks[i] = blockPointers[i]->blockType;
         } else {
             return false;
         }
@@ -97,7 +97,7 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
         }
 
         // Get lighting values from the adjacent block
-        int light = adjacentBlock->getBlockLight() + std::min(adjacentBlock->getSkyLight(), maxSkyLight);
+        int light = adjacentBlock->lightLevel + std::min(adjacentBlock->skyLightLevel, maxSkyLight);
 
         // Ensure light index is within bounds
         if (light < 0) {
@@ -113,10 +113,7 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
     }
 }
 
-bool isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 normal) {
-    if (!currentBlock) {
-        return true;
-    }
+bool isHidden(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMeta, glm::vec3 normal) {
     // Calculate adjacent block coordinates
     int adjX = x + static_cast<int>(normal.x);
     int adjY = y + static_cast<int>(normal.y);
@@ -128,10 +125,8 @@ bool isHidden(World* world, int x, int y, int z, Block* currentBlock, glm::vec3 
     if (!adjacentBlock) {
         return true;
     }
-    uint8_t cbType = currentBlock->getBlockType();
-    uint8_t cbMeta = currentBlock->getMetaData();
-    uint8_t abType = adjacentBlock->getBlockType();
-    uint8_t abMeta = adjacentBlock->getMetaData();
+    uint8_t abType = adjacentBlock->blockType;
+    uint8_t abMeta = adjacentBlock->metaData;
 
     // Snow Layer optimization
     if (cbType == SNOW_LAYER && !isTransparent(abType) && normal.y < 0.0) {
@@ -298,15 +293,15 @@ float getAmbientOcclusion(World* world, glm::vec3& position, glm::vec3& vertexPo
     // Get Blocks
     b1 = world->getBlock(floor(off1.x), floor(off1.y), floor(off1.z));
     if (b1) {
-        b1Type = b1->getBlockType();
+        b1Type = b1->blockType;
     }
     b2 = world->getBlock(floor(off2.x), floor(off2.y), floor(off2.z));
     if (b2) {
-        b2Type = b2->getBlockType();
+        b2Type = b2->blockType;
     }
     bc = world->getBlock(floor(offc.x), floor(offc.y), floor(offc.z));
     if (bc) {
-        bcType = bc->getBlockType();
+        bcType = bc->blockType;
     }
     if (b1 && !isTransparent(b1Type) && !isPartialBlock(b1Type)) { side1  = b1Type; }
     if (b2 && !isTransparent(b2Type) && !isPartialBlock(b2Type)) { side2  = b2Type; }
@@ -519,61 +514,61 @@ uint8_t getFluidMetadata(uint8_t& blockType, uint8_t& blockMetaData, int& x, uin
     uint8_t metadata = blockMetaData;
 
     // Check neighboring blocks along the X and Z axes
-    if (xPlus && xPlus->getBlockType() == blockType && vertPos.x > 0.0) {
-        if (xPlus->getMetaData() < blockMetaData) {
-            metadata = xPlus->getMetaData();
-        } else if (xPlus->getMetaData() & 0x8) {
+    if (xPlus && xPlus->blockType == blockType && vertPos.x > 0.0) {
+        if (xPlus->metaData < blockMetaData) {
+            metadata = xPlus->metaData;
+        } else if (xPlus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (xMinus && xMinus->getBlockType() == blockType && vertPos.x < 0.0) {
-        if (xMinus->getMetaData() < blockMetaData) {
-            metadata = xMinus->getMetaData();
-        } else if (xMinus->getMetaData() & 0x8) {
+    if (xMinus && xMinus->blockType == blockType && vertPos.x < 0.0) {
+        if (xMinus->metaData < blockMetaData) {
+            metadata = xMinus->metaData;
+        } else if (xMinus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (zPlus && zPlus->getBlockType() == blockType && vertPos.z > 0.0) {
-        if (zPlus->getMetaData() < blockMetaData) {
-            metadata = zPlus->getMetaData();
-        } else if (zPlus->getMetaData() & 0x8) {
+    if (zPlus && zPlus->blockType == blockType && vertPos.z > 0.0) {
+        if (zPlus->metaData < blockMetaData) {
+            metadata = zPlus->metaData;
+        } else if (zPlus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (zMinus && zMinus->getBlockType() == blockType && vertPos.z < 0.0) {
-        if (zMinus->getMetaData() < blockMetaData) {
-            metadata = zMinus->getMetaData();
-        } else if (zMinus->getMetaData() & 0x8) {
+    if (zMinus && zMinus->blockType == blockType && vertPos.z < 0.0) {
+        if (zMinus->metaData < blockMetaData) {
+            metadata = zMinus->metaData;
+        } else if (zMinus->metaData & 0x8) {
             metadata = 8;
         }
     }
 
     // Check diagonal neighbors for lower metadata
-    if (xPlusZPlus && xPlusZPlus->getBlockType() == blockType && vertPos.x > 0.0 && vertPos.z > 0.0) {
-        if (xPlusZPlus->getMetaData() < blockMetaData) {
-            metadata = xPlusZPlus->getMetaData();
-        } else if (xPlusZPlus->getMetaData() & 0x8) {
+    if (xPlusZPlus && xPlusZPlus->blockType == blockType && vertPos.x > 0.0 && vertPos.z > 0.0) {
+        if (xPlusZPlus->metaData < blockMetaData) {
+            metadata = xPlusZPlus->metaData;
+        } else if (xPlusZPlus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (xPlusZMinus && xPlusZMinus->getBlockType() == blockType && vertPos.x > 0.0 && vertPos.z < 0.0) {
-        if (xPlusZMinus->getMetaData() < blockMetaData) {
-            metadata = xPlusZMinus->getMetaData();
-        } else if (xPlusZMinus->getMetaData() & 0x8) {
+    if (xPlusZMinus && xPlusZMinus->blockType == blockType && vertPos.x > 0.0 && vertPos.z < 0.0) {
+        if (xPlusZMinus->metaData < blockMetaData) {
+            metadata = xPlusZMinus->metaData;
+        } else if (xPlusZMinus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (xMinusZPlus && xMinusZPlus->getBlockType() == blockType && vertPos.x < 0.0 && vertPos.z > 0.0) {
-        if (xMinusZPlus->getMetaData() < blockMetaData) {
-            metadata = xMinusZPlus->getMetaData();
-        } else if (xMinusZPlus->getMetaData() & 0x8) {
+    if (xMinusZPlus && xMinusZPlus->blockType == blockType && vertPos.x < 0.0 && vertPos.z > 0.0) {
+        if (xMinusZPlus->metaData < blockMetaData) {
+            metadata = xMinusZPlus->metaData;
+        } else if (xMinusZPlus->metaData & 0x8) {
             metadata = 8;
         }
     }
-    if (xMinusZMinus && xMinusZMinus->getBlockType() == blockType && vertPos.x < 0.0 && vertPos.z < 0.0) {
-        if (xMinusZMinus->getMetaData() < blockMetaData) {
-            metadata = xMinusZMinus->getMetaData();
-        } else if (xMinusZMinus->getMetaData() & 0x8) {
+    if (xMinusZMinus && xMinusZMinus->blockType == blockType && vertPos.x < 0.0 && vertPos.z < 0.0) {
+        if (xMinusZMinus->metaData < blockMetaData) {
+            metadata = xMinusZMinus->metaData;
+        } else if (xMinusZMinus->metaData & 0x8) {
             metadata = 8;
         }
     }
@@ -600,7 +595,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 if (!b || b == nullptr) {
                     continue;
                 }
-                unsigned char blockType = b->getBlockType();
+                unsigned char blockType = b->blockType;
                 if (blockType == 0) {
                     continue;
                 }
