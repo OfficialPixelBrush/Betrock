@@ -176,6 +176,7 @@ Chunk* RegionLoader::loadRegion(int chunkX, int chunkZ) {
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
 
+	// std::string regionfile = path + "DIM-1/region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
 	std::string regionfile = path + "region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
 	if (lastAccessedRegion != regionfile) {
 		// If f is already used, close it
