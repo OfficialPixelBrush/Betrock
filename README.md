@@ -29,7 +29,7 @@ cp ./build/Betrock ./
 
 ### Running
 ```bash
-./Betrock saves/glacier/
+./Betrock glacier
 ```
 Tested on Linux Mint 22 and Ubuntu 20.04
 
