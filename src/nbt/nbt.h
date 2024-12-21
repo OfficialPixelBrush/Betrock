@@ -4,6 +4,7 @@
 #include "nbttag.h"
 #include "../helper.h"
 #include "../debug.h"
+#include <stdexcept>
 
 class nbt {
     public:

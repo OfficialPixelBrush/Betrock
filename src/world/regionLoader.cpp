@@ -96,6 +96,9 @@ Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 	// Load compressed data
 	size_t nbtLength;
 	uint8_t* nbtData = decompressChunk(chunkIndex, length, compressionScheme, &nbtLength);
+	if (!nbtData) {
+		return nullptr;
+	}
 
 	// Extract Block Data
 	if (lastX != chunkX && lastZ != chunkZ) {
@@ -172,12 +175,16 @@ RegionLoader::RegionLoader(std::string pPath) {
 }
 
 // Get the Region data from the associated regionX and regionZ file
-Chunk* RegionLoader::loadRegion(int chunkX, int chunkZ) {
+Chunk* RegionLoader::loadRegion(int chunkX, int chunkZ, bool nether) {
     int regionX = (int) std::floor(chunkX / 32.0f);
     int regionZ = (int) std::floor(chunkZ / 32.0f);
 
 	// std::string regionfile = path + "DIM-1/region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
-	std::string regionfile = path + "region/r." + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
+	std::string regionFolder = "region/r.";
+	if (nether) {
+		regionFolder = "DIM-1/" + regionFolder;
+	}
+	std::string regionfile = path + regionFolder + std::to_string(regionX) + "." + std::to_string(regionZ) + ".mcr";
 	if (lastAccessedRegion != regionfile) {
 		// If f is already used, close it
 		if (f.is_open()) {

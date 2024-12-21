@@ -13,7 +13,7 @@ class RegionLoader {
     std::string path;
     public:
         RegionLoader(std::string pPath);
-        Chunk* loadRegion(int x, int z);
+        Chunk* loadRegion(int x, int z, bool nether = false);
     private:
 	    nbt* nbtLoader;
         TAG_Compound* chunkLevel = nullptr;

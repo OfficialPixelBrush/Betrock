@@ -30,7 +30,10 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             }
             *index += nameLength;
             if (nbtDebug) {
-                std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName << std::endl;
+                std::cout << printDepth(depth) <<"┠" << nbtIdentifierName(tagType) << ": " << tagName;
+                if (tagType == 9 || tagType == 10) {
+                    std::cout << std::endl;
+                }
                 //std::cout << std::to_string(*index) << ":\t" << std::to_string(tagType) << "/"<<nbtIdentifierName(tagType) << " - " << std::to_string(nameLength) << "->" << tagName << std::endl;
             }
         }
@@ -58,8 +61,12 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             case 7: {
                 int32_t size = intReadArray(data, index, 4);
                 auto arr = std::make_unique<int8_t[]>(size);
-                for (int32_t j = 0; j < size; j++) {
-                    arr[j] = data[*index + j];
+                try {
+                    for (int32_t j = 0; j < size; j++) {
+                        arr[j] = data[*index + j];
+                    }
+                } catch (const std::exception& ex) {
+                    std::cout << "Exception " << ex.what() << std::endl;
                 }
                 *index += size;
                 tag = std::make_unique<TAG_Byte_Array>(tagName, size, std::move(arr));
@@ -68,12 +75,20 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             case 8: {
                 uint16_t size = intReadArray(data, index, 2);
                 std::string tagString = ""; // This should be populated as needed
+                auto arr = std::make_unique<int8_t[]>(size);
+                for (uint j = 0; j < size; j++) {
+                    tagString += char(data[*index + j]);
+                }
+                *index += size;
+                if (nbtDebug) {
+                    std::cout << "\t"<< tagString;
+                }
                 tag = std::make_unique<TAG_String>(tagName, size, tagString);
                 break;
             }
             case 9: {
                 uint8_t underlyingTagType = intReadArray(data, index, 1);
-                uint16_t size = intReadArray(data, index, 2);
+                int32_t size = intReadArray(data, index, 4);
                 tag = std::make_unique<TAG_List>(tagName, underlyingTagType, size);
                 TAG_List* listTag = dynamic_cast<TAG_List*>(tag.get());
                 recursiveNbt(listTag, data, *index + size, index, depth + 1, underlyingTagType);
@@ -88,6 +103,10 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
             default:
                 std::cerr << "Unknown or Unimplemented Tag!" << std::endl;
                 return 1;
+        }
+
+        if (nbtDebug) {
+            std::cout << std::endl;
         }
 
         // Append the tag to upperTag (assuming it handles ownership correctly)

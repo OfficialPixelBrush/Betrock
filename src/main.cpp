@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
     //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, 0.30)); // Publicbeta Underground Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
-    Camera camera(windowWidth, windowHeight, glm::vec3(-158, 90, 316), glm::vec3(0.67, -0.57, -0.13)); // Testing
+    Camera camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
     camPointer = &camera;
 
     // Makes it so OpenGL shows the triangles in the right order
