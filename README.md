@@ -32,7 +32,7 @@ cd build
 ```
 Tested on Linux Mint 22 and Ubuntu 20.04
 
-### (Optional) Packing
+### (Optional) Packing as tar.gz
 ```bash
 cpack --config build/CPackConfig.cmake -G TGZ
 ```
@@ -47,6 +47,12 @@ chmod +x linuxdeploy-x86_64.AppImage
     --desktop-file Betrock.desktop \
     --icon-file icon.png \
     --output appimage
+mv Betrock-x86_64.AppImage ./src/external/
+cd ./src/
+zip -r Betrock_AppImage.zip *
+rm external/*.AppImage
+mv Betrock_AppImage.zip ../
+cd ..
 ```
 
 ## Background

@@ -31,3 +31,7 @@
 *.app
 /build
 *.AppImage
+/_CPack_Packages
+/AppDir
+*.gz
+*.zip
