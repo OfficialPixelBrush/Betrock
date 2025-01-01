@@ -268,8 +268,8 @@ int main(int argc, char *argv[]) {
     glViewport(0,0,windowWidth,windowHeight);
 
     // Creates Shader object using shaders default.vsh and .frag
-    Shader blockShader("./src/external/shader/default.vsh", "./src/external/shader/minecraft.fsh");
-    Shader normalShader("./src/external/shader/default.vsh", "./src/external/shader/normal.fsh");
+    Shader blockShader("./shaders/default.vsh", "./shaders/minecraft.fsh");
+    Shader normalShader("./shaders/default.vsh", "./shaders/normal.fsh");
     //Shader skyShader("./src/external/shader/sky.vsh", "./src/external/shader/sky.fsh");
     blockShader.Activate();
     //skyShader.Activate();
@@ -298,8 +298,8 @@ int main(int argc, char *argv[]) {
     initializeBlockLUTs();
 
     // Load Blockmodel
-    Model* skyModel = new Model("./src/external/models/sky.obj");
-    Model* blockModel = new Model("./src/external/models/models.obj");
+    Model* skyModel = new Model("./models/sky.obj");
+    Model* blockModel = new Model("./models/models.obj");
 
     Sky sky(skyModel);
 

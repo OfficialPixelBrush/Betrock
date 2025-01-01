@@ -10,6 +10,9 @@ add_compile_options(
   "-ggdb"
 )
 
+file(COPY "${CMAKE_SOURCE_DIR}/src/external/"
+DESTINATION "${CMAKE_BINARY_DIR}")
+
 add_executable(
     Betrock
     src/model/chunkBuilder.cpp
@@ -74,3 +77,27 @@ else()
         ${CMAKE_DL_LIBS}
     )
 endif()
+
+include(CPack)
+
+# Set up CPack for AppImage
+set(CPACK_PACKAGE_NAME "Betrock")
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Betrock - Minecraft Beta 1.7.3 World Explorer")
+set(CPACK_PACKAGE_VENDOR "Torben J. Virtmann")
+set(CPACK_PACKAGE_CONTACT "letsplaytvirtmann@gmail.com")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_SOURCE_DIR}/README.md")
+
+# AppImage specific settings
+set(CPACK_GENERATOR "AppImage")
+set(CPACK_APPIMAGE_FILE_ASSOCIATIONS "*.betrock")
+set(CPACK_PACKAGE_EXECUTABLES "Betrock;Betrock")
+
+# Ensure dependencies are bundled
+set(CPACK_APPIMAGE_USE_SYSTEM_LIBS FALSE)
+
+# Install the Betrock executable
+install(TARGETS Betrock DESTINATION bin)
+
+# Install additional resources
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/" DESTINATION bin)

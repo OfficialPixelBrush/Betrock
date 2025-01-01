@@ -135,6 +135,6 @@ std::vector<Texture> Model::getTextures() {
             }
         }
     }*/
-    textures.push_back(Texture("./src/external/textures/terrain.png", "diffuse", 0));
+    textures.push_back(Texture("./textures/terrain.png", "diffuse", 0));
     return textures;
 }

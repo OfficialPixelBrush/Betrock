@@ -17,21 +17,37 @@ sudo apt install libgl1-mesa-dev libglfw3-dev libzip-dev libdeflate-dev libglm-d
 # Setting up the repo
 git clone --recurse-submodules https://github.com/OfficialPixelBrush/Betrock.git
 cd Betrock
-mkdir build
 cmake -B build -S.
 ```
 
 ### Compilation
 ```bash
-cmake --build "build" --config Debug --target all
-cp ./build/Betrock ./
+cmake --build build --config Debug --target all
 ```
 
 ### Running
 ```bash
+cd build
 ./Betrock glacier
 ```
 Tested on Linux Mint 22 and Ubuntu 20.04
+
+### (Optional) Packing
+```bash
+cpack --config build/CPackConfig.cmake
+```
+
+### (Optional) Packing as AppImage
+**Note**: The AppImage still requires all the folders inside `src/external/` else it will not run.
+```bash
+wget https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+chmod +x linuxdeploy-x86_64.AppImage
+./linuxdeploy-x86_64.AppImage --appdir AppDir \
+    --executable build/Betrock \
+    --desktop-file Betrock.desktop \
+    --icon-file icon.png \
+    --output appimage
+```
 
 ## Background
 This project was an idea I had around the middle of 2023 but due to various factors, mainly me being busy with school and work, I was unable to realize it. As I'm unemployed right now, I figured I may as well get busy and learn some proper C++ and finally delve into OpenGL. This project is the result of that.
