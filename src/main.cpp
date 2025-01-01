@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Create Window
-    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,WINDOWNAME, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,PROJECT_NAME_VERSION, NULL, NULL);
     if (window == NULL) {
         printf("Failed to create GLFW window\n");
         glfwTerminate();

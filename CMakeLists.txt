@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16.0)
 cmake_policy(SET CMP0072 NEW)
 set (CMAKE_CXX_STANDARD 20)
-project(Betrock VERSION 0.1.0)
+project(Betrock VERSION 0.3.6)
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
@@ -12,6 +12,9 @@ add_compile_options(
 
 file(COPY "${CMAKE_SOURCE_DIR}/src/external/"
 DESTINATION "${CMAKE_BINARY_DIR}")
+
+# Configure the version header file
+configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_SOURCE_DIR}/src/version.h)
 
 add_executable(
     Betrock

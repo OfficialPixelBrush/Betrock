@@ -34,7 +34,7 @@ Tested on Linux Mint 22 and Ubuntu 20.04
 
 ### (Optional) Packing
 ```bash
-cpack --config build/CPackConfig.cmake
+cpack --config build/CPackConfig.cmake -G TGZ
 ```
 
 ### (Optional) Packing as AppImage

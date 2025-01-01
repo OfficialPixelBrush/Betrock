@@ -30,3 +30,4 @@
 *.out
 *.app
 /build
+*.AppImage

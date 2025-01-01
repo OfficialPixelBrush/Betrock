@@ -7,6 +7,7 @@
 #include <thread>
 #include <mutex>
 #include <format>
+#include "version.h"
 
 #include "include/imgui/imgui.h"
 #include "include/imgui/backends/imgui_impl_glfw.h"
@@ -31,4 +32,3 @@
 
 #define GL_MAJOR 3
 #define GL_MINOR 3
-#define WINDOWNAME "Betrock 0.3.6"
