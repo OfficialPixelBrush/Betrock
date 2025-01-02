@@ -1,7 +1,7 @@
 #pragma once
+#include "../debug.h"
 #include "block.h"
 #include "../compat.h"
-
 class Chunk {
     Block blocks [16*128*16];
     public:
@@ -35,12 +35,39 @@ class Chunk {
             return blocks;
         }
 
-        Block* getBlock(uint x, uint y, uint z) {
+        Block* getBlock(int x, uint y, int z) {
             if (y > 127) {
                 return nullptr;
             }
+
+            if (logoDebug) {
+                int logo[5][28] = {
+                    {1,1,0,0,1,1,1,0,0,1,0,0,1,0,1,0,1,1,1,0,1,1,1,0,1,0,0,1},
+                    {1,0,1,0,1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0},
+                    {1,1,0,0,1,1,0,0,0,1,0,0,1,1,0,0,1,0,1,0,1,0,0,0,1,1,0,0},
+                    {1,0,1,0,1,0,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,0,0,0,1,0,1,0},
+                    {1,1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,1,1,0,1,0,0,1}
+                };
+                
+                if (x >= 5 || z >= 28 || x < 0 || z < 0) {
+                    return new Block(AIR);
+                }
+
+                if (y == 1 && logo[x][z] == 1) {
+                    return new Block(COBBLESTONE);
+                } else {
+                    return new Block(AIR);
+                }
+            }
+
             x = x%16;
             z = z%16;
+            if (x < 0) {
+                x+=16;
+            }
+            if (z < 0) {
+                z+=16;
+            }
             return &blocks[y + z*128 + (x*128*16)];
         }
 };
