@@ -130,8 +130,8 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 ### Minecraft Wiki
 - [Region file format](https://minecraft.wiki/w/Region_file_format)
 - [NBT format](https://minecraft.wiki/w/NBT_format)
-### wiki.vg
-- [Protocol: Chunk Data and Update Light](https://wiki.vg/Protocol#Chunk_Data_and_Update_Light)
+### wiki.vg (Now part of the Minecraft Wiki)
+- [Protocol: Chunk Data and Update Light](https://minecraft.wiki/w/Minecraft_Wiki:Projects/wiki.vg_merge/Protocol#Chunk_Data_and_Update_Light)
 ### YouTube
 - ["Why You Shouldn't Nest Your Code" by CodeAesthetic](https://www.youtube.com/watch?v=CFRhGnuXG-4)
 - ["OpenGL Course - Create 3D and 2D Graphics With C++" by freeCodeCamp.org](https://youtu.be/45MIykWJ-C4)
