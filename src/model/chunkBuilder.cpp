@@ -80,6 +80,27 @@ ChunkBuilder::ChunkBuilder(Model* model, World* world) {
     ChunkBuilder::world = world;
 }
 
+float getLightingOfCurrent(World* world, int x, int y, int z, uint8_t maxSkyLight) {
+    // Array for light values
+
+    try {
+
+        // Get the adjacent block
+        Block* currentBlock = world->getBlock(x, y, z);
+        if (currentBlock == nullptr) {
+            throw std::runtime_error("Current block pointer is null.");
+        }
+
+        // Get lighting values from the adjacent block
+        int light = std::max(currentBlock->lightLevel, std::min(currentBlock->skyLightLevel, maxSkyLight));
+
+        return lightArray[light];
+
+    } catch (const std::exception& e) {
+        return 1.0f;  // Return a default value in case of an error
+    }
+}
+
 float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t maxSkyLight) {
     // Array for light values
 
@@ -96,14 +117,7 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal, uint8_t m
         }
 
         // Get lighting values from the adjacent block
-        int light = adjacentBlock->lightLevel + std::min(adjacentBlock->skyLightLevel, maxSkyLight);
-
-        // Ensure light index is within bounds
-        if (light < 0) {
-            light = 0;
-        } else if (light > 15) {
-            light = 15;
-        }
+        int light = std::max(adjacentBlock->lightLevel, std::min(adjacentBlock->skyLightLevel, maxSkyLight));
 
         return lightArray[light];
 
@@ -303,52 +317,41 @@ float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosi
     return ao;
 }
 
-float getSmoothLighting(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal, uint8_t maxSkyLight) {
-    int x = int(position.x);
-    int y = int(position.y);
-    int z = int(position.z);
-    int light = 0;
-    int relevantLights = 0;
+int roundDirectional(float value) {
+    return (value > 0) ? static_cast<int>(std::ceil(value)) : static_cast<int>(std::floor(value));
+}
+
+float getSmoothLighting(World* world, int x, int y, int z, glm::vec3 vertexPosition, glm::vec3 normal, uint8_t maxSkyLight) {
+    uint8_t light = 0;
     Block* b = nullptr;
+    int xOffset = roundDirectional(vertexPosition.x);
+    int yOffset = roundDirectional(vertexPosition.y);
+    int zOffset = roundDirectional(vertexPosition.z);
 
     // Get the adjacent blocks along face
-    for (int aOff = -1; aOff < 1; aOff++) {
-        for (int bOff = -1; bOff < 1; bOff++) {
+    for (int aOff = 0; aOff <= 1; aOff++) {
+        for (int bOff = 0; bOff <= 1; bOff++) {
             if (normal.x > 0.0) {
-                b = world->getBlock(x+1, y+aOff, z+bOff);
+                b = world->getBlock(x+1, y+aOff*yOffset, z+bOff*zOffset);
             } else if (normal.x < 0.0) {
-                b = world->getBlock(x-1, y+aOff, z+bOff);
+                b = world->getBlock(x-1, y+aOff*yOffset, z+bOff*zOffset);
             } else if (normal.y > 0.0) {
-                b = world->getBlock(x+aOff, y+1, z+bOff);
+                b = world->getBlock(x+aOff*xOffset, y+1, z+bOff*zOffset);
             } else if (normal.y < 0.0) {
-                b = world->getBlock(x+aOff, y-1, z+bOff);
+                b = world->getBlock(x+aOff*xOffset, y-1, z+bOff*zOffset);
             } else if (normal.z > 0.0) {
-                b = world->getBlock(x+aOff, y+bOff, z+1);
+                b = world->getBlock(x+aOff*xOffset, y+bOff*yOffset, z+1);
             } else if (normal.z < 0.0) {
-                b = world->getBlock(x+aOff, y+bOff, z-1);
+                b = world->getBlock(x+aOff*xOffset, y+bOff*yOffset, z-1);
             } else {
                 b = nullptr;
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                if (isTransparent(b->blockType)) {
-                    light += std::max(b->lightLevel, std::min(b->skyLightLevel, maxSkyLight));
-                    relevantLights++;
-                }
+                uint8_t winningLight = std::max(b->lightLevel, std::min(b->skyLightLevel, maxSkyLight));
+                light = std::max(light, winningLight);
             }
         }
-    }
-
-    if (!relevantLights) {
-        return lightArray[0];
-    }
-    light = light / relevantLights;
-
-    // Ensure light index is within bounds
-    if (light < 0) {
-        light = 0;
-    } else if (light > 15) {
-        light = 15;
     }
 
     return lightArray[light];
@@ -640,13 +643,17 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     } else {
                         // Apply light if the block isn't a lightsource
                         if (!isLightSource(blockType)) {
-                            if (smoothLighting) {
-                                color *= getSmoothLighting(world,worldPos,vertPos,normal,maxSkyLight);
-                                if (!isTransparent(blockType) && blockType != SNOW_LAYER) {
-                                    color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
-                                }
+                            if (isBillboard(blockType)) {
+                                color*= getLightingOfCurrent(world,x,y,z,maxSkyLight);
                             } else {
-                                color *= getLighting(world,x,y,z,normal,maxSkyLight);
+                                if (smoothLighting) {
+                                    color *= getSmoothLighting(world,x,y,z,vertPos,normal,maxSkyLight);
+                                    if (!isTransparent(blockType) && blockType != SNOW_LAYER) {
+                                        color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
+                                    }
+                                } else {
+                                    color *= getLighting(world,x,y,z,normal,maxSkyLight);
+                                }
                             }
                         }
                         worldVertices.push_back(

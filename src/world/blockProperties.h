@@ -14,6 +14,7 @@ extern std::array<bool, MAX_BLOCK_TYPES> lightSourceBlocksLUT;
 extern std::array<bool, MAX_BLOCK_TYPES> partialBlocksLUT;
 extern std::array<bool, MAX_BLOCK_TYPES> nonSolidBlocksLUT;
 extern std::array<bool, MAX_BLOCK_TYPES> fluidBlocksLUT;
+extern std::array<bool, MAX_BLOCK_TYPES> billboardBlocksLUT;
 
 // Function to initialize the lookup tables (call once at program startup)
 void initializeBlockLUTs();
@@ -22,4 +23,5 @@ bool isPartialBlock(uint8_t blockType);
 bool isLightSource(uint8_t blockType);
 bool isFluid(uint8_t blockType);
 bool isNonSolid(uint8_t blockType);
+bool isBillboard(uint8_t blockType);
 std::string getBlockName(uint8_t blockType);

@@ -7,6 +7,7 @@ std::array<bool, MAX_BLOCK_TYPES> lightSourceBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> partialBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> nonSolidBlocksLUT = { false };
 std::array<bool, MAX_BLOCK_TYPES> fluidBlocksLUT = { false };
+std::array<bool, MAX_BLOCK_TYPES> billboardBlocksLUT = { false };
 
 // Initialize the lookup tables
 void initializeBlockLUTs() {
@@ -35,6 +36,11 @@ void initializeBlockLUTs() {
     for (uint8_t blockType : {8,9,10,11}) {
         fluidBlocksLUT[blockType] = true;
     }
+
+    // Billboarded blocks
+    for (uint8_t blockType : {6,29,30,31,32,37,38,39,40,83}) {
+        billboardBlocksLUT[blockType] = true;
+    }
 }
 
 bool isTransparent(uint8_t blockType) {
@@ -51,6 +57,10 @@ bool isLightSource(uint8_t blockType) {
 
 bool isFluid(uint8_t blockType) {
     return fluidBlocksLUT[blockType];
+}
+
+bool isBillboard(uint8_t blockType) {
+    return billboardBlocksLUT[blockType];
 }
 
 bool isNonSolid(uint8_t blockType) {
