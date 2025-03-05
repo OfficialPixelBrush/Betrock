@@ -6,7 +6,7 @@
 #include <math.h>
 #include <thread>
 #include <mutex>
-#include <format>
+#include <fmt/core.h>
 #include "version.h"
 
 #include "include/imgui/imgui.h"

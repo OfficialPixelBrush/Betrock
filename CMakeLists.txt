@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.16.0)
 cmake_policy(SET CMP0072 NEW)
 set (CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(Betrock VERSION 0.3.7)
 
+find_package(fmt REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 include_directories(src/include)
@@ -66,6 +68,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         opengl32
         deflate
         stb
+	fmt::fmt
     )
 else()
     # Apply AddressSanitizer to all build types
@@ -77,6 +80,7 @@ else()
         OpenGL::GL
         deflate
         stb
+	fmt::fmt
         ${CMAKE_DL_LIBS}
     )
 endif()

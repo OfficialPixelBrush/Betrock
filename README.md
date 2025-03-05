@@ -12,7 +12,7 @@ Install the required programs
 # Getting utilities
 sudo apt install git cmake ninja-build g++
 # Getting libraries
-sudo apt install libgl1-mesa-dev libglfw3-dev libzip-dev libdeflate-dev libglm-dev libstb-dev
+sudo apt install libgl1-mesa-dev libglfw3-dev libzip-dev libdeflate-dev libglm-dev libstb-dev libfmt-dev
 
 # Setting up the repo
 git clone --recurse-submodules https://github.com/OfficialPixelBrush/Betrock.git
