@@ -60,6 +60,7 @@ void Model::getMeshData() {
                         positions[pos-1],
                         normals[norm-1],
                         glm::vec3(1.0f,1.0f,1.0f),
+                        15.0,
                         textureUVs[texUV-1]
                     )
                 );

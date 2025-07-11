@@ -5,13 +5,16 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 // Input Vertex Color
 layout (location = 2) in vec3 aColor;
+// Input Sky Brightness
+layout (location = 3) in float aSkyLight;
 // Input Texture
-layout (location = 3) in vec2 aTexture;
+layout (location = 4) in vec2 aTexture;
 
 // The color that is output to the fragment shader
 out vec3 currentPosition;
 out vec3 Normal;
 out vec3 color;
+out float skyLight;
 out vec2 textureCoordinate;
 out float fogFactor;  // Pass fog factor to fragment shader
 out vec4 fogColor;
@@ -29,6 +32,7 @@ void main()
     //currentPosition = vec3(model * translation * -rotation * scale * vec4(aPos, 1.0f));
     Normal = aNormal;
     color = aColor;
+    skyLight = aSkyLight;
     textureCoordinate = aTexture;
 
     vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
