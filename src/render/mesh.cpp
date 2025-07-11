@@ -88,10 +88,8 @@ void Mesh::Draw(
     scale = glm::scale(scale, pScale);
 
 	// Push the matrices to the vertex shader
-    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "translation"), 1, GL_FALSE, glm::value_ptr(pTranslation));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "rotation"), 1, GL_FALSE, glm::value_ptr(pRotation));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "scale"), 1, GL_FALSE, glm::value_ptr(pScale));
-    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "model"), 1, GL_FALSE, glm::value_ptr(pMatrix));
+    glm::mat4 model = translation * rotation * scale;
+    glUniformMatrix4fv(glGetUniformLocation(shader.Id, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	// Draw the actual mesh
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);

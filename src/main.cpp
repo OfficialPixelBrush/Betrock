@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    char worldName[256] = "publicbeta";
+    char worldName[256] = "Nyareative";
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
         //return 1;
@@ -278,13 +278,14 @@ int main(int argc, char *argv[]) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
 
     // Create a camera
-    //Camera camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
+    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-18.77, 70.60, -42.00), glm::vec3(0.13, -0.79, 0.36)); // Nyareative Chunk Error
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, -0.30)); // Publicbeta Underground Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //Camera camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, -0.13, -0.61)); // Publicbeta Bg, Fov 50
-    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
@@ -328,6 +329,7 @@ int main(int argc, char *argv[]) {
     bool optimalViewDistance = false;
     bool raycastToBlock = true;
     bool normals = false;
+    bool fullBright = false;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -338,13 +340,14 @@ int main(int argc, char *argv[]) {
     int timeOfDay = 0;
     glm::vec3 previousPosition = camPointer->Position;
 
-    int renderDistance = 32;
+    int renderDistance = 8;
 
     float x = camPointer->Position.x;
     float z = camPointer->Position.z;
     std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0].textures;
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(25));
     //std::thread chunkBuildingThread2(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
     // Main while loop
@@ -464,6 +467,7 @@ int main(int argc, char *argv[]) {
         // Render all chunks
         // TODO: Only render chunks that're actually visible
         blockShader.setFloat("maxSkyLight", float(maxSkyLight));
+        blockShader.setBool("fullbright", fullBright);
         if (renderChunks) {
             for (uint i = 0; i < chunkMeshes.size(); i++) {
                 if (normals) {
@@ -529,6 +533,7 @@ int main(int argc, char *argv[]) {
             ImGui::Checkbox("Fullscreen", &fullscreen);
             ImGui::Checkbox("Backface Culling", &cullFace);
             ImGui::Checkbox("Polygon", &polygon);
+            ImGui::Checkbox("Fullbright", &fullBright);
             ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
             ImGui::Checkbox("Render Chunks", &renderChunks);
             ImGui::Checkbox("Normals", &normals);

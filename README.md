@@ -55,6 +55,9 @@ mv Betrock_AppImage.zip ../../
 cd ../../
 ```
 
+## Note for adding blocks
+When exporting, ensure the exported block meshes are triangulated! Quad Meshes are not handled and **will** break rendering.
+
 ## Background
 This project was an idea I had around the middle of 2023 but due to various factors, mainly me being busy with school and work, I was unable to realize it. As I'm unemployed right now, I figured I may as well get busy and learn some proper C++ and finally delve into OpenGL. This project is the result of that.
 

@@ -16,21 +16,26 @@ uniform vec3 cameraPosition;
 void main() {
     vec3 normal = normalize(Normal);
     vec4 texColor = texture(diffuse0, textureCoordinate);
+    vec3 newColor = color;
 
     // Calculate light
     float lighting = 1.0f;
-    
-    if (normal.y > 0.0f) {
-        lighting = 1.0f;
-    } else if (normal.y < 0.0f) {
-        lighting = 0.5f;
+
+    if (all(lessThanEqual(newColor, vec3(1.0)))) {
+        if (normal.y > 0.0f) {
+            lighting = 1.0f;
+        } else if (normal.y < 0.0f) {
+            lighting = 0.5f;
+        } else {
+            lighting = (abs(normal.x) * 0.6) + (abs(normal.z) * 0.8);
+        }
     } else {
-        lighting = (abs(normal.x) * 0.6) + (abs(normal.z) * 0.8);
+        newColor = vec3(1.0);
     }
 
     // The final color of the pixel
     if(texColor.a < 0.1)
         discard;
     //FragColor = mix((vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), fogColor, fogFactor);
-    FragColor = (vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor);
+    FragColor = (vec4(newColor,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor);
 }

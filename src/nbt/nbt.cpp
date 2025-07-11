@@ -101,7 +101,7 @@ int recursiveNbt(nbtTag* upperTag, uint8_t* data, size_t length, uint* index, ui
                 break;
             }
             default:
-                std::cerr << "Unknown or Unimplemented Tag!" << std::endl;
+                //std::cerr << "Unknown or Unimplemented Tag!" << std::endl;
                 return 1;
         }
 

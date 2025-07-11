@@ -135,7 +135,7 @@ Light getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
     }
 }
 
-bool isHidden(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMeta, glm::vec3 normal) {
+bool isVisible(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMeta, glm::vec3 normal) {
     // Calculate adjacent block coordinates
     int adjX = x + static_cast<int>(normal.x);
     int adjY = y + static_cast<int>(normal.y);
@@ -143,46 +143,59 @@ bool isHidden(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMet
 
     // Get the adjacent block
     Block* adjacentBlock = world->getBlock(adjX, adjY, adjZ);
-    // No adjacent Block, not hidden
+    // No adjacent Block, not visible
     if (!adjacentBlock) {
-        return true;
+        return false;
     }
     uint8_t abType = adjacentBlock->blockType;
     uint8_t abMeta = adjacentBlock->metaData;
 
     // Snow Layer optimization
     if (cbType == SNOW_LAYER && !isTransparent(abType) && normal.y < 0.0) {
-        return true;
+        return false;
     }
 
     if (abType == SNOW_LAYER && !isTransparent(cbType) && normal.y > 0.0) {
-        return true;
+        return false;
     }
 
     // If it's the same as the checking block
     if (isFluid(cbType) && abType == ICE) {
-        return true;
+        return false;
     }
 
     // Prevent top faces from getting culled on Liquids
     if (isFluid(cbType) && cbType != abType && normal.y > 0.0) {
+        return true;
+    }
+
+    // All fluids are one
+    if (isFluid(cbType) && cbType == abType) {
         return false;
     }
 
-    if (isTransparent(cbType) || isPartialBlock(cbType) || isTransparent(abType) || isPartialBlock(abType)) {
-        if (cbType == abType) {
-            if (isFluid(cbType)) {
-                return true;
-            }
-            if ((cbType == ICE || cbType == SNOW_LAYER || cbType == GLASS) && cbType != LEAVES) {
-                return true;
-            }
-            return false;
-        } else if (isTransparent(abType) || isPartialBlock(abType)) {
-            return false;
-        }
+    // Billboards are always visible
+    if (isBillboard(cbType)) {
         return true;
     }
+
+    /*
+    Doesn't work for the top of slabs against full blocks
+    if (isPartialBlock(cbType) && isFull(abType)) {
+        return false;
+    } 
+    */
+
+    if (isTransparent(cbType)) {
+        if (cbType == abType || isFull(abType)) {
+            return false;
+        }
+    }
+
+    if (isFull(cbType) && isFull(abType)) {
+        return false;
+    }
+    
     return true;
 }
 
@@ -199,71 +212,96 @@ std::vector<std::string> splitString(const std::string& str, char delimiter) {
 }
 
 Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData) {
-    if (blockType == AIR) {
-        return nullptr;
-    }
-    std::string specialQuery = "";
+    if (blockType == AIR) return nullptr;
 
-    // Snow
+    std::string specialQuery;
+
+    // Handle Snow on Grass
     if (blockType == GRASS) {
-        Block* b = world->getBlock(x,y+1,z);
-        if (b && b->blockType == SNOW_LAYER) {
+        Block* above = world->getBlock(x, y + 1, z);
+        if (above && above->blockType == SNOW_LAYER) {
             specialQuery = "Snow";
         }
     }
 
-    // Leaves (removes decay data)
+    // Normalize metadata for specific blocks
     if (blockType == LEAVES) {
         blockMetaData &= 0x3;
-    }
-
-    // Blocks that should ignore rotation data
-    if (blockType == BED  || blockType == WOODEN_DOOR || blockType == IRON_DOOR) {
+    } else if (blockType == BED || blockType == WOODEN_DOOR || blockType == IRON_DOOR) {
         blockMetaData &= 0x8;
     }
 
-    std::vector<std::string> compareTo;
-    // Check Cached Mesh first to save time
-    if (cachedMesh != nullptr) {
-        compareTo = splitString(cachedMesh->name,'_');
-        if (blockType == std::stoi(compareTo[0]) && blockMetaData == std::stoi(compareTo[1])) {
-            return cachedMesh;
+    // Set of block types that care about metadata
+    static const std::unordered_set<uint8_t> metadataSensitiveBlocks = {
+        LEAVES,
+        LOG,
+        TALLGRASS,
+        TORCH,
+        STONE_STAIRS,
+        OAK_STAIRS,
+        WOOL,
+        PISTON,
+        TRAPDOOR,
+        WOODEN_DOOR,
+        IRON_DOOR,
+        UNLIT_REDSTONE_TORCH,
+        REDSTONE_TORCH,
+        BED,
+        WOODEN_PRESSURE_PLATE,
+        STONE_PRESSURE_PLATE
+    };
+
+    // Check cached mesh first
+    if (cachedMesh) {
+        std::vector<std::string> parts = splitString(cachedMesh->name, '_');
+        if (parts.size() >= 2) {
+            try {
+                if (blockType == std::stoi(parts[0]) &&
+                    blockMetaData == std::stoi(parts[1])) {
+                    return cachedMesh;
+                }
+            } catch (...) {
+                // Ignore parsing errors
+            }
         }
     }
-    
-    // Search for the mesh
+
+    // Search through available meshes
     for (auto& m : model->meshes) {
-        compareTo = splitString(m.name,'_');
-        if (blockType == std::stoi(compareTo[0])) {
-            // TODO: Temp while some metadata situations aren't accounted for
-            if (blockType == LEAVES ||
-                blockType == LOG ||
-                blockType == TALLGRASS ||
-                blockType == TORCH ||
-                blockType == STONE_STAIRS ||
-                blockType == OAK_STAIRS ||
-                blockType == WOOL ||
-                blockType == PISTON ||
-                blockType == TRAPDOOR ||
-                blockType == WOODEN_DOOR ||
-                blockType == IRON_DOOR ||
-                blockType == BED
-            ) {
-                if (blockMetaData == std::stoi(compareTo[1])) {
+        std::vector<std::string> parts = splitString(m.name, '_');
+        if (parts.size() < 2) continue;
+
+        try {
+            uint8_t meshType = static_cast<uint8_t>(std::stoi(parts[0]));
+            uint8_t meshMeta = static_cast<uint8_t>(std::stoi(parts[1]));
+
+            if (blockType != meshType) continue;
+
+            // Metadata-specific comparison
+            if (metadataSensitiveBlocks.contains(blockType)) {
+                if (blockMetaData != meshMeta) continue;
+                return &m;
+            }
+
+            // Special query (e.g., "Snow")
+            if (!specialQuery.empty()) {
+                if (parts.size() > 3 && specialQuery == parts[3]) {
                     return &m;
                 } else {
                     continue;
                 }
             }
-            
-            if (specialQuery == "") {
-                return &m;
-            }
-            if (specialQuery == compareTo[3]) {
-                return &m;
-            }
+
+            // Default match (type matches, metadata ignored)
+            return &m;
+
+        } catch (...) {
+            // Skip mesh if parsing fails
+            continue;
         }
     }
+
+    // Fallback mesh (should never be hit in ideal case)
     return &model->meshes[0];
 }
 
@@ -616,7 +654,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 for (uint v = 0; v < mesh->vertices.size(); v++) {
                     glm::vec3 offset = glm::vec3(0.0f);
                     glm::vec3 normal = glm::vec3(mesh->vertices[v].normal);
-                    if (isHidden(world, x, y, z, blockType, blockMetaData, normal)) {
+                    if (!isVisible(world, x, y, z, blockType, blockMetaData, normal)) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);
@@ -670,6 +708,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                                 }
                             }
                         }
+                        if (isLightSource(blockType)) l.blockLight++;
                         worldVertices.push_back(
                             Vertex(
                                 worldPos,
@@ -688,13 +727,11 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
 
                 if (isFluid(blockType) || blockType == ICE) {
                     for (uint i = 0; i < mesh->indices.size(); i++) {
-                        GLuint newInd = totalWaterIndices + mesh->indices[i];
-                        waterIndices.push_back(newInd);
+                        waterIndices.push_back(totalWaterIndices + mesh->indices[i]);
                     }
                 } else {
                     for (uint i = 0; i < mesh->indices.size(); i++) {
-                        GLuint newInd = totalWorldIndices + mesh->indices[i];
-                        worldIndices.push_back(newInd);
+                        worldIndices.push_back(totalWorldIndices + mesh->indices[i]);
                     }
                 }
             }

@@ -28,12 +28,16 @@ uniform mat4 scale;
 uniform float fogDistance;
 uniform vec4 externalFogColor;  // Dynamic fog color as a uniform
 uniform float maxSkyLight;
+uniform bool fullbright;
 
 void main()
 {
     //currentPosition = vec3(model * translation * -rotation * scale * vec4(aPos, 1.0f));
     Normal = aNormal;
-    color = aColor*vec3(max(aBlocklight,min(aSkylight,maxSkyLight/15.0))); //vec3(min(aSkylight,maxSkyLight/15.0));
+    color = aColor;
+    if (!fullbright) {
+        color *= vec3(max(aBlocklight,min(aSkylight,maxSkyLight/15.0))); //vec3(min(aSkylight,maxSkyLight/15.0));
+    }
     textureCoordinate = aTexture;
 
     vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
