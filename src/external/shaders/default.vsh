@@ -5,10 +5,10 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 // Input Vertex Color
 layout (location = 2) in vec3 aColor;
-// Input Sky Brightness
-layout (location = 3) in float aSkyLight;
 // Input Texture
-layout (location = 4) in vec2 aTexture;
+layout (location = 3) in vec2 aTexture;
+// Input Sky Brightness
+layout (location = 4) in float aSkyLight;
 
 // The color that is output to the fragment shader
 out vec3 currentPosition;
