@@ -5,6 +5,13 @@
 
 const float lightArray[16] = {0.035f, 0.044f, 0.055f, 0.069f, 0.086f, 0.107f, 0.134f, 0.168f, 0.21f, 0.262f, 0.328f, 0.41f, 0.512f, 0.64f, 0.8f, 1.0f};
 
+struct Light {
+    float blockLight = 1.0;
+    float skyLight = 1.0;
+};
+
+typedef struct Light Light;
+
 bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     bool onlySurroundedBySame = false;
     if (blockIndex >= 8 && blockIndex <= 11) {
@@ -80,7 +87,7 @@ ChunkBuilder::ChunkBuilder(Model* model, World* world) {
     ChunkBuilder::world = world;
 }
 
-float getLightingOfCurrent(World* world, int x, int y, int z) {
+Light getLightingOfCurrent(World* world, int x, int y, int z) {
     // Array for light values
 
     try {
@@ -92,16 +99,17 @@ float getLightingOfCurrent(World* world, int x, int y, int z) {
         }
 
         // Get lighting values from the adjacent block
-        int light = currentBlock->lightLevel; //std::max(currentBlock->lightLevel, std::min(currentBlock->skyLightLevel, maxSkyLight));
-
-        return lightArray[light];
+        return Light{
+            lightArray[currentBlock->lightLevel],
+            lightArray[currentBlock->skyLightLevel]
+        };
 
     } catch (const std::exception& e) {
-        return 1.0f;  // Return a default value in case of an error
+        return Light { 1.0f, 1.0f };  // Return a default value in case of an error
     }
 }
 
-float getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
+Light getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
     // Array for light values
 
     try {
@@ -117,12 +125,13 @@ float getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
         }
 
         // Get lighting values from the adjacent block
-        int light = adjacentBlock->lightLevel; //std::max(adjacentBlock->lightLevel, std::min(adjacentBlock->skyLightLevel, maxSkyLight));
-
-        return lightArray[light];
+        return Light{
+            lightArray[adjacentBlock->lightLevel],
+            lightArray[adjacentBlock->skyLightLevel]
+        };
 
     } catch (const std::exception& e) {
-        return 1.0f;  // Return a default value in case of an error
+        return Light{1.0f,1.0f};  // Return a default value in case of an error
     }
 }
 
@@ -321,8 +330,9 @@ int roundDirectional(float value) {
     return (value > 0) ? static_cast<int>(std::ceil(value)) : static_cast<int>(std::floor(value));
 }
 
-float getSmoothLighting(World* world, int x, int y, int z, glm::vec3 vertexPosition, glm::vec3 normal) {
-    uint8_t light = 0;
+Light getSmoothLighting(World* world, int x, int y, int z, glm::vec3 vertexPosition, glm::vec3 normal) {
+    uint8_t blockLight = 0;
+    uint8_t skyLight = 0;
     Block* b = nullptr;
     int xOffset = roundDirectional(vertexPosition.x);
     int yOffset = roundDirectional(vertexPosition.y);
@@ -348,13 +358,15 @@ float getSmoothLighting(World* world, int x, int y, int z, glm::vec3 vertexPosit
             }
             if (b) {
                 // Air is transparent, so we can ignore it too
-                uint8_t winningLight = b->lightLevel; //std::max(b->lightLevel, std::min(b->skyLightLevel, maxSkyLight));
-                light = std::max(light, winningLight);
+                uint8_t winningBlockLight = b->lightLevel; //std::max(b->lightLevel, std::min(b->skyLightLevel, maxSkyLight));
+                uint8_t winningSkyLight = b->skyLightLevel; //std::max(b->lightLevel, std::min(b->skyLightLevel, maxSkyLight));
+                blockLight = std::max(blockLight, winningBlockLight);
+                skyLight = std::max(skyLight, winningSkyLight);
             }
         }
     }
 
-    return lightArray[light];
+    return Light{lightArray[blockLight],lightArray[skyLight]};
 }
 
 glm::vec3 rotateVertexAroundOrigin(glm::vec3 vertexPosition, float angle, glm::vec3 axis) {
@@ -628,32 +640,33 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                     if (normal.y == 0) {
                         finalUV.y = finalUV.y + (offset.y/16);
                     }
-                    
+                    Light l;
                     // Water in it's own thing
                     if (blockType == WATER || blockType == ICE) {
-                        color *= getLighting(world,x,y,z,normal);
+                        l = getLighting(world,x,y,z,normal);
                         waterVertices.push_back(
                             Vertex(
                                 worldPos,
                                 normal,
                                 color,
-                                15.0,
-                                finalUV
+                                finalUV,
+                                l.skyLight,
+                                l.blockLight
                             )
                         );
                     } else {
                         // Apply light if the block isn't a lightsource
                         if (!isLightSource(blockType)) {
                             if (isBillboard(blockType)) {
-                                color*= getLightingOfCurrent(world,x,y,z);
+                                l = getLightingOfCurrent(world,x,y,z);
                             } else {
                                 if (smoothLighting) {
-                                    color *= getSmoothLighting(world,x,y,z,vertPos,normal);
+                                    l = getSmoothLighting(world,x,y,z,vertPos,normal);
                                     if (!isTransparent(blockType) && blockType != SNOW_LAYER) {
                                         color *= getAmbientOcclusion(world,worldPos,vertPos,normal);
                                     }
                                 } else {
-                                    color *= getLighting(world,x,y,z,normal);
+                                    l = getLighting(world,x,y,z,normal);
                                 }
                             }
                         }
@@ -662,8 +675,9 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                                 worldPos,
                                 normal,
                                 color,
-                                15.0,
-                                finalUV
+                                finalUV,
+                                l.skyLight,
+                                l.blockLight
                             )
                         );
                     }

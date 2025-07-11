@@ -9,12 +9,13 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec3 color;
-    float skyLight;
     glm::vec2 textureUV;
+    float skyLight;
+    float blockLight;
 
     // Explicit constructor
-    Vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec3& col, const float& skyLight, const glm::vec2& uv)
-        : position(pos), normal(norm), color(col), skyLight(skyLight), textureUV(uv) {}
+    Vertex(const glm::vec3& pos, const glm::vec3& norm, const glm::vec3& col, const glm::vec2& uv, const float& skyLight, const float& blockLight)
+        : position(pos), normal(norm), color(col), textureUV(uv), skyLight(skyLight), blockLight(blockLight) {}
 };
 
 class VBO {

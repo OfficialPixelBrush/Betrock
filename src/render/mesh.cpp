@@ -22,11 +22,12 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
     EBO ebo(indices);
 
     // Link that shit to VAO
-    vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
-    vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3*sizeof(float)));
-    vao.LinkAttrib(vbo, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6*sizeof(float)));
-    // TODO: Put skylight here?
-    vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9*sizeof(float)));
+    vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    vao.LinkAttrib(vbo, 1, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    vao.LinkAttrib(vbo, 2, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, color));
+    vao.LinkAttrib(vbo, 3, 2, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, textureUV));
+    vao.LinkAttrib(vbo, 4, 1, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, skyLight));
+    vao.LinkAttrib(vbo, 5, 1, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, blockLight));
 
     // Clean up our binds for new stuff
     vao.Unbind();

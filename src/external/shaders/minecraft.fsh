@@ -5,7 +5,6 @@ out vec4 FragColor;
 in vec3 currentPosition; 
 in vec3 Normal;
 in vec3 color;
-in float skyLight;
 in vec2 textureCoordinate;
 in float fogFactor;   // Fog factor from the vertex shader
 in vec4 fogColor;
