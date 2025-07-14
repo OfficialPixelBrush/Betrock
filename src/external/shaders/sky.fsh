@@ -1,15 +1,16 @@
 #version 330 core
+
+in vec3 TexCoords;
 out vec4 FragColor;
 
-in vec3 TexCoords;  // The y component from the camera's position
-
-vec3 topColor = vec3(1.0, 1.0, 1.0);     // The color at the top of the sky (white)
-vec3 bottomColor = vec3(0.0, 0.0, 0.0);  // The color at the bottom of the sky (black)
+// You can tweak these colors to get your desired sky appearance
+uniform vec3 topColor = vec3(0.529, 0.808, 0.922);   // Sky blue
+uniform vec3 bottomColor = vec3(0.984, 0.741, 0.482); // Light orange / horizon
 
 void main()
 {
-    // Normalize TexCoords.y from [-1, 1] to [0, 1]
-    float factor = clamp((TexCoords.y + 1.0) / 2.0, 0.0, 1.0);
-    vec3 gradientColor = mix(bottomColor, topColor, factor);  // Interpolate between bottom and top colors
-    FragColor = vec4(gradientColor, 1.0); // Set the final color with full opacity
+    // Normalize y from -1 (bottom) to +1 (top), then remap to 0..1
+    //float t = clamp(TexCoords.y * 0.5 + 0.5, 0.0, 1.0);
+    //vec3 color = mix(bottomColor, topColor, t);
+    FragColor = vec4(TexCoords, 1.0);
 }

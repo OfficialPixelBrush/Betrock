@@ -1,6 +1,7 @@
 #include "mesh.h"
 
-Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures) {
+Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures)
+    : vbo(vertices), ebo(indices) {
     if (vertices.empty() && indices.empty()) {
         std::cout << "Missing Vertices and Indices!" << std::endl;
     } else if (vertices.empty()) {
@@ -15,11 +16,7 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
 
     // Create Vertex Array Object and Bind it
     vao.Bind();
-
-    // Generates Vertex Buffer Object and links it to vertices
-    VBO vbo(vertices);
-    // Same with the Element Buffer Object, just for indices
-    EBO ebo(indices);
+    vbo.Bind();
 
     // Link that shit to VAO
     vao.LinkAttrib(vbo, 0, 3, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, position));
@@ -29,22 +26,20 @@ Mesh::Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>
     vao.LinkAttrib(vbo, 4, 1, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, skyLight));
     vao.LinkAttrib(vbo, 5, 1, GL_FLOAT, sizeof(Vertex), (void*)offsetof(Vertex, blockLight));
 
+    ebo.Bind();
+
     // Clean up our binds for new stuff
     vao.Unbind();
-    vbo.Unbind();
-    ebo.Unbind();
 }
 
 Mesh::~Mesh() {
-    glFinish();
-
     vao.Unbind();
     vao.Delete();
 
     vertices.clear();
     indices.clear();
     textures.clear();
-    //std::cout << "Deleted " << name << " Mesh " << this << std::endl;
+    std::cout << "Deleted " << name << " Mesh " << this << std::endl;
 }
 
 void Mesh::Draw(
@@ -93,4 +88,9 @@ void Mesh::Draw(
 
 	// Draw the actual mesh
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        std::cout << "OpenGL error after draw: " << err << std::endl;
+    }
+    vao.Unbind();
 }

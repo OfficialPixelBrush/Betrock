@@ -7,6 +7,10 @@ project(Betrock VERSION 0.3.9)
 find_package(fmt REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
+
+add_library(glad src/src/glad.c)
+target_include_directories(glad PUBLIC ${CMAKE_SOURCE_DIR}/src/include/)
+
 include_directories(src/include)
 add_compile_options(
   "-ggdb"
@@ -45,7 +49,6 @@ add_executable(
     src/debug.cpp
     src/main.cpp
 
-    src/include/glad.c
     src/include/imgui/imgui.cpp
     src/include/imgui/imgui_draw.cpp
     src/include/imgui/imgui_tables.cpp
@@ -64,11 +67,12 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(CMAKE_RANLIB i686-w64-mingw32-ranlib)
     target_link_libraries(
         Betrock
+        glad
         gdi32
         opengl32
         deflate
         stb
-	fmt::fmt
+	    fmt::fmt
     )
 else()
     # Apply AddressSanitizer to all build types
@@ -76,11 +80,12 @@ else()
     set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
     target_link_libraries(
         Betrock
+        glad
         glfw
         OpenGL::GL
         deflate
         stb
-	fmt::fmt
+	    fmt::fmt
         ${CMAKE_DL_LIBS}
     )
 endif()

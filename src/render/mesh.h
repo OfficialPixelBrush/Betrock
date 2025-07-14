@@ -14,6 +14,8 @@ class Mesh {
         std::vector<Texture> textures;
 
         VAO vao;
+        VBO vbo;
+        EBO ebo;
 
         Mesh(std::string pName, std::vector<Vertex>& vertices, std::vector<GLuint>& indices, std::vector<Texture> textures);
         ~Mesh();

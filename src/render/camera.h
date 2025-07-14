@@ -25,6 +25,10 @@ class Camera {
         // Camera size
         int width, height;
 
+        float FOVdeg;
+        float nearPlane;
+        float farPlane;
+
         // Movement Settings
         float speed = 0.01;
         bool speedModified = false;
@@ -35,6 +39,7 @@ class Camera {
 
         // Used to define projection Matrix
         void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
+        glm::mat4 GetProjectionMatrix();
         void updateResolution(int pWidth, int pHeight);
         void Matrix(Shader& shader, const char* uniform);
 

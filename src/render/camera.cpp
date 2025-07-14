@@ -7,13 +7,20 @@ Camera::Camera(int pWidth, int pHeight, glm::vec3 pPosition, glm::vec3 pOrientat
     Orientation = pOrientation;
 }
 
-void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane) {
+void Camera::updateMatrix(float pFOVdeg, float pNearPlane, float pFarPlane) {
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection = glm::mat4(1.0f);
+    FOVdeg = pFOVdeg;
+    nearPlane = pNearPlane;
+    farPlane = pFarPlane;
 
     view = glm::lookAt(Position, Position + Orientation, Up);
-    projection = glm::perspective(glm::radians(FOVdeg), (float)((float)width/(float)height), nearPlane, farPlane);
+    projection = GetProjectionMatrix();
     cameraMatrix = projection * view;
+}
+
+glm::mat4 Camera::GetProjectionMatrix() {
+    return glm::perspective(glm::radians(FOVdeg), (float)((float)width/(float)height), nearPlane, farPlane);;
 }
 
 void Camera::updateResolution(int pWidth, int pHeight) {

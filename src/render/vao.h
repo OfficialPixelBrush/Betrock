@@ -2,6 +2,7 @@
 #include "../include/glad/glad.h"
 #include "vbo.h"
 #include "../compat.h"
+#include <iostream>
 
 class VAO {
     public:
