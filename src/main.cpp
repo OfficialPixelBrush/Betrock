@@ -315,11 +315,11 @@ int main(int argc, char *argv[]) {
 
     // Create a camera
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
-    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
+    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-18.77, 70.60, -42.00), glm::vec3(0.13, -0.79, 0.36)); // Nyareative Chunk Error
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, -0.30)); // Publicbeta Underground Screenshot
-    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, 0.13, -0.61)); // Publicbeta Bg, Fov 50
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
 
