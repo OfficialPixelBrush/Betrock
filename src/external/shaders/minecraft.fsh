@@ -12,6 +12,7 @@ in vec4 fogColor;
 uniform sampler2D diffuse0;
 // TODO: uniform vec3 blockLight;
 uniform vec3 cameraPosition;
+uniform bool fogEnabled;
 
 void main() {
     vec3 normal = normalize(Normal);
@@ -36,6 +37,10 @@ void main() {
     // The final color of the pixel
     if(texColor.a < 0.1)
         discard;
-    //FragColor = mix((vec4(color,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), fogColor, fogFactor);
-    FragColor = (vec4(newColor,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor);
+    
+    if (fogEnabled) {
+        FragColor = mix((vec4(newColor,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor), fogColor, fogFactor);
+    } else {
+        FragColor = (vec4(newColor,1.0f) * vec4(lighting,lighting,lighting,1.0f) * texColor);
+    }
 }
