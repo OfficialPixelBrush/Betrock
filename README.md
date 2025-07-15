@@ -1,11 +1,12 @@
 # Betrock
- C++ Application for exploring Minecraft Beta 1.7.3 Worlds
+A C++ Application for exploring Minecraft Beta 1.7.3 Worlds,
+written to look as close to the real deal as I can manage.
 
 ## Screenshot
 ![Betrock Screenshot](images/image.png)
 
 ## Build Instructions
-Install the required programs
+Install the required programs and libraries.
 
 ## Setup
 ```bash
@@ -79,14 +80,16 @@ Please refer to the following video as to why: ["Why You Shouldn't Nest Your Cod
 
 
 ## Progress
-### Goals for Version 0.3.0
+### Goals for Version 0.4.0
 - [ ] Make fog act in world space, not view space!
-- [ ] Smooth Lighting Fixes
-- [ ] Sky
 - [ ] Biome Visuals
 - [ ] Fix Chunk Loading Memory leak
 - [ ] Windows Version
       - stb causing issues here
+
+### Goals for Version 0.3.0
+- [x] Smooth Lighting Fixes (turns out Minecrafts lighting just works like that)
+- [x] Sky (was borked due to model loading being borked)
 
 ### Goals for Version 0.2.0
 - Visual Flair
