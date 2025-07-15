@@ -224,7 +224,7 @@ void APIENTRY OpenGLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
     std::cerr << "  Severity: " << severity << "\n";
     std::cerr << "  Message: " << message << "\n\n";
     int x;
-    std::cin >> x;
+    //std::cin >> x;
 }
 
 void EnableOpenGLDebug()
@@ -512,6 +512,16 @@ int main(int argc, char *argv[]) {
             blockShader.setBool("fullbright", fullBright);
             blockShader.setBool("fogEnabled",fogEnabled);
             for (uint i = 0; i < chunkMeshes.size(); i++) {
+                // Camera to Chunk Vector
+                glm::vec2 ab = glm::vec2(float(chunkMeshes[i]->chunk->x) - x/16.0, float(chunkMeshes[i]->chunk->y), y/16.0);
+                if (!chunkMeshes[i]->chunk) {
+                    continue;
+                }
+                // Make it so only chunks that're facing the camera can be seen
+                /*
+                if (chunkMeshes[i]->chunk->x != int(x/16.0)) {
+                    continue;
+                }*/
                 if (normals) {
                     chunkMeshes[i]->Draw(normalShader, *camPointer);
                 } else {
