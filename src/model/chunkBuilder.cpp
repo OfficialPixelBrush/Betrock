@@ -268,7 +268,7 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
 
     // Search through available meshes
     for (auto& m : model->meshes) {
-        std::vector<std::string> parts = splitString(m.name, '_');
+        std::vector<std::string> parts = splitString(m->name, '_');
         if (parts.size() < 2) continue;
 
         try {
@@ -280,20 +280,20 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
             // Metadata-specific comparison
             if (metadataSensitiveBlocks.contains(blockType)) {
                 if (blockMetaData != meshMeta) continue;
-                return &m;
+                return m.get();
             }
 
             // Special query (e.g., "Snow")
             if (!specialQuery.empty()) {
                 if (parts.size() > 3 && specialQuery == parts[3]) {
-                    return &m;
+                    return m.get();
                 } else {
                     continue;
                 }
             }
 
             // Default match (type matches, metadata ignored)
-            return &m;
+            return m.get();
 
         } catch (...) {
             // Skip mesh if parsing fails
@@ -302,7 +302,7 @@ Mesh* ChunkBuilder::getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t
     }
 
     // Fallback mesh (should never be hit in ideal case)
-    return &model->meshes[0];
+    return model->meshes[0].get();
 }
 
 float getAmbientOcclusion(World* world, glm::vec3 position, glm::vec3 vertexPosition, glm::vec3 normal) {

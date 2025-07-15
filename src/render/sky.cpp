@@ -1,13 +1,13 @@
 #include "sky.h"
 
-Sky::Sky(Model* model) {
+Sky::Sky(Mesh* mesh) {
     std::copy(std::begin(dayTimeSkyColor), std::end(dayTimeSkyColor), skyColor);
     std::copy(std::begin(dayTimeHorizonColor), std::end(dayTimeHorizonColor), fogColor);
-    Sky::model = model;
+    Sky::mesh = mesh;
 }
 
 void Sky::Draw(Shader& shader, Camera& camera) {
-    model->Draw(shader, camera);
+    mesh->Draw(shader, camera);
 }
 
 void Sky::UpdateFog(Shader& shader, int renderDistance) {

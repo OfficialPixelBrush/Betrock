@@ -22,9 +22,6 @@ out vec4 fogColor;
 
 uniform mat4 cameraMatrix;
 uniform mat4 model;
-uniform mat4 translation;
-uniform mat4 rotation;
-uniform mat4 scale;
 uniform float fogDistance;
 uniform vec4 externalFogColor;  // Dynamic fog color as a uniform
 uniform float maxSkyLight;

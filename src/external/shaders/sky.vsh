@@ -1,17 +1,20 @@
 #version 330 core
 layout (location = 0) in vec3 aPos;
+
 out vec3 TexCoords;
 
+uniform mat4 projection;
+uniform mat4 view;
+
 uniform mat4 cameraMatrix;
+uniform mat4 model;
+uniform float fogDistance;
+uniform vec4 externalFogColor;  // Dynamic fog color as a uniform
+uniform float maxSkyLight;
+uniform bool fullbright;
 
 void main()
 {
-    // Transform the vertex position into camera space
-    vec4 viewPosition = cameraMatrix * vec4(aPos, 1.0);
-    
-    // Use only the y-component of the camera space position for TexCoords
-    TexCoords = vec3(0.0, viewPosition.y, 0.0);
-    
-    // Maintain depth properly
-    gl_Position = viewPosition;  
-}
+    TexCoords = aPos;
+    gl_Position = projection * view * vec4(aPos, 1.0);
+}  

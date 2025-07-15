@@ -3,13 +3,14 @@
 Model::Model(const char* file) {
 	// Get the binary data
     Model::file = file;
+    std::cout << file << std::endl;
     getMeshData();
 }
 
 void Model::Draw(Shader& shader, Camera& camera) {
 	// Go over all meshes and draw each one
     for (uint i = 0; i < meshes.size(); i++) {
-        meshes[i].Mesh::Draw(shader, camera);
+        meshes[i]->Mesh::Draw(shader, camera);
     }
 }
 
@@ -121,13 +122,19 @@ void Model::getMeshData() {
                     uv,
                     1.0f, 1.0f      // any other parameters
                 );
-                indices.push_back(indexCount++);
+                /*
+                std::cout << (indexCount+1) << std::endl;
+                std::cout << position.x << ", " << position.y << ", " << position.z << std::endl;
+                std::cout << normal.x << ", " << normal.y << ", " << normal.z << std::endl;
+                std::cout << uv.x << ", " << uv.y << std::endl;
+                */
+                indices.emplace_back(indexCount++);
             }
 
         } else if (type == "o") {
             // New object delimiter
             if (!firstObject) {
-                meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+                meshes.push_back(std::make_unique<Mesh>(objectName, vertices, indices, getTextures()));
                 vertices.clear();
                 indices.clear();
                 indexCount = 0;
@@ -135,7 +142,6 @@ void Model::getMeshData() {
                 firstObject = false;
             }
             in >> objectName;
-
         } else if (type == "#" || type.empty()) {
             // Comment or empty line, ignore
             continue;
@@ -147,10 +153,20 @@ void Model::getMeshData() {
 
     // Push last mesh if any
     if (!firstObject) {
-        meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+        meshes.push_back(std::make_unique<Mesh>(objectName, vertices, indices, getTextures()));
     }
 
     std::cout << "Saved " << meshes.size() << " meshes" << std::endl;
+    /*
+    for (int i = 0; i < meshes.size(); i++) {
+        std::cout
+            << meshes[i].name << ": "
+            << meshes[i].vertices.size() << ", "
+            << meshes[i].indices.size() << " | "
+            << meshes[i].vao.Id << ", " << meshes[i].vbo.Id << ", " << meshes[i].ebo.Id
+            << std::endl;
+    }
+    */
 }
 
 std::vector<Texture> Model::getTextures() {

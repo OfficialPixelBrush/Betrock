@@ -211,6 +211,39 @@ void takeScreenshot(GLFWwindow* window) {
     }
 }
 
+
+// Debug callback function
+void APIENTRY OpenGLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
+                                         GLenum severity, GLsizei length,
+                                         const GLchar* message, const void* userParam)
+{
+    std::cerr << "OpenGL Debug Message:\n";
+    std::cerr << "  Source: " << source << "\n";
+    std::cerr << "  Type: " << type << "\n";
+    std::cerr << "  ID: " << id << "\n";
+    std::cerr << "  Severity: " << severity << "\n";
+    std::cerr << "  Message: " << message << "\n\n";
+    int x;
+    std::cin >> x;
+}
+
+void EnableOpenGLDebug()
+{
+    GLint flags;
+    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
+    {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback(OpenGLDebugMessageCallback, nullptr);
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+    }
+    else
+    {
+        std::cerr << "Warning: OpenGL debug context not available.\n";
+    }
+}
+
 // Targeting OpenGL 3.3
 int main(int argc, char *argv[]) {
     // Define a buffer 
@@ -227,7 +260,7 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    char worldName[256] = "Nyareative";
+    char worldName[256] = "publicbeta";
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
         //return 1;
@@ -246,6 +279,7 @@ int main(int argc, char *argv[]) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, GL_MAJOR);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, GL_MINOR);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
     // Create Window
     GLFWwindow* window = glfwCreateWindow(windowWidth,windowHeight,PROJECT_NAME_VERSION, NULL, NULL);
@@ -270,26 +304,28 @@ int main(int argc, char *argv[]) {
     // Creates Shader object using shaders default.vsh and .frag
     Shader blockShader("./shaders/default.vsh", "./shaders/minecraft.fsh");
     Shader normalShader("./shaders/default.vsh", "./shaders/normal.fsh");
-    //Shader skyShader("./src/external/shader/sky.vsh", "./src/external/shader/sky.fsh");
-    blockShader.Activate();
-    //skyShader.Activate();
+    Shader defaultShader("./shaders/default.vsh", "./shaders/default.fsh");
+    Shader skyShader("./shaders/sky.vsh", "./shaders/sky.fsh");
+
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);  
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    EnableOpenGLDebug();
 
     // Create a camera
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(20.392706f+0.5, 67.527435f+0.5, 90.234566f+0.5), glm::vec3(0.604827, -0.490525, 0.627354f)); // Glacier Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-19.11, 66.5, -6.92), glm::vec3(0.0, 0.0, 0.9)); // 404 Screenshot
-    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-18.77, 70.60, -42.00), glm::vec3(0.13, -0.79, 0.36)); // Nyareative Chunk Error
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, -0.30)); // Publicbeta Underground Screenshot
-    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, -0.13, -0.61)); // Publicbeta Bg, Fov 50
+    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, 0.13, -0.61)); // Publicbeta Bg, Fov 50
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     // Face Ordering
     glCullFace(GL_BACK);
@@ -299,10 +335,10 @@ int main(int argc, char *argv[]) {
     initializeBlockLUTs();
 
     // Load Blockmodel
-    Model* skyModel = new Model("./models/sky.obj");
     Model* blockModel = new Model("./models/models.obj");
+    Model* skyModel = new Model("./models/sky.obj");
 
-    Sky sky(skyModel);
+    Sky sky(skyModel->meshes[0].get());
 
     World* world = new World();
 
@@ -318,7 +354,7 @@ int main(int argc, char *argv[]) {
     bool fullscreen = false;
     bool wasFullscreen = false;
     bool cullFace = true;
-    bool polygon = false;
+    bool wireframe = false;
     bool updateWhenMoving = false;
     bool smoothLighting = true;
     bool manualChunkUpdateTrigger = false;
@@ -330,6 +366,8 @@ int main(int argc, char *argv[]) {
     bool raycastToBlock = true;
     bool normals = false;
     bool fullBright = false;
+    bool fogEnabled = true;
+    bool waterSorting = true;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -345,7 +383,7 @@ int main(int argc, char *argv[]) {
     float x = camPointer->Position.x;
     float z = camPointer->Position.z;
     std::string debugText = "";
-    std::vector<Texture> tex = blockModel->meshes[0].textures;
+    std::vector<Texture> tex = blockModel->meshes[0]->textures;
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
     //std::this_thread::sleep_for(std::chrono::milliseconds(25));
     //std::thread chunkBuildingThread2(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
@@ -360,20 +398,6 @@ int main(int argc, char *argv[]) {
             glfwSwapInterval( 0 );
         }
 
-        // Toggle Backface culling
-        if (cullFace) {
-            glEnable(GL_CULL_FACE);
-        } else {
-            glDisable(GL_CULL_FACE);
-        }
-        
-        // Toggle Wireframe drawing
-        if (polygon) {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        } else {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-        }
-
         // Draw
         float skyLightMultiplier = float(maxSkyLight)/15.0;
         glClearColor(
@@ -381,7 +405,7 @@ int main(int argc, char *argv[]) {
             sky.skyColor[1]*skyLightMultiplier,
             sky.skyColor[2]*skyLightMultiplier,
             sky.skyColor[3]*skyLightMultiplier
-            );
+        );
         // Clear the Back and Depth buffer
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -405,15 +429,37 @@ int main(int argc, char *argv[]) {
 
         // ---- RENDERING ----
 
-        // Render Sky
-        // Disable Depth Test
-        //glDepthFunc(GL_LEQUAL);
-        // Bind and render skybox
-        //sky.Draw(skyShader, camera);
+        // Render Skybox
+        glDepthMask(GL_FALSE);
+        glDepthFunc(GL_ALWAYS);
+        glDisable(GL_CULL_FACE);
+        skyShader.Activate();
+        skyShader.setMat4("projection", camPointer->GetProjectionMatrix());
+        skyShader.setMat4("view", glm::mat4(glm::mat3(camPointer->GetViewMatrix())));
+        skyShader.setFloat("timeOfDay", float(maxSkyLight)/15.0);
+        sky.Draw(skyShader, *camPointer);
+        glCullFace(GL_BACK);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LEQUAL);
+
+        // Toggle Backface culling
+        if (cullFace) {
+            glEnable(GL_CULL_FACE);
+        } else {
+            glDisable(GL_CULL_FACE);
+        }
+        
+        // Toggle Wireframe drawing
+        if (wireframe) {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+        } else {
+            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+        }
+
         // Re-enable Depth Test
-        //glDepthFunc(GL_LESS);
         std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex, std::try_to_lock);
-        // TODO: Fix chunks corrupting
+        // FIXED: Fix chunks corrupting
+        // Turns out chunks corrupted due to non-triangulated meshes!!!
         if (mbLock.owns_lock()) {
             if (!meshBuildQueue.empty()) {
                 DummyMesh mesh = meshBuildQueue.back();
@@ -431,44 +477,40 @@ int main(int argc, char *argv[]) {
         }
 
         // Sort Chunks by Manhattan Distance
-        std::unique_lock<std::mutex> cmLock(chunkMeshesMutex);
-        std::sort(chunkMeshes.begin(), chunkMeshes.end(),
-            [camPointer](const auto& a, const auto& b) {
-                // Only compare if the second mesh is "water" for both chunks
-                if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
-                    b->meshes.size() > 1 && b->meshes[1]->name == "water") {
+        // Maybe add  && checkIfChunkBoundaryCrossed(camPointer->Position, previousPosition)?
+        if (waterSorting) {
+            std::unique_lock<std::mutex> cmLock(chunkMeshesMutex);
+            std::sort(chunkMeshes.begin(), chunkMeshes.end(),
+                [camPointer](const auto& a, const auto& b) {
+                    // Only compare if the second mesh is "water" for both chunks
+                    if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
+                        b->meshes.size() > 1 && b->meshes[1]->name == "water") {
 
-                    // Calculate chunk center positions
-                    glm::vec2 aChunkPosition = glm::vec2(a->chunk->x * 16 + 8, a->chunk->z * 16 + 8);
-                    glm::vec2 bChunkPosition = glm::vec2(b->chunk->x * 16 + 8, b->chunk->z * 16 + 8);
-                    glm::vec2 cameraXZ = glm::vec2(camPointer->Position.x, camPointer->Position.z);
+                        // Calculate chunk center positions
+                        glm::vec2 aChunkPosition = glm::vec2(a->chunk->x * 16 + 8, a->chunk->z * 16 + 8);
+                        glm::vec2 bChunkPosition = glm::vec2(b->chunk->x * 16 + 8, b->chunk->z * 16 + 8);
+                        glm::vec2 cameraXZ = glm::vec2(camPointer->Position.x, camPointer->Position.z);
 
-                    // Calculate Manhattan distances from the camera
-                    float distA = std::abs(aChunkPosition.x - cameraXZ.x) + std::abs(aChunkPosition.y - cameraXZ.y);
-                    float distB = std::abs(bChunkPosition.x - cameraXZ.x) + std::abs(bChunkPosition.y - cameraXZ.y);
+                        // Calculate Manhattan distances from the camera
+                        float distA = std::abs(aChunkPosition.x - cameraXZ.x) + std::abs(aChunkPosition.y - cameraXZ.y);
+                        float distB = std::abs(bChunkPosition.x - cameraXZ.x) + std::abs(bChunkPosition.y - cameraXZ.y);
 
-                    // Primary sorting condition: Compare distances (larger distance comes first)
-                    if (std::abs(distA - distB) > 1e-4f) {  // Add epsilon tolerance to avoid precision issues
-                        return distA > distB;
+                        // Primary sorting condition: Compare distances (larger distance comes first)
+                        if (std::abs(distA - distB) > 1e-4f) {  // Add epsilon tolerance to avoid precision issues
+                            return distA > distB;
+                        }
                     }
-
-                    /*
-                    // Secondary sorting condition: Compare chunk x positions as tie-breaker
-                    if (a->chunk->x != b->chunk->x) {
-                        return a->chunk->x > b->chunk->x;
-                    }
-
-                    // Final tie-breaker: Compare chunk z positions
-                    return a->chunk->z > b->chunk->z;*/
-                }
-                return false;
-            });
-        cmLock.unlock();
+                    return false;
+                });
+            cmLock.unlock();
+        }
         // Render all chunks
         // TODO: Only render chunks that're actually visible
-        blockShader.setFloat("maxSkyLight", float(maxSkyLight));
-        blockShader.setBool("fullbright", fullBright);
         if (renderChunks) {
+            blockShader.Activate();
+            blockShader.setFloat("maxSkyLight", float(maxSkyLight));
+            blockShader.setBool("fullbright", fullBright);
+            blockShader.setBool("fogEnabled",fogEnabled);
             for (uint i = 0; i < chunkMeshes.size(); i++) {
                 if (normals) {
                     chunkMeshes[i]->Draw(normalShader, *camPointer);
@@ -479,231 +521,254 @@ int main(int argc, char *argv[]) {
         }
 
         ImGui::Begin("Options");
-        if (ImGui::Button("Screenshot")) {
-            takeScreenshot(window);
-        }
-        ImGui::InputText("##",worldName, 256);
-        ImGui::SameLine(0,0);
-        if (ImGui::Button("Load") && worldName != "") {
-            std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
-            world->clearChunks();
-            world->LoadWorld(worldPath);
-            updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
-        }
-        std::string msTime = fmt::v9::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
-        std::string camPos =  fmt::v9::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
-        std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16)));
-        std::string camRot =  fmt::v9::format("Orientation: {:.2f},{:.2f},{:.2f}",camPointer->Orientation.x,camPointer->Orientation.y,camPointer->Orientation.z);
-        std::string facing =  "Facing: ";
-        // Calculate the angle in radians based on the camera's orientation
-        float angle = atan2(camPointer->Orientation.z, camPointer->Orientation.x); // Angle in radians
-
-        // Convert radians to degrees (optional, for easier understanding)
-        float degrees = angle * 180.0f / M_PI;
-
-        // Determine the direction based on the angle
-        // TODO: Fix orientation
-        if (angle > -M_PI_4 && angle <= M_PI_4) {
-            facing += "East";
-        } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
-            facing += "South";
-        } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
-            facing += "West";
-        } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
-            facing += "North";
-        }
-        std::string camSpeed =  "Speed: " + std::to_string(camPointer->speed);
-        ImGui::Text("%s", msTime.c_str());
-        ImGui::Text("%s", camPos.c_str());
-        ImGui::Text("%s", chunkPos.c_str());
-        ImGui::Text("%s", camRot.c_str());
-        ImGui::Text("%s", facing.c_str());
-        ImGui::Text("%s", camSpeed.c_str());
-        static float tpCoords[3] = { camPointer->Position.x, camPointer->Position.y, camPointer->Position.z };
-        ImGui::InputFloat3("TP Coords", tpCoords);
-        if (ImGui::Button("Teleport")) {
-            camPointer->Position = glm::vec3(tpCoords[0], tpCoords[1], tpCoords[2]);
-        }
-        if (ImGui::CollapsingHeader("Colors")) {
-            ImGui::ColorEdit4("Sky Color", sky.skyColor);
-            ImGui::ColorEdit4("Fog Color", sky.fogColor);
-        }
-        if (ImGui::CollapsingHeader("Graphical")) {
-            ImGui::Checkbox("Vsync", &vsync);
-            ImGui::Checkbox("Fullscreen", &fullscreen);
-            ImGui::Checkbox("Backface Culling", &cullFace);
-            ImGui::Checkbox("Polygon", &polygon);
-            ImGui::Checkbox("Fullbright", &fullBright);
-            ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
-            ImGui::Checkbox("Render Chunks", &renderChunks);
-            ImGui::Checkbox("Normals", &normals);
-        }
-
-        if (ImGui::CollapsingHeader("Chunks")) {
-            ImGui::Checkbox("Smooth Lighting", &smoothLighting);
-            ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
-            std::string renderDistancePreset = "";
-            if (renderDistance==32) {
-                renderDistancePreset = "Extreme";
+        {
+            if (ImGui::Button("Screenshot")) {
+                takeScreenshot(window);
             }
-            if (renderDistance==16) {
-                renderDistancePreset = "Far";
-            }
-            if (renderDistance==8) {
-                renderDistancePreset = "Normal";
-            }
-            if (renderDistance==4) {
-                renderDistancePreset = "Short";
-            }
-            if (renderDistance==2) {
-                renderDistancePreset = "Tiny";
-            }
-            ImGui::Text("%s", renderDistancePreset.c_str());
-            ImGui::SliderInt("Render Distance",&renderDistance, 1, 32);
-        
-            // Get list of chunks that're to be updated
-            if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camPointer->Position, previousPosition) && updateWhenMoving)) {
+            ImGui::InputText("##",worldName, 256);
+            ImGui::SameLine(0,0);
+            if (ImGui::Button("Load") && worldName != "") {
+                std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
+                world->clearChunks();
+                world->LoadWorld(worldPath);
                 updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
-                manualChunkUpdateTrigger = false;
             }
-        }
-        if (ImGui::CollapsingHeader("Misc")) {
-            int fovTemp = int(fieldOfView/10);
-            ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
-            fieldOfView = float(fovTemp*10);
-            ImGui::Checkbox("Update when Moving", &updateWhenMoving);
-            ImGui::Checkbox("Gravity", &gravity);
-            ImGui::Checkbox("Collision", &collision);
-            ImGui::Checkbox("Raycast Block", &raycastToBlock);
-        }
-        if (ImGui::CollapsingHeader("Debug Flags")) {
-            ImGui::Checkbox("nbtDebug", &nbtDebug);
-            ImGui::Checkbox("regionLoaderDebug", &regionLoaderDebug);
-            ImGui::Checkbox("chunkBuilderDebug", &chunkBuilderDebug);
-            ImGui::Checkbox("logoDebug", &logoDebug);
-            if (ImGui::Button("Tp to logo")) {
-                fieldOfView = 50.0;
-                camPointer->Position = glm::vec3(-7.0, 18.0, 14);
-                camPointer->Orientation = glm::vec3(0.40, -0.9, 0.0);
-            }
-        }
+            std::string msTime = fmt::v9::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
+            std::string camPos =  fmt::v9::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
+            std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16)));
+            std::string camRot =  fmt::v9::format("Orientation: {:.2f},{:.2f},{:.2f}",camPointer->Orientation.x,camPointer->Orientation.y,camPointer->Orientation.z);
+            std::string facing =  "Facing: ";
+            // Calculate the angle in radians based on the camera's orientation
+            float angle = atan2(camPointer->Orientation.z, camPointer->Orientation.x); // Angle in radians
 
-        if (collision) {
-            // Which collisions occured
-            bool ground = false;
-            bool ceiling = false;
-            Block* groundBlock = nullptr;
-            Block* ceilingBlock = nullptr;
-            // Ground
-            BlockHitResult groundHit = raycast(camPointer->Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
-            if (groundHit.hit) {
-                groundBlock = world->getBlock(groundHit.blockPos.x,groundHit.blockPos.y,groundHit.blockPos.z);
+            // Convert radians to degrees (optional, for easier understanding)
+            float degrees = angle * 180.0f / M_PI;
+
+            // Determine the direction based on the angle
+            // TODO: Fix orientation
+            if (angle > -M_PI_4 && angle <= M_PI_4) {
+                facing += "East";
+            } else if (angle > M_PI_4 && angle <= 3 * M_PI_4) {
+                facing += "South";
+            } else if (angle > 3 * M_PI_4 || angle <= -3 * M_PI_4) {
+                facing += "West";
+            } else if (angle > -3 * M_PI_4 && angle <= -M_PI_4) {
+                facing += "North";
+            }
+            std::string camSpeed =  "Speed: " + std::to_string(camPointer->speed);
+            ImGui::Text("%s", msTime.c_str());
+            ImGui::Text("%s", camPos.c_str());
+            ImGui::Text("%s", chunkPos.c_str());
+            ImGui::Text("%s", camRot.c_str());
+            ImGui::Text("%s", facing.c_str());
+            ImGui::Text("%s", camSpeed.c_str());
+            static float tpCoords[3] = { camPointer->Position.x, camPointer->Position.y, camPointer->Position.z };
+            ImGui::InputFloat3("TP Coords", tpCoords);
+            if (ImGui::Button("Teleport")) {
+                camPointer->Position = glm::vec3(tpCoords[0], tpCoords[1], tpCoords[2]);
+            }
+            if (ImGui::CollapsingHeader("Colors")) {
+                ImGui::ColorEdit4("Sky Color", sky.skyColor);
+                ImGui::ColorEdit4("Fog Color", sky.fogColor);
+            }
+            if (ImGui::CollapsingHeader("Graphical")) {
+                ImGui::Checkbox("Vsync", &vsync);
+                ImGui::Checkbox("Fullscreen", &fullscreen);
+                ImGui::Checkbox("Backface Culling", &cullFace);
+                ImGui::Checkbox("Wireframe", &wireframe);
+                ImGui::Checkbox("Water Sorting", &waterSorting);
+                ImGui::Checkbox("Fullbright", &fullBright);
+                ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
+                ImGui::Checkbox("Render Chunks", &renderChunks);
+                ImGui::Checkbox("Fog", &fogEnabled);
+                ImGui::Checkbox("Normals", &normals);
             }
 
-            // Ceiling
-            BlockHitResult ceilingHit = raycast(camPointer->Position, glm::vec3(0.0,1.0,0.0), maxDistance, world, true);
-            if (ceilingHit.hit) {
-                ceilingBlock = world->getBlock(ceilingHit.blockPos.x,ceilingHit.blockPos.y,ceilingHit.blockPos.z);
-            }
-
-            if (groundBlock && camPointer->Position.y < (groundHit.blockPos.y + 2.75)) {
-                //camPointer->Position = camPointer->Position-glm::vec3(glm::ivec3(camPointer->Position)) + glm::vec3(groundHit.blockPos);
-                camPointer->Position.y = groundHit.blockPos.y + 2.8;
-                ground = true;
-                if (camPointer->Velocity.y < 0.0) {
-                    camPointer->Velocity.y = 0.0;
+            if (ImGui::CollapsingHeader("Chunks")) {
+                ImGui::Checkbox("Smooth Lighting", &smoothLighting);
+                ImGui::SliderInt("Skylight",&maxSkyLight, 0, 15);
+                std::string renderDistancePreset = "";
+                switch(renderDistance) {
+                    case 32:
+                        renderDistancePreset = "Extreme";
+                        break;
+                    case 16: 
+                        renderDistancePreset = "Far";
+                        break;
+                    case 8:
+                        renderDistancePreset = "Normal";
+                        break;
+                    case 4:
+                        renderDistancePreset = "Short";
+                        break;
+                    case 2:
+                        renderDistancePreset = "Tiny";
+                        break;
+                }
+                ImGui::Text("%s", renderDistancePreset.c_str());
+                ImGui::SliderInt("Render Distance",&renderDistance, 1, 32);
+            
+                // Get list of chunks that're to be updated
+                if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camPointer->Position, previousPosition) && updateWhenMoving)) {
+                    updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
+                    manualChunkUpdateTrigger = false;
                 }
             }
-            
-            if (ceilingBlock && camPointer->Position.y > (ceilingHit.blockPos.y - 0.15)) {
-                camPointer->Position.y = ceilingHit.blockPos.y - 0.2;
-                ceiling = true;
-                if (camPointer->Velocity.y > 0.0) {
-                    camPointer->Velocity.y = 0.0;
+            if (ImGui::CollapsingHeader("Misc")) {
+                int fovTemp = int(fieldOfView/10);
+                ImGui::SliderInt("Field of View",&fovTemp, 3, 11);
+                fieldOfView = float(fovTemp*10);
+                ImGui::Checkbox("Update when Moving", &updateWhenMoving);
+                ImGui::Checkbox("Gravity", &gravity);
+                ImGui::Checkbox("Collision", &collision);
+                ImGui::Checkbox("Raycast Block", &raycastToBlock);
+            }
+            if (ImGui::CollapsingHeader("Debug Flags")) {
+                ImGui::Checkbox("nbtDebug", &nbtDebug);
+                ImGui::Checkbox("regionLoaderDebug", &regionLoaderDebug);
+                ImGui::Checkbox("chunkBuilderDebug", &chunkBuilderDebug);
+                ImGui::Checkbox("logoDebug", &logoDebug);
+                if (ImGui::Button("Tp to logo")) {
+                    fieldOfView = 50.0;
+                    camPointer->Position = glm::vec3(-7.0, 18.0, 14);
+                    camPointer->Orientation = glm::vec3(0.40, -0.9, 0.0);
                 }
             }
-            if (ground && ceiling) {
-                camPointer->Position = previousPosition;
+
+            if (collision) {
+                // Which collisions occured
+                bool ground = false;
+                bool ceiling = false;
+                Block* groundBlock = nullptr;
+                Block* ceilingBlock = nullptr;
+                // Ground
+                BlockHitResult groundHit = raycast(camPointer->Position, glm::vec3(0.0,-1.0,0.0), maxDistance, world, true);
+                if (groundHit.hit) {
+                    groundBlock = world->getBlock(groundHit.blockPos.x,groundHit.blockPos.y,groundHit.blockPos.z);
+                }
+
+                // Ceiling
+                BlockHitResult ceilingHit = raycast(camPointer->Position, glm::vec3(0.0,1.0,0.0), maxDistance, world, true);
+                if (ceilingHit.hit) {
+                    ceilingBlock = world->getBlock(ceilingHit.blockPos.x,ceilingHit.blockPos.y,ceilingHit.blockPos.z);
+                }
+
+                if (groundBlock && camPointer->Position.y < (groundHit.blockPos.y + 2.75)) {
+                    //camPointer->Position = camPointer->Position-glm::vec3(glm::ivec3(camPointer->Position)) + glm::vec3(groundHit.blockPos);
+                    camPointer->Position.y = groundHit.blockPos.y + 2.8;
+                    ground = true;
+                    if (camPointer->Velocity.y < 0.0) {
+                        camPointer->Velocity.y = 0.0;
+                    }
+                }
+                
+                if (ceilingBlock && camPointer->Position.y > (ceilingHit.blockPos.y - 0.15)) {
+                    camPointer->Position.y = ceilingHit.blockPos.y - 0.2;
+                    ceiling = true;
+                    if (camPointer->Velocity.y > 0.0) {
+                        camPointer->Velocity.y = 0.0;
+                    }
+                }
+                if (ground && ceiling) {
+                    camPointer->Position = previousPosition;
+                }
+
+                Block* northBlock = nullptr;    
+                Block* southBlock = nullptr;
+                Block*  eastBlock = nullptr;
+                Block*  westBlock = nullptr;
+
+                // East
+                BlockHitResult eastHit = raycast(camPointer->Position, glm::vec3(1.0,0.0,0.0), 1, world, true);
+                if (eastHit.hit) {
+                    eastBlock = world->getBlock(eastHit.blockPos.x,eastHit.blockPos.y,eastHit.blockPos.z);
+                }
+
+                // West
+                BlockHitResult westHit = raycast(camPointer->Position, glm::vec3(-1.0,0.0,0.0), 1, world, true);
+                if (westHit.hit) {
+                    westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
+                }
+
+                // North
+                BlockHitResult northHit = raycast(camPointer->Position, glm::vec3(0.0,0.0,1.0), 1, world, true);
+                if (northHit.hit) {
+                    northBlock = world->getBlock(northHit.blockPos.x,northHit.blockPos.y,northHit.blockPos.z);
+                }
+
+                // South
+                BlockHitResult southHit = raycast(camPointer->Position, glm::vec3(0.0,0.0,-1.0), 1, world, true);
+                if (southHit.hit) {
+                    southBlock = world->getBlock(southHit.blockPos.x,southHit.blockPos.y,southHit.blockPos.z);
+                }
+
+                // 
+                if (eastBlock && camPointer->Position.x > eastHit.blockPos.x - 0.2) {
+                    camPointer->Position.x = previousPosition.x;
+                    camPointer->Velocity.x = 0.0;
+                }
+
+                if (westBlock && camPointer->Position.x < westHit.blockPos.x + 1.2) {
+                    camPointer->Position.x = previousPosition.x;
+                    camPointer->Velocity.x = 0.0;
+                }
+
+                if (northBlock && camPointer->Position.z < northHit.blockPos.z + 1.2) {
+                    camPointer->Position.z = previousPosition.z;
+                    camPointer->Velocity.z = 0.0;
+                }
+
+                if (southBlock && camPointer->Position.z > southHit.blockPos.z - 0.2) {
+                    camPointer->Position.z = previousPosition.z;
+                    camPointer->Velocity.z = 0.0;
+                }
+                
+                //camPointer->Speed = 4.317;
             }
 
-            Block* northBlock = nullptr;    
-            Block* southBlock = nullptr;
-            Block*  eastBlock = nullptr;
-            Block*  westBlock = nullptr;
+            if (fullscreen && !wasFullscreen) {
+                // Get the primary monitor and its video mode
+                GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+                const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-            // East
-            BlockHitResult eastHit = raycast(camPointer->Position, glm::vec3(1.0,0.0,0.0), 1, world, true);
-            if (eastHit.hit) {
-                eastBlock = world->getBlock(eastHit.blockPos.x,eastHit.blockPos.y,eastHit.blockPos.z);
+                // Save windowed mode position and size
+                glfwGetWindowPos(window, &windowedX, &windowedY);
+                glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
+
+                // Set the window to fullscreen on the primary monitor
+                glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+            } else if (wasFullscreen && !fullscreen) {
+                // Restore the window to windowed mode
+                glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedWidth, windowedHeight, 0);
             }
 
-            // West
-            BlockHitResult westHit = raycast(camPointer->Position, glm::vec3(-1.0,0.0,0.0), 1, world, true);
-            if (westHit.hit) {
-                westBlock = world->getBlock(westHit.blockPos.x,westHit.blockPos.y,westHit.blockPos.z);
-            }
+            if (raycastToBlock) {
+                // Debug Raycast to looked-at Block
+                BlockHitResult hit = raycast(camPointer->Position, camPointer->Orientation, maxDistance, world);
 
-            // North
-            BlockHitResult northHit = raycast(camPointer->Position, glm::vec3(0.0,0.0,1.0), 1, world, true);
-            if (northHit.hit) {
-                northBlock = world->getBlock(northHit.blockPos.x,northHit.blockPos.y,northHit.blockPos.z);
-            }
-
-            // South
-            BlockHitResult southHit = raycast(camPointer->Position, glm::vec3(0.0,0.0,-1.0), 1, world, true);
-            if (southHit.hit) {
-                southBlock = world->getBlock(southHit.blockPos.x,southHit.blockPos.y,southHit.blockPos.z);
-            }
-
-            // 
-            if (eastBlock && camPointer->Position.x > eastHit.blockPos.x - 0.2) {
-                camPointer->Position.x = previousPosition.x;
-                camPointer->Velocity.x = 0.0;
-            }
-
-            if (westBlock && camPointer->Position.x < westHit.blockPos.x + 1.2) {
-                camPointer->Position.x = previousPosition.x;
-                camPointer->Velocity.x = 0.0;
-            }
-
-            if (northBlock && camPointer->Position.z < northHit.blockPos.z + 1.2) {
-                camPointer->Position.z = previousPosition.z;
-                camPointer->Velocity.z = 0.0;
-            }
-
-            if (southBlock && camPointer->Position.z > southHit.blockPos.z - 0.2) {
-                camPointer->Position.z = previousPosition.z;
-                camPointer->Velocity.z = 0.0;
-            }
-            
-            //camPointer->Speed = 4.317;
-        }
-
-        if (fullscreen && !wasFullscreen) {
-            // Get the primary monitor and its video mode
-            GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-            const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-            // Save windowed mode position and size
-            glfwGetWindowPos(window, &windowedX, &windowedY);
-            glfwGetWindowSize(window, &windowedWidth, &windowedHeight);
-
-            // Set the window to fullscreen on the primary monitor
-            glfwSetWindowMonitor(window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
-        } else if (wasFullscreen && !fullscreen) {
-            // Restore the window to windowed mode
-            glfwSetWindowMonitor(window, nullptr, windowedX, windowedY, windowedWidth, windowedHeight, 0);
-        }
-
-        if (raycastToBlock) {
-            // Debug Raycast to looked-at Block
-            BlockHitResult hit = raycast(camPointer->Position, camPointer->Orientation, maxDistance, world);
-
-            if (!hit.hit) {
-                debugText += "No block hit.\n";
+                if (!hit.hit) {
+                    debugText += "No block hit.\n";
+                } else {
+                    debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
+                    Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+                    if (b) {
+                        uint8_t blockType = b->blockType;
+                        debugText += "Name: " + getBlockName(blockType) + "\n";
+                        debugText += "Id: " + std::to_string(blockType) + "\n";
+                        debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
+                        debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
+                        debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
+                        debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
+                        debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
+                    }
+                    Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
+                    if (bn) {
+                        debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
+                        debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+                    }
+                }
             } else {
-                debugText +=  "Hit block at: " + std::to_string(hit.blockPos.x) + ", " + std::to_string(hit.blockPos.y) + ", " + std::to_string(hit.blockPos.z) + "\n";
-                Block* b = world->getBlock(hit.blockPos.x,hit.blockPos.y,hit.blockPos.z);
+                Block* b = world->getBlock(floor(camPointer->Position.x),floor(camPointer->Position.y),floor(camPointer->Position.z));
                 if (b) {
                     uint8_t blockType = b->blockType;
                     debugText += "Name: " + getBlockName(blockType) + "\n";
@@ -712,32 +777,15 @@ int main(int argc, char *argv[]) {
                     debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
                     debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
                     debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
+                    debugText += "isNonSolid: " + std::to_string(isNonSolid(blockType)) + "\n";
                     debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
-                }
-                Block* bn = world->getBlock(hit.blockPos.x+hit.hitNormal.x,hit.blockPos.y+hit.hitNormal.y,hit.blockPos.z+hit.hitNormal.z);
-                if (bn) {
-                    debugText += "SkyLight: " + std::to_string(bn->skyLightLevel) + "\n";
-                    debugText += "LightLevel: " + std::to_string(bn->lightLevel) + "\n";
+                    debugText += "SkyLight: " + std::to_string(b->skyLightLevel) + "\n";
+                    debugText += "LightLevel: " + std::to_string(b->lightLevel) + "\n";
                 }
             }
-        } else {
-            Block* b = world->getBlock(floor(camPointer->Position.x),floor(camPointer->Position.y),floor(camPointer->Position.z));
-            if (b) {
-                uint8_t blockType = b->blockType;
-                debugText += "Name: " + getBlockName(blockType) + "\n";
-                debugText += "Id: " + std::to_string(blockType) + "\n";
-                debugText += "MetaData: " + std::to_string(b->metaData) + "\n";
-                debugText += "isTransparent: " + std::to_string(isTransparent(blockType)) + "\n";
-                debugText += "isLightSource: " + std::to_string(isLightSource(blockType)) + "\n";
-                debugText += "isPartialBlock: " + std::to_string(isPartialBlock(blockType)) + "\n";
-                debugText += "isNonSolid: " + std::to_string(isNonSolid(blockType)) + "\n";
-                debugText += "isFluid: " + std::to_string(isFluid(blockType)) + "\n";
-                debugText += "SkyLight: " + std::to_string(b->skyLightLevel) + "\n";
-                debugText += "LightLevel: " + std::to_string(b->lightLevel) + "\n";
-            }
+            ImGui::SeparatorText("Debug");
+            ImGui::Text("%s", debugText.c_str());
         }
-        ImGui::SeparatorText("Debug");
-        ImGui::Text("%s", debugText.c_str());
         ImGui::End();
 
         ImGui::Render();
