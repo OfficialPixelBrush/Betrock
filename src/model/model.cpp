@@ -10,7 +10,7 @@ Model::Model(const char* file) {
 void Model::Draw(Shader& shader, Camera& camera) {
 	// Go over all meshes and draw each one
     for (uint i = 0; i < meshes.size(); i++) {
-        meshes[i].Mesh::Draw(shader, camera);
+        meshes[i]->Mesh::Draw(shader, camera);
     }
 }
 
@@ -134,7 +134,7 @@ void Model::getMeshData() {
         } else if (type == "o") {
             // New object delimiter
             if (!firstObject) {
-                meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+                meshes.push_back(std::make_unique<Mesh>(objectName, vertices, indices, getTextures()));
                 vertices.clear();
                 indices.clear();
                 indexCount = 0;
@@ -153,7 +153,7 @@ void Model::getMeshData() {
 
     // Push last mesh if any
     if (!firstObject) {
-        meshes.push_back(Mesh(objectName, vertices, indices, getTextures()));
+        meshes.push_back(std::make_unique<Mesh>(objectName, vertices, indices, getTextures()));
     }
 
     std::cout << "Saved " << meshes.size() << " meshes" << std::endl;

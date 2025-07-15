@@ -11,7 +11,7 @@ class Model {
         Model(const char* file);
         void Draw(Shader& shader, Camera& camera);
         const char* file;
-        std::vector<Mesh> meshes;
+        std::vector<std::unique_ptr<Mesh>> meshes;
         
     private:
 

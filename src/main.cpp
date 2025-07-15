@@ -304,6 +304,7 @@ int main(int argc, char *argv[]) {
     // Creates Shader object using shaders default.vsh and .frag
     Shader blockShader("./shaders/default.vsh", "./shaders/minecraft.fsh");
     Shader normalShader("./shaders/default.vsh", "./shaders/normal.fsh");
+    Shader defaultShader("./shaders/default.vsh", "./shaders/default.fsh");
     Shader skyShader("./shaders/sky.vsh", "./shaders/sky.fsh");
 
     glEnable(GL_DEPTH_TEST);
@@ -318,9 +319,9 @@ int main(int argc, char *argv[]) {
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-18.77, 70.60, -42.00), glm::vec3(0.13, -0.79, 0.36)); // Nyareative Chunk Error
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, -0.30)); // Publicbeta Underground Screenshot
-    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
-    //Camera camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, -0.13, -0.61)); // Publicbeta Bg, Fov 50
-    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
+    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, 0.13, -0.61)); // Publicbeta Bg, Fov 50
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
@@ -336,9 +337,8 @@ int main(int argc, char *argv[]) {
     // Load Blockmodel
     Model* blockModel = new Model("./models/models.obj");
     Model* skyModel = new Model("./models/sky.obj");
-    Model* goatModel = new Model("./models/goat.obj");
 
-    Sky sky(&skyModel->meshes[0]);
+    Sky sky(skyModel->meshes[0].get());
 
     World* world = new World();
 
@@ -366,6 +366,7 @@ int main(int argc, char *argv[]) {
     bool raycastToBlock = true;
     bool normals = false;
     bool fullBright = false;
+    bool fogEnabled = true;
     bool waterSorting = true;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
@@ -382,7 +383,7 @@ int main(int argc, char *argv[]) {
     float x = camPointer->Position.x;
     float z = camPointer->Position.z;
     std::string debugText = "";
-    std::vector<Texture> tex = blockModel->meshes[0].textures;
+    std::vector<Texture> tex = blockModel->meshes[0]->textures;
     std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
     //std::this_thread::sleep_for(std::chrono::milliseconds(25));
     //std::thread chunkBuildingThread2(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
@@ -435,6 +436,7 @@ int main(int argc, char *argv[]) {
         skyShader.Activate();
         skyShader.setMat4("projection", camPointer->GetProjectionMatrix());
         skyShader.setMat4("view", glm::mat4(glm::mat3(camPointer->GetViewMatrix())));
+        skyShader.setFloat("timeOfDay", float(maxSkyLight)/15.0);
         sky.Draw(skyShader, *camPointer);
         glCullFace(GL_BACK);
         glDepthMask(GL_TRUE);
@@ -453,8 +455,6 @@ int main(int argc, char *argv[]) {
         } else {
             glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
         }
-
-        goatModel->Draw(normalShader, *camPointer);
 
         // Re-enable Depth Test
         std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex, std::try_to_lock);
@@ -510,6 +510,7 @@ int main(int argc, char *argv[]) {
             blockShader.Activate();
             blockShader.setFloat("maxSkyLight", float(maxSkyLight));
             blockShader.setBool("fullbright", fullBright);
+            blockShader.setBool("fogEnabled",fogEnabled);
             for (uint i = 0; i < chunkMeshes.size(); i++) {
                 if (normals) {
                     chunkMeshes[i]->Draw(normalShader, *camPointer);
@@ -579,6 +580,7 @@ int main(int argc, char *argv[]) {
                 ImGui::Checkbox("Fullbright", &fullBright);
                 ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
                 ImGui::Checkbox("Render Chunks", &renderChunks);
+                ImGui::Checkbox("Fog", &fogEnabled);
                 ImGui::Checkbox("Normals", &normals);
             }
 
