@@ -31,7 +31,7 @@ cmake --build build --config Debug --target all
 cd build
 ./Betrock glacier
 ```
-Tested on Linux Mint 22 and Ubuntu 20.04
+Tested on Linux Mint 22.1, Ubuntu 20.04 and WSL 2.4.10.0  (Debian 12)
 
 ### (Optional) Packing as tar.gz
 ```bash
