@@ -5,6 +5,7 @@
 #include "block.h"
 #include <cmath>
 #include "regionLoader.h"
+#include "generator.h"
 #include <unordered_set>
 #include <mutex>
 #include <unordered_map>
@@ -30,6 +31,8 @@ class World {
         int cachedBlockY;
         int cachedBlockZ;
         std::string name;
+        std::uint64_t seed = 0;
+        void LoadLevelData();
         World(const std::string& pName = "");
         void LoadWorld(const std::string& pName);
         // Also add a destructor if you haven't already
@@ -40,10 +43,12 @@ class World {
             }
         }
 
+        Beta173Perlin* perlin;
         Chunk* findChunk(int x, int z);
         Chunk* loadChunk(int x, int z);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);
+        std::uint64_t getSeed();
         void addChunk(Chunk* chunk);
         void removeChunk(int x, int z);
         void clearChunks();

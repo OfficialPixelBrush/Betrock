@@ -20,4 +20,5 @@ class ChunkBuilder {
         World* world;
         bool isSurrounded(int x, int y, int z, uint8_t blockType);
         Mesh* getBlockMesh(uint8_t blockType, int x, int y, int z, uint8_t blockMetaData = 0);
+        glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert, std::int64_t worldSeed, int x, int z);
 };

@@ -1,9 +1,9 @@
 // version.h.in
 #define PROJECT_VERSION_MAJOR 0
 #define PROJECT_VERSION_MINOR 4
-#define PROJECT_VERSION_PATCH 0
-#define PROJECT_VERSION_STRING "0.4.0"
+#define PROJECT_VERSION_PATCH 1
+#define PROJECT_VERSION_STRING "0.4.1"
 
 #define PROJECT_NAME "Betrock"
 
-#define PROJECT_NAME_VERSION "Betrock 0.4.0"
+#define PROJECT_NAME_VERSION "Betrock 0.4.1"

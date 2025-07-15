@@ -260,7 +260,9 @@ int main(int argc, char *argv[]) {
         // If _getcwd returns NULL, print an error message
         std::cerr << "Error getting current working directory" << std::endl;
     }
-    char worldName[256] = "publicbeta";
+    char worldName[256] = "404";
+    std::uint64_t worldSeed = 0;
+    // TODO: Load this from the level.dat
     if (argc < 2) {
         std::cout << "No world name provided!" << std::endl;
         //return 1;
@@ -531,8 +533,10 @@ int main(int argc, char *argv[]) {
                 std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
                 world->clearChunks();
                 world->LoadWorld(worldPath);
+                worldSeed = world->getSeed();
                 updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
             }
+            std::string worldSeedString = fmt::v9::format("Seed: {}", worldSeed);
             std::string msTime = fmt::v9::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
             std::string camPos =  fmt::v9::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
             std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16)));
@@ -556,6 +560,7 @@ int main(int argc, char *argv[]) {
                 facing += "North";
             }
             std::string camSpeed =  "Speed: " + std::to_string(camPointer->speed);
+            ImGui::Text("%s", worldSeedString.c_str());
             ImGui::Text("%s", msTime.c_str());
             ImGui::Text("%s", camPos.c_str());
             ImGui::Text("%s", chunkPos.c_str());

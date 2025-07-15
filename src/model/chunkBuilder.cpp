@@ -62,99 +62,9 @@ bool ChunkBuilder::isSurrounded(int x, int y, int z, uint8_t blockIndex) {
     return true;
 }
 
-// ---------------------------------------------------------------------------
-//  Beta 1.7.3‑style Perlin noise (temperature / rainfall) – public‑domain code
-// ---------------------------------------------------------------------------
-#include <array>
-#include <cstdint>
-#include <random>
-#include <vector>
-#include <cmath>
-
-class Beta173Perlin {
-public:
-    explicit Beta173Perlin(std::uint64_t worldSeed, int octaves = 6)
-        : m_octaves(octaves),
-          m_perm(512)                                // 2 × 256 for fast wrap
-    {
-        /*
-         * Minecraft Beta calls Java’s java.util.Random with the world seed,
-         * then initialises a 256‑entry permutation table using a Fisher‑Yates
-         * shuffle.  Java Random is a 48‑bit LCG:  (seed * 0x5DEECE66D + 11) & 0xFFFF_FFFFFFFF.
-         */
-        auto nextInt = [seed = (worldSeed ^ 0x5DEECE66DL) & ((1LL << 48) - 1)]() mutable {
-            seed = (seed * 0x5DEECE66DL + 0xB) & ((1LL << 48) - 1);
-            return static_cast<int>(seed >> 17);
-        };
-
-        std::array<int, 256> p{};
-        for (int i = 0; i < 256; ++i) p[i] = i;
-
-        for (int i = 255; i >= 0; --i) {
-            int j = nextInt() % (i + 1);
-            std::swap(p[i], p[j]);
-            m_perm[i] = m_perm[i + 256] = p[i];
-        }
-    }
-
-    // 2‑D noise sample; identical to Beta 1.7.3
-    double noise(double x, double z) const {
-        const int X = fastFloor(x) & 255;
-        const int Z = fastFloor(z) & 255;
-        x -= fastFloor(x);
-        z -= fastFloor(z);
-        const double u = fade(x);
-        const double v = fade(z);
-
-        const int A  = m_perm[X] + Z;
-        const int B  = m_perm[X + 1] + Z;
-
-        return lerp(v,
-                    lerp(u, grad(m_perm[A  ], x    , z    ),
-                             grad(m_perm[B  ], x - 1, z    )),
-                    lerp(u, grad(m_perm[A+1], x    , z - 1),
-                             grad(m_perm[B+1], x - 1, z - 1)));
-    }
-
-    // Full FBM stack (6 octaves, identical gain/frequency)
-    double fbm(double x, double z,
-               double baseFreq  = 0.05,   // 1/20 blocks – official value
-               double lacunarity = 2.0,
-               double gain       = 0.5) const
-    {
-        double amp = 1.0, freq = baseFreq, sum = 0.0;
-        for (int i = 0; i < m_octaves; ++i) {
-            sum += amp * noise(x * freq, z * freq);
-            freq *= lacunarity;
-            amp  *= gain;
-        }
-        // Java Perlin returns in [‑1,1]; Beta rescales to [0,1]
-        return 0.5 * (sum + 1.0);
-    }
-
-private:
-    static int fastFloor(double x)        { return x < 0 ? int(x) - 1 : int(x); }
-    static double fade(double t)          { return t * t * t * (t * (t * 6 - 15) + 10); }
-    static double lerp(double a, double b, double t) { return a + t * (b - a); }
-    static double grad(int h, double x, double z) {
-        switch (h & 3) {                 // 2‑D gradient hash
-            case 0: return  x + z;
-            case 1: return -x + z;
-            case 2: return  x - z;
-            default:return -x - z;
-        }
-    }
-
-    int m_octaves;
-    std::vector<int> m_perm;
-};
-
-// ---------------------------------------------------------------------------
-//  Example – reproducing the Beta foliage colour lookup at (x,z) world coords
-// ---------------------------------------------------------------------------
-inline std::uint32_t beta173GrassColour(std::int64_t worldSeed, int x, int z)
-{
-    static constexpr std::uint32_t biomeLUT[64] = {
+glm::vec3 ChunkBuilder::getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert, std::int64_t worldSeed, int x, int z) {
+    
+    static constexpr std::uint32_t biomeLUT[16] = {
         /* 4×4 Whittaker‑diagram in Beta – packed RGB ints (ABGR) */
         0xFF007F0E,0xFF169F0D,0xFF1FAD10,0xFF1FA514,
         0xFF3BA317,0xFF4FAB21,0xFF5FB32A,0xFF68B330,
@@ -162,11 +72,9 @@ inline std::uint32_t beta173GrassColour(std::int64_t worldSeed, int x, int z)
         0xFF86BA24,0xFF91C128,0xFFA2CC2E,0xFFAED334
     };
 
-    Beta173Perlin perlin(worldSeed);
-
-    double temp    = perlin.fbm(double(x), double(z),
+    double temp    = world->perlin->fbm(double(x), double(z),
                                 0.025);               // temperature scale
-    double rain    = perlin.fbm(double(x), double(z),
+    double rain    = world->perlin->fbm(double(x), double(z),
                                 0.05);                // rainfall scale
     double moist   = rain * temp;                     // Beta’s quirk
 
@@ -175,28 +83,8 @@ inline std::uint32_t beta173GrassColour(std::int64_t worldSeed, int x, int z)
     int rr = int((1.0 - moist) * 4.0);
     tt = std::clamp(tt, 0, 3);
     rr = std::clamp(rr, 0, 3);
-    return biomeLUT[rr * 4 + tt];
-}
+    uint64_t col = biomeLUT[rr * 4 + tt];
 
-void printColorBlock(int r, int g, int b) {
-    // Ensure values are within 0–255
-    r = std::max(0, std::min(255, r));
-    g = std::max(0, std::min(255, g));
-    b = std::max(0, std::min(255, b));
-
-    std::ostringstream oss;
-    // ANSI escape: \x1b[48;2;<r>;<g>;<b>m sets background color
-    oss << "\x1b[48;2;" << r << ";" << g << ";" << b << "m";
-    // Print a block character
-    oss << "  ";
-    // Reset terminal colors
-    oss << "\x1b[0m";
-
-    std::cout << oss.str();
-}
-
-glm::vec3 getBiomeBlockColor(unsigned char blockType, unsigned char blockMetaData, Vertex* vert, std::int64_t worldSeed, int x, int z) {
-    uint32_t col = beta173GrassColour(worldSeed, x, z);
     float blue  = float((col      ) & 0xFF)/255.0;       // B
     float green = float((col >> 8 ) & 0xFF)/255.0;       // G
     float red   = float((col >> 16) & 0xFF)/255.0;       // R

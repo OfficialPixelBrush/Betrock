@@ -6,9 +6,20 @@ World::World(const std::string& pName) {
     }
 }
 
+void World::LoadLevelData() {
+    if (this->name == "") {
+        return;
+    }
+    // TODO: Load the seed value from level.dat
+    this->seed = 404;
+}
+
 void World::LoadWorld(const std::string& pName) {  // Use const reference
     // First assign the new name
     name = pName;  // No need for World:: inside member functions
+    LoadLevelData();
+
+    perlin = new Beta173Perlin(this->getSeed());
     
     // Safely delete old RegionLoader
     if (rl != nullptr) {  // Better null check
@@ -18,6 +29,10 @@ void World::LoadWorld(const std::string& pName) {  // Use const reference
     
     // Create new RegionLoader
     rl = new RegionLoader(pName);
+}
+
+std::uint64_t World::getSeed() {
+    return this->seed;
 }
 /*
 Region* World::findRegion(int x, int z) {
