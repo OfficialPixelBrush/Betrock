@@ -513,7 +513,7 @@ int main(int argc, char *argv[]) {
             blockShader.setBool("fogEnabled",fogEnabled);
             for (uint i = 0; i < chunkMeshes.size(); i++) {
                 // Camera to Chunk Vector
-                glm::vec2 ab = glm::vec2(float(chunkMeshes[i]->chunk->x) - x/16.0, float(chunkMeshes[i]->chunk->y), y/16.0);
+                //glm::vec2 ab = glm::vec2(float(chunkMeshes[i]->chunk->x) - x/16.0, float(chunkMeshes[i]->chunk->z), z/16.0);
                 if (!chunkMeshes[i]->chunk) {
                     continue;
                 }
