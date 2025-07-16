@@ -511,17 +511,26 @@ int main(int argc, char *argv[]) {
             blockShader.setFloat("maxSkyLight", float(maxSkyLight));
             blockShader.setBool("fullbright", fullBright);
             blockShader.setBool("fogEnabled",fogEnabled);
+            // Camera Vector
+            glm::vec2 ap = 
+                glm::vec2(sin(camPointer->Orientation.x), -cos(camPointer->Orientation.x));
+            ap = glm::normalize(ap);
             for (uint i = 0; i < chunkMeshes.size(); i++) {
-                // Camera to Chunk Vector
-                //glm::vec2 ab = glm::vec2(float(chunkMeshes[i]->chunk->x) - x/16.0, float(chunkMeshes[i]->chunk->z), z/16.0);
                 if (!chunkMeshes[i]->chunk) {
                     continue;
                 }
+                // Camera Pos to Chunk Vector
+                glm::vec2 ab =
+                    glm::vec2(x - float(chunkMeshes[i]->chunk->x)*16.0f, z - float(chunkMeshes[i]->chunk->z)*16.0f);
+                ab = glm::normalize(ab);
+                std::cout << "CamRaw: " << camPointer->Orientation.x << ", " << camPointer->Orientation.x << std::endl;
+                std::cout << "Chunk : " << ab.x << ", " << ab.y << std::endl;
+                std::cout << "Cam   : " << ap.x << ", " << ap.y << std::endl;
                 // Make it so only chunks that're facing the camera can be seen
-                /*
-                if (chunkMeshes[i]->chunk->x != int(x/16.0)) {
+                if (glm::dot(ap,ab) <= 0.0f) {
                     continue;
-                }*/
+                }
+                
                 if (normals) {
                     chunkMeshes[i]->Draw(normalShader, *camPointer);
                 } else {
