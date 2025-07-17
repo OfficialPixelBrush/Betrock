@@ -559,7 +559,7 @@ int main(int argc, char *argv[]) {
             std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16.0f))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16.0f)));
             Chunk* currentChunk = world->findChunk(int(std::floor(camPointer->Position.x/16.0f)),int(std::floor(camPointer->Position.z/16.0f)));
             if (currentChunk) {
-                if (currentChunk->populated) {
+                if (currentChunk->populated > 0) {
                     chunkPos += " (Populated)";
                 } else {
                     chunkPos += " (Generated)";

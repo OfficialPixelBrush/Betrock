@@ -116,7 +116,7 @@ Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 	int8_t* blockSkyLightData;
 	int8_t* blockLightData;
 	int8_t* blockMetaData;
-	bool terrainPopulated = false;
+	int8_t terrainPopulated = 0;
 	for (uint i = 0; i < chunkLevel->getSizeOfData(); i++) {
 		// Get Block ID
 		if (chunkLevel->getData(i)->getName() == "Blocks") {
@@ -141,7 +141,7 @@ Chunk* RegionLoader::decodeRegion(int chunkX, int chunkZ) {
 		// Get Population Status
 		if (chunkLevel->getData(i)->getName() == "TerrainPopulated") {
 			auto* terrainPopulatedData = dynamic_cast<TAG_Byte*>( chunkLevel->getData(i) );
-			terrainPopulated = (bool)terrainPopulatedData->data;
+			terrainPopulated = terrainPopulatedData->data;
 		}
 	}
 	if (!blockData) {
