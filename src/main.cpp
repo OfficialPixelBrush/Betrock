@@ -153,8 +153,7 @@ void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, s
     toBeAdded.clear();*/
 }
 
-void updateChunks(Shader& shader, Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated) {
-    sky.UpdateFog(shader, renderDistance*16);
+void updateChunks(Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated) {
     int x = int(camPointer->Position.x);
     int z = int(camPointer->Position.z);
     std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated));
@@ -319,9 +318,9 @@ int main(int argc, char *argv[]) {
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-31.80, 71.73, -55.69), glm::vec3(0.57, 0.05, 0.67)); // Nyareative Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(-18.77, 70.60, -42.00), glm::vec3(0.13, -0.79, 0.36)); // Nyareative Chunk Error
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(2.30, 14.62, 235.69), glm::vec3(0.77, -0.32, -0.30)); // Publicbeta Underground Screenshot
-    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
+    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(47.00, 67.62, 225.59), glm::vec3(0.46, -0.09, 0.76)); // Publicbeta Screenshot
     //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(59.76, 67.41, 251.58), glm::vec3(-0.63, 0.13, -0.61)); // Publicbeta Bg, Fov 50
-    //camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
+    camPointer = new Camera(windowWidth, windowHeight, glm::vec3(0, 90, 0), glm::vec3(0.67, -0.57, -0.13)); // Testing
 
     // Makes it so OpenGL shows the triangles in the right order
     // Enables the depth buffer
@@ -379,6 +378,7 @@ int main(int argc, char *argv[]) {
     glm::vec3 previousPosition = camPointer->Position;
 
     int renderDistance = 8;
+    sky.UpdateFog(blockShader, renderDistance*16);
 
     float x = camPointer->Position.x;
     float z = camPointer->Position.z;
@@ -519,6 +519,7 @@ int main(int argc, char *argv[]) {
                 if (!chunkMeshes[i]->chunk) {
                     continue;
                 }
+                /*
                 // Camera Pos to Chunk Vector
                 glm::vec2 ab =
                     glm::vec2(x - float(chunkMeshes[i]->chunk->x)*16.0f, z - float(chunkMeshes[i]->chunk->z)*16.0f);
@@ -529,7 +530,7 @@ int main(int argc, char *argv[]) {
                 // Make it so only chunks that're facing the camera can be seen
                 if (glm::dot(ap,ab) <= 0.0f) {
                     continue;
-                }
+                }*/
                 
                 if (normals) {
                     chunkMeshes[i]->Draw(normalShader, *camPointer);
@@ -550,7 +551,7 @@ int main(int argc, char *argv[]) {
                 std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
                 world->clearChunks();
                 world->LoadWorld(worldPath);
-                updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
+                updateChunks(sky, renderDistance, world, toBeUpdated);
             }
             std::string msTime = fmt::v9::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
             std::string camPos =  fmt::v9::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
@@ -625,11 +626,13 @@ int main(int argc, char *argv[]) {
                         break;
                 }
                 ImGui::Text("%s", renderDistancePreset.c_str());
-                ImGui::SliderInt("Render Distance",&renderDistance, 1, 32);
+                if (ImGui::SliderInt("Render Distance",&renderDistance, 1, 32)) {
+                    sky.UpdateFog(blockShader, renderDistance*16);
+                }
             
                 // Get list of chunks that're to be updated
                 if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camPointer->Position, previousPosition) && updateWhenMoving)) {
-                    updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
+                    updateChunks(sky, renderDistance, world, toBeUpdated);
                     manualChunkUpdateTrigger = false;
                 }
             }

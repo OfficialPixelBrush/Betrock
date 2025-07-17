@@ -16,17 +16,22 @@ void main()
 
     // Calculate angle from vertical (dot product with up vector)
     float cosTheta = dot(dir, vec3(0.0, 1.0, 0.0)); // -1 (down) to +1 (up)
-    float t = (cosTheta + 1.0) * 0.5; // Remap to 0.0 - 1.0
+    float t = cosTheta + 0.1;
+    //float t = (cosTheta + 1.0) * 0.5; // Remap to 0.0 - 1.0
 
     // Blend bottom → horizon → top using t
-    vec3 color = bottomColor;
+    vec3 color = vec3(1.0,0.0,0.0);
 
-    if (t < 0.5) {
-        float factor = smoothstep(0.45, 0.5, t);
-        color = mix(bottomColor, horizonColor, factor);
+    if (t < -0.01) {
+        float factor = smoothstep(-0.3, -0.01, t);
+        color = mix(bottomColor, horizonColor, factor*factor*factor*factor);
+    } else if (t < 0.01) {
+        color = horizonColor;
     } else {
-        float factor = smoothstep(0.55, 0.6, t);
-        color = mix(horizonColor, topColor, factor);
+        float factor = smoothstep(0.01, 0.3, t);
+        float factor2 = smoothstep(0.0, 1.0, t);
+        color = mix(horizonColor, topColor, factor*factor*factor*factor);
+        color = mix(horizonColor, color, factor2);
     }
 
     FragColor = vec4(color*timeOfDay, 1.0);

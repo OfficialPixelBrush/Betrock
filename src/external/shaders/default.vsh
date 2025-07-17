@@ -43,7 +43,7 @@ void main()
     fogFactor = (distance - fogDistance * 0.5f) / (fogDistance - fogDistance * 0.5f + 16.0f);
     fogFactor = clamp(fogFactor, 0.0, 1.0);  // Clamp between 0 and 1
 
-    fogColor = externalFogColor;  // Use the dynamically set fog color
+    fogColor = vec4(vec3(externalFogColor.xyz)*(aSkylight,maxSkyLight/15.0),externalFogColor.w);  // Use the dynamically set fog color
 
     gl_Position = viewPosition;
 }

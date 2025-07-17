@@ -11,6 +11,7 @@ void Sky::Draw(Shader& shader, Camera& camera) {
 }
 
 void Sky::UpdateFog(Shader& shader, int renderDistance) {
+    shader.Activate();
     // Render Distance is given in blocks
     GLint fogColorLoc = glGetUniformLocation(shader.Id, "externalFogColor");
     glUniform4f(fogColorLoc, fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
