@@ -89,7 +89,7 @@ std::mutex meshBuildQueueMutex;
 std::mutex chunkRadiusMutex;
 Camera* camPointer = nullptr;
 
-void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& skyLight, std::vector<Chunk*>& toBeUpdated) {
+void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& skyLight, bool& solidTrees, std::vector<Chunk*>& toBeUpdated) {
     ChunkBuilder cb(blockModel, world);
     bool building = false;
     bool wasBuilding = false;
@@ -120,7 +120,7 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
 
             // Build a new chunk mesh and add it to the chunkMeshes
             std::unique_lock<std::mutex> mbLock(meshBuildQueueMutex);
-            meshBuildQueue.push_back(cb.buildChunk(c, smoothLighting, skyLight));
+            meshBuildQueue.push_back(cb.buildChunk(c, smoothLighting, solidTrees, skyLight));
             mbLock.unlock();
 
             // Backwards iteration to remove chunkMeshes with missing chunks
@@ -367,6 +367,7 @@ int main(int argc, char *argv[]) {
     bool fullBright = false;
     bool fogEnabled = true;
     bool waterSorting = true;
+    bool solidTrees = true;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -384,7 +385,7 @@ int main(int argc, char *argv[]) {
     float z = camPointer->Position.z;
     std::string debugText = "";
     std::vector<Texture> tex = blockModel->meshes[0]->textures;
-    std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
+    std::thread chunkBuildingThread(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(solidTrees), std::ref(toBeUpdated));
     //std::this_thread::sleep_for(std::chrono::milliseconds(25));
     //std::thread chunkBuildingThread2(buildChunks, std::ref(blockModel), world, std::ref(smoothLighting), std::ref(maxSkyLight), std::ref(toBeUpdated));
 
@@ -598,6 +599,7 @@ int main(int argc, char *argv[]) {
                 ImGui::Checkbox("Wireframe", &wireframe);
                 ImGui::Checkbox("Water Sorting", &waterSorting);
                 ImGui::Checkbox("Fullbright", &fullBright);
+                ImGui::Checkbox("Solid Trees", &solidTrees);
                 ImGui::Checkbox("Optimal View Distance", &optimalViewDistance);
                 ImGui::Checkbox("Render Chunks", &renderChunks);
                 ImGui::Checkbox("Fog", &fogEnabled);

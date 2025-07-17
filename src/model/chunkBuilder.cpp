@@ -135,7 +135,7 @@ Light getLighting(World* world, int x, int y, int z, glm::vec3 normal) {
     }
 }
 
-bool isVisible(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMeta, glm::vec3 normal) {
+bool isVisible(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMeta, glm::vec3 normal, bool solidTrees) {
     // Calculate adjacent block coordinates
     int adjX = x + static_cast<int>(normal.x);
     int adjY = y + static_cast<int>(normal.y);
@@ -188,6 +188,7 @@ bool isVisible(World* world, int x, int y, int z, uint8_t& cbType, uint8_t& cbMe
 
     if (isTransparent(cbType)) {
         if (cbType == abType || isFull(abType)) {
+            if (cbType == LEAVES && solidTrees) return true;
             return false;
         }
     }
@@ -431,10 +432,10 @@ glm::vec3 rotateNormalAroundOrigin(glm::vec3 normal, float angle, glm::vec3 axis
 
 
 
-std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight) {
+std::vector<DummyMesh> ChunkBuilder::buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, bool solidTrees, uint8_t maxSkyLight) {
     std::vector<DummyMesh> meshes;
     for (auto c : chunks) {
-        meshes.push_back(buildChunk(c,smoothLighting,maxSkyLight));
+        meshes.push_back(buildChunk(c,smoothLighting,maxSkyLight,solidTrees));
     }
     return meshes;
 }
@@ -613,7 +614,7 @@ uint8_t getFluidMetadata(uint8_t& blockType, uint8_t& blockMetaData, int& x, uin
     return metadata;
 }
 
-DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight) {
+DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, bool solidTrees, uint8_t maxSkyLight) {
     std::vector<Vertex> worldVertices;
     std::vector<GLuint> worldIndices;
 
@@ -654,7 +655,7 @@ DummyMesh ChunkBuilder::buildChunk(Chunk* chunk, bool smoothLighting, uint8_t ma
                 for (uint v = 0; v < mesh->vertices.size(); v++) {
                     glm::vec3 offset = glm::vec3(0.0f);
                     glm::vec3 normal = glm::vec3(mesh->vertices[v].normal);
-                    if (!isVisible(world, x, y, z, blockType, blockMetaData, normal)) {
+                    if (!isVisible(world, x, y, z, blockType, blockMetaData, normal, solidTrees)) {
                         continue;
                     }
                     glm::vec3 color = getBiomeBlockColor(blockType, blockMetaData, &mesh->vertices[v]);

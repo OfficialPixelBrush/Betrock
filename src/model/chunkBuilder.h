@@ -12,8 +12,8 @@
 class ChunkBuilder {
     public:
         ChunkBuilder(Model* model, World* world);
-        std::vector<DummyMesh> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, uint8_t maxSkyLight = 15);
-        DummyMesh buildChunk(Chunk* chunk, bool smoothLighting, uint8_t maxSkyLight = 15);
+        std::vector<DummyMesh> buildChunks(std::vector<Chunk*> chunks, bool smoothLighting, bool solidTrees, uint8_t maxSkyLight = 15);
+        DummyMesh buildChunk(Chunk* chunk, bool smoothLighting, bool solidTrees, uint8_t maxSkyLight = 15);
     private:
         Mesh* cachedMesh = nullptr;
         Model* model;
