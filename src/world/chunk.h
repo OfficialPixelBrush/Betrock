@@ -6,7 +6,9 @@ class Chunk {
     Block blocks [16*128*16];
     public:
         int x,z;
-        Chunk(int pX, int pZ, int8_t pBlockData [], int8_t pSkyLightData[], int8_t pBlockLightData [], int8_t pMetaData []) {
+        bool populated = false;
+        Chunk(int pX, int pZ, int8_t pBlockData [], int8_t pSkyLightData[], int8_t pBlockLightData [], int8_t pMetaData [], bool pPopulated) {
+            populated = pPopulated;
             x = pX;
             z = pZ;
             for (uint i = 0; i < 16*128*16; i++) {
