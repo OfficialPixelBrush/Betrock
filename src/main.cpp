@@ -554,8 +554,8 @@ int main(int argc, char *argv[]) {
                 world->LoadWorld(worldPath);
                 updateChunks(sky, renderDistance, world, toBeUpdated);
             }
-            std::string msTime = fmt::v9::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
-            std::string camPos =  fmt::v9::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
+            std::string msTime = fmt::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
+            std::string camPos =  fmt::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
             std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16.0f))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16.0f)));
             Chunk* currentChunk = world->findChunk(int(std::floor(camPointer->Position.x/16.0f)),int(std::floor(camPointer->Position.z/16.0f)));
             if (currentChunk) {
@@ -565,7 +565,7 @@ int main(int argc, char *argv[]) {
                     chunkPos += " (Generated)";
                 }
             }
-            std::string camRot =  fmt::v9::format("Orientation: {:.2f},{:.2f},{:.2f}",camPointer->Orientation.x,camPointer->Orientation.y,camPointer->Orientation.z);
+            std::string camRot =  fmt::format("Orientation: {:.2f},{:.2f},{:.2f}",camPointer->Orientation.x,camPointer->Orientation.y,camPointer->Orientation.z);
             std::string facing =  "Facing: ";
             // Calculate the angle in radians based on the camera's orientation
             float angle = atan2(camPointer->Orientation.z, camPointer->Orientation.x); // Angle in radians

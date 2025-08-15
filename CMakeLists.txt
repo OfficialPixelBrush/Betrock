@@ -48,6 +48,7 @@ add_executable(
     src/helper.cpp
     src/debug.cpp
     src/main.cpp
+    src/stb_impl.cpp
 
     src/include/imgui/imgui.cpp
     src/include/imgui/imgui_draw.cpp
@@ -71,7 +72,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
         gdi32
         opengl32
         deflate
-        stb
 	    fmt::fmt
     )
 else()
@@ -84,7 +84,6 @@ else()
         glfw
         OpenGL::GL
         deflate
-        stb
 	    fmt::fmt
         ${CMAKE_DL_LIBS}
     )
