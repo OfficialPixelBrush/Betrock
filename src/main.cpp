@@ -297,6 +297,11 @@ int main(int argc, char *argv[]) {
     // Set the framebuffer size callback to handle resizing
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    glfwSetErrorCallback([](int code, const char* desc) {
+        std::cerr << "GLFW Error " << code << ": " << desc << std::endl;
+    });
+
+
     // Define OpenGL Viewport
     glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
     glViewport(0,0,windowWidth,windowHeight);
@@ -481,7 +486,7 @@ int main(int argc, char *argv[]) {
         if (waterSorting) {
             std::unique_lock<std::mutex> cmLock(chunkMeshesMutex);
             std::sort(chunkMeshes.begin(), chunkMeshes.end(),
-                [camPointer](const auto& a, const auto& b) {
+                [&](const auto& a, const auto& b) {
                     // Only compare if the second mesh is "water" for both chunks
                     if (a->meshes.size() > 1 && a->meshes[1]->name == "water" &&
                         b->meshes.size() > 1 && b->meshes[1]->name == "water") {

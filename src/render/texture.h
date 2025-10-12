@@ -1,6 +1,7 @@
 #pragma once
 #include "../include/glad/glad.h"
-#include "../include/stb/stb_image.h"
+#include "stb_image.h"
+#include "stb_image_write.h"
 #include "shader.h"
 #include "../compat.h"
 
