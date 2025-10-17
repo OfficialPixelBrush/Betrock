@@ -142,22 +142,22 @@ void buildChunks(Model* blockModel, World* world, bool& smoothLighting, int& sky
     }
 }
 
-void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, std::vector<Chunk*>& toBeUpdated) {
+void getChunksInRenderDistance(int renderDistance, int x, int z, World* world, std::vector<Chunk*>& toBeUpdated, bool nether) {
     std::cout << "Get Chunk Render Distance Thread Called" << std::endl;
     //std::lock_guard<std::mutex> lock(chunkMeshesMutex);
     //std::vector<Chunk*> toBeAdded = 
-    world->getChunksInRadius(x,z,renderDistance,toBeUpdated,chunkRadiusMutex);
+    world->getChunksInRadius(x,z,renderDistance,toBeUpdated,chunkRadiusMutex, nether);
     /*for (uint i = 0; i < toBeAdded.size(); i++) {
         toBeUpdated.push_back(toBeAdded[i]);
     }
     toBeAdded.clear();*/
 }
 
-void updateChunks(Shader& shader, Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated) {
+void updateChunks(Shader& shader, Sky& sky, int renderDistance, World* world, std::vector<Chunk*>& toBeUpdated, bool nether) {
     sky.UpdateFog(shader, renderDistance*16);
     int x = int(camPointer->Position.x);
     int z = int(camPointer->Position.z);
-    std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated));
+    std::thread chunkRadiusThread(getChunksInRenderDistance, renderDistance, x, z, world, std::ref(toBeUpdated), nether);
     chunkRadiusThread.detach();
 }
 
@@ -373,6 +373,7 @@ int main(int argc, char *argv[]) {
     bool fullBright = false;
     bool fogEnabled = true;
     bool waterSorting = true;
+    bool loadNether = false;
     std::vector<Chunk*> toBeUpdated;
     float maxDistance = 100.0f;  // Maximum ray distance (e.g., 100 units)
 
@@ -536,8 +537,9 @@ int main(int argc, char *argv[]) {
                 std::string worldPath = std::string(buffer) + "/saves/" + std::string(worldName) + "/";
                 world->clearChunks();
                 world->LoadWorld(worldPath);
-                updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
+                updateChunks(blockShader, sky, renderDistance, world, toBeUpdated, loadNether);
             }
+            ImGui::Checkbox("Nether", &loadNether);
             std::string msTime = fmt::format("Frame time: {:.2f}ms/{:.2f}fps", fpsTime, 1000/fpsTime);
             std::string camPos =  fmt::format("Position: {:.2f},{:.2f},{:.2f}", camPointer->Position.x, camPointer->Position.y,camPointer->Position.z);
             std::string chunkPos =  "Chunk: " + std::to_string(int(std::floor(camPointer->Position.x/16))) + ", " + std::to_string(int(std::floor(camPointer->Position.z/16)));
@@ -615,7 +617,7 @@ int main(int argc, char *argv[]) {
             
                 // Get list of chunks that're to be updated
                 if (manualChunkUpdateTrigger || ImGui::Button("Update Chunks") || (checkIfChunkBoundaryCrossed(camPointer->Position, previousPosition) && updateWhenMoving)) {
-                    updateChunks(blockShader, sky, renderDistance, world, toBeUpdated);
+                    updateChunks(blockShader, sky, renderDistance, world, toBeUpdated, loadNether);
                     manualChunkUpdateTrigger = false;
                 }
             }

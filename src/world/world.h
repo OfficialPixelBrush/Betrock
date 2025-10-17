@@ -41,12 +41,12 @@ class World {
         }
 
         Chunk* findChunk(int x, int z);
-        Chunk* loadChunk(int x, int z);
+        Chunk* loadChunk(int x, int z, bool nether = false);
         Chunk* getChunk(int x, int z);
         Block* getBlock(int x, int y, int z);
         void addChunk(Chunk* chunk);
         void removeChunk(int x, int z);
         void clearChunks();
         size_t getNumberOfChunks();
-        void getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex);
+        void getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex, bool nether = false);
 };

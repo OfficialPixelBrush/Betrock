@@ -51,9 +51,9 @@ Chunk* World::findChunk(int x, int z) {
     return it != chunks.end() ? it->second : nullptr;
 }
 
-Chunk* World::loadChunk(int x, int z) {
+Chunk* World::loadChunk(int x, int z, bool nether) {
     //std::cout << "Load Chunk at " << x/16 << ", " << z/16 << std::endl;
-    Chunk* c = rl->loadRegion(x,z);
+    Chunk* c = rl->loadRegion(x,z, nether);
     addChunk(c);
     return c;
 }
@@ -96,7 +96,7 @@ size_t World::getNumberOfChunks() {
     return chunks.size();
 }
 
-void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex) {
+void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& newChunks, std::mutex& chunkRadiusMutex, bool nether) {
     int ix = int(float(x) / 16.0f);
     int iz = int(float(z) / 16.0f);
 
@@ -111,7 +111,7 @@ void World::getChunksInRadius(int x, int z, int radius, std::vector<Chunk*>& new
                 Chunk* c = findChunk(ix + cx, iz + cz);
                 if (!c) {
                     newChunk = true;
-                    c = loadChunk(ix + cx, iz + cz);
+                    c = loadChunk(ix + cx, iz + cz, nether);
                 }
 
                 if (c) {
