@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera_nx.h"
 
 Camera::Camera(int width, int height, glm::vec3 position, glm::vec3 orientation)
     : width(width), height(height), Position(position), Orientation(orientation)

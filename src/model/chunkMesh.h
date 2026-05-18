@@ -1,5 +1,5 @@
 #include "../render/mesh.h"
-#include "../render/camera.h"
+#include "../render/camera_nx.h"
 #include "../world/chunk.h"
 #include <vector>
 

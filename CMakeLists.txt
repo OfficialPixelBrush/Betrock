@@ -1,36 +1,70 @@
 cmake_minimum_required(VERSION 3.16.0)
-cmake_policy(SET CMP0072 NEW)
+
+# ── devkitpro / libnx toolchain ───────────────────────────────────────────────
+# Build with:
+#   cmake -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/Switch.cmake \
+#         -B build_nx -G"Unix Makefiles" -f CMakeLists_Switch.txt
+#   cmake --build build_nx
+# ──────────────────────────────────────────────────────────────────────────────
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(BetrockViewer VERSION 0.4.3)
 
-find_package(fmt REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(glfw3 3.3 REQUIRED)
+# devkitpro cmake helpers expose nx_add_nro_target, find_package(libnx) etc.
+find_package(PkgConfig REQUIRED)
 
+# ── Switch OpenGL via glad + EGL (provided by devkitpro mesa/deko port) ───────
+# devkitpro distributes switch-mesa which gives us EGL + OpenGL ES 3.2
+pkg_check_modules(MESA REQUIRED
+    egl
+    glapi
+    glesv2
+)
+#pkg_check_modules(SWITCH_EGL  REQUIRED switch-egl)
+
+# ── GLM (header-only) ─────────────────────────────────────────────────────────
+find_path(GLM_INCLUDE_DIR glm/glm.hpp)
+
+# ── libdeflate ────────────────────────────────────────────────────────────────
+pkg_check_modules(DEFLATE REQUIRED libdeflate)
+
+# ── fmt ───────────────────────────────────────────────────────────────────────
+include_directories($ENV{DEVKITPRO}/portlibs/switch/include)
+
+# ── glad (we compile it ourselves; already in-tree) ───────────────────────────
 add_library(glad src/src/glad.c)
 target_include_directories(glad PUBLIC ${CMAKE_SOURCE_DIR}/src/include/)
 
+# ── Include directories ───────────────────────────────────────────────────────
 include_directories(
     src/include
     src/include/stb
     src/include/imgui
-    src/include/glad
+    ${SWITCH_MESA_INCLUDE_DIRS}
+    ${SWITCH_EGL_INCLUDE_DIRS}
+    ${GLM_INCLUDE_DIRS}
 )
+include_directories($ENV{DEVKITPRO}/libnx/include)
 
-# Debug info in all builds; strip for release via CMAKE_BUILD_TYPE=Release
-add_compile_options("-ggdb")
-
-# Copy runtime assets next to the binary during builds so dev runs work
-# (the AppImage build copies them to the proper install tree instead)
-file(COPY "${CMAKE_SOURCE_DIR}/src/external/"
-     DESTINATION "${CMAKE_BINARY_DIR}")
-
-# Configure the version header file
+# ── Configure version header ──────────────────────────────────────────────────
 configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_SOURCE_DIR}/src/version.h)
 
-add_executable(
-    BetrockViewer
+# ── Copy runtime assets into the build directory ──────────────────────────────
+# Copy everything except desktop shaders first, then overlay the GLSL ES shaders
+file(COPY "${CMAKE_SOURCE_DIR}/src/external/textures" DESTINATION "${CMAKE_BINARY_DIR}/romfs")
+file(COPY "${CMAKE_SOURCE_DIR}/src/external/models"   DESTINATION "${CMAKE_BINARY_DIR}/romfs")
+file(COPY "${CMAKE_SOURCE_DIR}/src/external/saves"    DESTINATION "${CMAKE_BINARY_DIR}/romfs")
+# GLSL ES 3.00 shaders go in romfs/shaders/ (replace desktop #version 330 shaders)
+file(COPY "${CMAKE_SOURCE_DIR}/src/external/shaders_nx/"
+     DESTINATION "${CMAKE_BINARY_DIR}/romfs/shaders")
+
+# ── Executable ────────────────────────────────────────────────────────────────
+add_executable(BetrockViewer
+    # ── Platform-specific entry point (replaces GLFW with libnx EGL) ──────────
+    src/nx_main.cpp
+
     src/model/chunkBuilder.cpp
     src/model/model.cpp
 
@@ -39,9 +73,9 @@ add_executable(
     src/render/vbo.cpp
     src/render/ebo.cpp
     src/render/texture.cpp
-    src/render/camera.cpp
+    src/render/camera_nx.cpp      # Switch-specific camera (libnx HID)
     src/render/mesh.cpp
-    src/render/sky.cpp
+    src/render/sky_nx.cpp       # GLSL-ES-compatible sky (uploads colour uniforms)
 
     src/world/world.cpp
     src/world/loaders/regionLoader.cpp
@@ -54,90 +88,42 @@ add_executable(
 
     src/helper.cpp
     src/debug.cpp
-    src/main.cpp
 
     src/include/stb_include.cpp
     src/include/imgui/imgui.cpp
     src/include/imgui/imgui_draw.cpp
     src/include/imgui/imgui_tables.cpp
     src/include/imgui/imgui_widgets.cpp
-    src/include/imgui/backends/imgui_impl_glfw.cpp
+    # ImGui backend: OpenGL3 (GLES-compatible when IMGUI_IMPL_OPENGL_ES3 is defined)
     src/include/imgui/backends/imgui_impl_opengl3.cpp
+    # No imgui_impl_glfw — replaced by our own nx_imgui_nx.cpp stub
+    src/platform/nx_imgui_nx.cpp
 )
 
-# TODO: Get Windows Target working
-if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
-    set(CMAKE_C_COMPILER i686-w64-mingw32-gcc)
-    set(CMAKE_CXX_COMPILER i686-w64-mingw32-g++)
-    set(CMAKE_RC_COMPILER i686-w64-mingw32-windres)
-    set(CMAKE_RANLIB i686-w64-mingw32-ranlib)
-    target_link_libraries(
-        BetrockViewer
-        glad
-        gdi32
-        opengl32
-        deflate
-        fmt::fmt
-    )
-else()
-    # AddressSanitizer is useful for development but must NOT be included in
-    # AppImage / release builds – libasan is not portable and the AppImage
-    # won't run on systems where the exact libasan version is absent.
-    # Enable it explicitly with -DUSE_ASAN=ON if you want it.
-    option(USE_ASAN "Build with AddressSanitizer" OFF)
-    if(USE_ASAN)
-        message(STATUS "AddressSanitizer enabled")
-        target_compile_options(BetrockViewer PRIVATE -fsanitize=address -g)
-        target_link_options(BetrockViewer PRIVATE -fsanitize=address)
-    endif()
+target_include_directories(BetrockViewer PRIVATE ${MESA_INCLUDE_DIRS})
+target_link_libraries(BetrockViewer PRIVATE
+    glad
+    ${MESA_LIBRARIES}
+    ${DEFLATE_LIBRARIES}
+)
 
-    target_link_libraries(
-        BetrockViewer
-        glad
-        glfw
-        OpenGL::GL
-        deflate
-        fmt::fmt
-        ${CMAKE_DL_LIBS}
+# ── Compiler definitions ──────────────────────────────────────────────────────
+target_compile_definitions(BetrockViewer PRIVATE
+    # Tell ImGui's OpenGL3 backend to use GLES 3.0 instead of desktop GL
+    IMGUI_IMPL_OPENGL_ES3
+    IMGUI_DISABLE_WIN32_FUNCTIONS
+    IMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS
+    # Our own guard so shared source files can conditionally compile
+    PLATFORM_SWITCH
+)
+
+# ── devkitpro NRO packaging ───────────────────────────────────────────────────
+# Produces BetrockViewer.nro with embedded romfs from build/romfs/
+if(COMMAND nx_add_nro_target)
+    nx_add_nro_target(BetrockViewer
+        NAME    "BetrockViewer"
+        AUTHOR  "Pixel Brush"
+        VERSION "${PROJECT_VERSION}"
+        ROMFS   "${CMAKE_BINARY_DIR}/romfs"
     )
 endif()
-
-# ── Install layout ────────────────────────────────────────────────────────────
-# The install tree mirrors what linuxdeploy expects inside an AppDir:
-#
-#   usr/bin/BetrockViewer
-#   usr/share/BetrockViewer/shaders/
-#   usr/share/BetrockViewer/textures/
-#   usr/share/BetrockViewer/models/
-#   usr/share/BetrockViewer/saves/
-#   usr/share/applications/BetrockViewer.desktop
-#   usr/share/icons/hicolor/256x256/apps/BetrockViewer.png
-#
-# The executable resolves $APPDIR/usr/share/BetrockViewer at runtime when running
-# as an AppImage (see main.cpp basePath logic).
-
-install(TARGETS BetrockViewer DESTINATION bin)
-
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/shaders"  DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/textures" DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/models"   DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/saves"    DESTINATION share/BetrockViewer)
-
-install(FILES "${CMAKE_SOURCE_DIR}/BetrockViewer.desktop"
-        DESTINATION share/applications)
-install(FILES "${CMAKE_SOURCE_DIR}/BetrockViewer.png"
-        DESTINATION share/icons/hicolor/256x256/apps
-        RENAME BetrockViewer.png)
-
-# ── CPack packaging ───────────────────────────────────────────────────────────
-set(CPACK_PACKAGE_NAME "BetrockViewer")
-set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_PACKAGE_VENDOR "Pixel Brush")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "BetrockViewer - Legacy Minecraft World Explorer")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "BetrockViewer")
-
-# For TGZ: just pack the install tree
-set(CPACK_GENERATOR "TGZ")
-set(CPACK_STRIP_FILES TRUE)
-
-include(CPack)

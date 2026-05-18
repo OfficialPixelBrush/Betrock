@@ -2,7 +2,7 @@
 #include <string>
 #include "vao.h"
 #include "ebo.h"
-#include "camera.h"
+#include "camera_nx.h"
 #include "texture.h"
 
 class Mesh {
