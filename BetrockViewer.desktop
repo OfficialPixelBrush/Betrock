@@ -1,9 +1,9 @@
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=BetrockViewer
+Name=LegacyWorldViewer
 Comment=Legacy Minecraft World Explorer
-Exec=BetrockViewer %u
-Icon=BetrockViewer
+Exec=LegacyWorldViewer %u
+Icon=LegacyWorldViewer
 Terminal=false
 Categories=Game;

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# build_appimage.sh – Build BetrockViewer and package it as an AppImage.
+# build_appimage.sh – Build LegacyWorldViewer and package it as an AppImage.
 #
 # Usage:
 #   ./build_appimage.sh            # release build (no ASAN)
 #   ./build_appimage.sh --debug    # keeps debug symbols, enables ASAN
 #
-# Output: BetrockViewer-0.4.2-Linux.AppImage  (in the repo root)
+# Output: LegacyWorldViewer-0.4.2-Linux.AppImage  (in the repo root)
 #
 # Requirements (install once):
 #   sudo apt install cmake build-essential libfmt-dev libglfw3-dev \
@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 VERSION="0.4.3"
-APP_NAME="BetrockViewer"
+APP_NAME="LegacyWorldViewer"
 OUTPUT="${APP_NAME}-${VERSION}-Linux.AppImage"
 TOOLS_DIR="${SCRIPT_DIR}/tools"
 BUILD_DIR="${SCRIPT_DIR}/build"
@@ -76,9 +76,9 @@ echo ""
 echo "==> Installing into AppDir ..."
 cmake --install "$BUILD_DIR" --prefix "${APPDIR}/usr"
 mkdir -p "${APPDIR}/usr/share/icons/hicolor/256x256/apps"
-cp "${SCRIPT_DIR}/BetrockViewer.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/BetrockViewer.png"
+cp "${SCRIPT_DIR}/LegacyWorldViewer.png" "${APPDIR}/usr/share/icons/hicolor/256x256/apps/LegacyWorldViewer.png"
 mkdir -p "${APPDIR}/usr/share/applications"
-cp "${SCRIPT_DIR}/BetrockViewer.desktop" "${APPDIR}/usr/share/applications/BetrockViewer.desktop"
+cp "${SCRIPT_DIR}/LegacyWorldViewer.desktop" "${APPDIR}/usr/share/applications/LegacyWorldViewer.desktop"
 
 # ── Package with linuxdeploy ──────────────────────────────────────────────────
 # linuxdeploy bundles shared libraries, creates the AppRun wrapper, and calls
@@ -92,20 +92,20 @@ export OUTPUT="${SCRIPT_DIR}/${OUTPUT}"
 # ARCH must be set for the appimage plugin
 export ARCH="x86_64"
 
-cp "${SCRIPT_DIR}/BetrockViewer.png" "${APPDIR}/BetrockViewer.png"
+cp "${SCRIPT_DIR}/LegacyWorldViewer.png" "${APPDIR}/LegacyWorldViewer.png"
 
 # linuxdeploy validates the Icon= entry in the .desktop file by looking for a
 # .DirIcon file in the AppDir root. Create it so the icon check passes.
-ln -sf "usr/share/icons/hicolor/256x256/apps/BetrockViewer.png" "${APPDIR}/.DirIcon"
+ln -sf "usr/share/icons/hicolor/256x256/apps/LegacyWorldViewer.png" "${APPDIR}/.DirIcon"
 
 # Run linuxdeploy; the --appimage-extract-and-run flag avoids FUSE issues in
 # containers / build servers.
 "${LINUXDEPLOY}" \
     --appimage-extract-and-run \
     --appdir "${APPDIR}" \
-    --executable "${APPDIR}/usr/bin/BetrockViewer" \
+    --executable "${APPDIR}/usr/bin/LegacyWorldViewer" \
     --desktop-file "${APPDIR}/usr/share/applications/${APP_NAME}.desktop" \
-    --icon-file "${SCRIPT_DIR}/BetrockViewer.png" \
+    --icon-file "${SCRIPT_DIR}/LegacyWorldViewer.png" \
     --output appimage
 
 echo ""

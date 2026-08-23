@@ -1,7 +1,7 @@
-# BetrockViewer
+# LegacyWorldViewer
 ![C++23](https://img.shields.io/badge/Language-C%2B%2B20-5E96CF)
-![Issues](https://img.shields.io/github/issues/OfficialPixelBrush/BetrockViewer)
-![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/BetrockViewer)
+![Issues](https://img.shields.io/github/issues/OfficialPixelBrush/LegacyWorldViewer)
+![Pull requests](https://img.shields.io/github/issues-pr/OfficialPixelBrush/LegacyWorldViewer)
 
 A C++ Application for exploring old Minecraft Worlds,
 written to look as close to the real deal as I can manage.
@@ -16,7 +16,7 @@ While [Release 1.1](https://minecraft.wiki/w/Java_Edition_1.1) Worlds can be loa
 See the [compatibility section](#compatibility) for more info.
 
 ## Screenshot
-![BetrockViewer Screenshot](images/image.png)
+![LegacyWorldViewer Screenshot](images/image.png)
 
 ## Compatibility
 Worlds made between [Beta 1.3](https://minecraft.wiki/w/Java_Edition_Beta_1.3) and [Beta 1.7.3](https://minecraft.wiki/w/Java_Edition_Beta_1.7.3) should show up accurately, as these are fully supported and tested.
@@ -61,8 +61,8 @@ sudo pacman -S git cmake ninja gcc mesa glfw libdeflate glm stb fmt
 ### Clone the repository
 ```bash
 # Setting up the repo
-git clone --recurse-submodules https://github.com/OfficialPixelBrush/BetrockViewer.git
-cd BetrockViewer
+git clone --recurse-submodules https://github.com/OfficialPixelBrush/LegacyWorldViewer.git
+cd LegacyWorldViewer
 cmake -B build -S.
 ```
 
@@ -78,7 +78,7 @@ cmake --build build --config Release
 ### Running
 ```bash
 cd build
-./BetrockViewer glacier
+./LegacyWorldViewer glacier
 ```
 Tested on Linux Mint 22.1, Ubuntu 20.04, WSL 2.4.10.0 (Debian 12/13) and Fedora 44.
 

@@ -235,13 +235,13 @@ void EnableOpenGLDebug()
 int main(int argc, char *argv[]) {
     // Determine the base data directory.
     // When running as an AppImage, $APPDIR points to the mounted image root and
-    // our data was installed to $APPDIR/usr/share/BetrockViewer.  Outside an AppImage
+    // our data was installed to $APPDIR/usr/share/LegacyWorldViewer.  Outside an AppImage
     // (normal build / development) we fall back to the directory that contains
-    // the executable so that "cmake --build && ./BetrockViewer" keeps working.
+    // the executable so that "cmake --build && ./LegacyWorldViewer" keeps working.
     std::string basePath;
     const char* appDir = getenv("APPDIR");
     if (appDir != nullptr && appDir[0] != '\0') {
-        basePath = std::string(appDir) + "/usr/share/BetrockViewer";
+        basePath = std::string(appDir) + "/usr/share/LegacyWorldViewer";
     } else {
         // Use the real path of argv[0] so the app can be launched from any
         // working directory (e.g. double-clicking in a file manager).
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
         basePath = exePath.string();
     }
     std::cout << "Base data directory: " << basePath << std::endl;
-    BetrockViewer::basePath() = basePath;  // make available to all subsystems
+    LegacyWorldViewer::basePath() = basePath;  // make available to all subsystems
 
     // Keep 'buffer' as a plain char array so existing code that uses it for
     // the world path (std::string(buffer) + "/saves/...") continues to work.

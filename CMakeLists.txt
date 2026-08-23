@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16.0)
 cmake_policy(SET CMP0072 NEW)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-project(BetrockViewer VERSION 0.4.3)
+project(LegacyWorldViewer VERSION 0.4.3)
 
 find_package(fmt REQUIRED)
 find_package(OpenGL REQUIRED)
@@ -30,7 +30,7 @@ file(COPY "${CMAKE_SOURCE_DIR}/src/external/"
 configure_file(${CMAKE_SOURCE_DIR}/src/version.h.in ${CMAKE_SOURCE_DIR}/src/version.h)
 
 add_executable(
-    BetrockViewer
+    LegacyWorldViewer
     src/model/chunkBuilder.cpp
     src/model/model.cpp
 
@@ -72,7 +72,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set(CMAKE_RC_COMPILER i686-w64-mingw32-windres)
     set(CMAKE_RANLIB i686-w64-mingw32-ranlib)
     target_link_libraries(
-        BetrockViewer
+        LegacyWorldViewer
         glad
         gdi32
         opengl32
@@ -87,12 +87,12 @@ else()
     option(USE_ASAN "Build with AddressSanitizer" OFF)
     if(USE_ASAN)
         message(STATUS "AddressSanitizer enabled")
-        target_compile_options(BetrockViewer PRIVATE -fsanitize=address -g)
-        target_link_options(BetrockViewer PRIVATE -fsanitize=address)
+        target_compile_options(LegacyWorldViewer PRIVATE -fsanitize=address -g)
+        target_link_options(LegacyWorldViewer PRIVATE -fsanitize=address)
     endif()
 
     target_link_libraries(
-        BetrockViewer
+        LegacyWorldViewer
         glad
         glfw
         OpenGL::GL
@@ -105,36 +105,36 @@ endif()
 # ── Install layout ────────────────────────────────────────────────────────────
 # The install tree mirrors what linuxdeploy expects inside an AppDir:
 #
-#   usr/bin/BetrockViewer
-#   usr/share/BetrockViewer/shaders/
-#   usr/share/BetrockViewer/textures/
-#   usr/share/BetrockViewer/models/
-#   usr/share/BetrockViewer/saves/
-#   usr/share/applications/BetrockViewer.desktop
-#   usr/share/icons/hicolor/256x256/apps/BetrockViewer.png
+#   usr/bin/LegacyWorldViewer
+#   usr/share/LegacyWorldViewer/shaders/
+#   usr/share/LegacyWorldViewer/textures/
+#   usr/share/LegacyWorldViewer/models/
+#   usr/share/LegacyWorldViewer/saves/
+#   usr/share/applications/LegacyWorldViewer.desktop
+#   usr/share/icons/hicolor/256x256/apps/LegacyWorldViewer.png
 #
-# The executable resolves $APPDIR/usr/share/BetrockViewer at runtime when running
+# The executable resolves $APPDIR/usr/share/LegacyWorldViewer at runtime when running
 # as an AppImage (see main.cpp basePath logic).
 
-install(TARGETS BetrockViewer DESTINATION bin)
+install(TARGETS LegacyWorldViewer DESTINATION bin)
 
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/shaders"  DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/textures" DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/models"   DESTINATION share/BetrockViewer)
-install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/saves"    DESTINATION share/BetrockViewer)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/shaders"  DESTINATION share/LegacyWorldViewer)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/textures" DESTINATION share/LegacyWorldViewer)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/models"   DESTINATION share/LegacyWorldViewer)
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/external/saves"    DESTINATION share/LegacyWorldViewer)
 
-install(FILES "${CMAKE_SOURCE_DIR}/BetrockViewer.desktop"
+install(FILES "${CMAKE_SOURCE_DIR}/LegacyWorldViewer.desktop"
         DESTINATION share/applications)
-install(FILES "${CMAKE_SOURCE_DIR}/BetrockViewer.png"
+install(FILES "${CMAKE_SOURCE_DIR}/LegacyWorldViewer.png"
         DESTINATION share/icons/hicolor/256x256/apps
-        RENAME BetrockViewer.png)
+        RENAME LegacyWorldViewer.png)
 
 # ── CPack packaging ───────────────────────────────────────────────────────────
-set(CPACK_PACKAGE_NAME "BetrockViewer")
+set(CPACK_PACKAGE_NAME "LegacyWorldViewer")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
 set(CPACK_PACKAGE_VENDOR "Pixel Brush")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "BetrockViewer - Legacy Minecraft World Explorer")
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "BetrockViewer")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "LegacyWorldViewer - Legacy Minecraft World Explorer")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "LegacyWorldViewer")
 
 # For TGZ: just pack the install tree
 set(CPACK_GENERATOR "TGZ")
